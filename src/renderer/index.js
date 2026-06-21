@@ -47,6 +47,10 @@ const menuTrust = document.querySelector("#menu-trust");
 const menuPin = document.querySelector("#menu-pin");
 const menuNickname = document.querySelector("#menu-nickname");
 const menuBlock = document.querySelector("#menu-block");
+const bootLogo = document.querySelector(".boot-logo");
+const bootStatus = document.querySelector("#boot-status");
+const bootProgressFill = document.querySelector("#boot-progress-fill");
+const bootPercent = document.querySelector("#boot-percent");
 
 const connections = new Map();
 const pendingConnections = new Map();
@@ -67,8 +71,48 @@ let contacts = [];
 let contextContactId = "";
 let removeUpdateProgressListener = null;
 
+function setBootProgress(percent, text) {
+  const nextPercent = Math.max(0, Math.min(100, Math.round(percent)));
+  if (bootProgressFill) {
+    bootProgressFill.style.width = `${nextPercent}%`;
+  }
+  if (bootPercent) {
+    bootPercent.textContent = `${nextPercent}%`;
+  }
+  if (bootStatus && text) {
+    bootStatus.textContent = text;
+  }
+}
+
+function waitForImageReady(image) {
+  if (!image) {
+    return Promise.resolve();
+  }
+
+  if (image.complete && image.naturalWidth > 0) {
+    return image.decode ? image.decode().catch(() => {}) : Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    image.addEventListener("load", () => resolve(), { once: true });
+    image.addEventListener("error", () => resolve(), { once: true });
+  }).then(() => (image.decode ? image.decode().catch(() => {}) : undefined));
+}
+
+async function waitForVisualReady() {
+  await Promise.all([
+    waitForImageReady(titlebarLogo),
+    waitForImageReady(brandLogo),
+    document.fonts?.ready?.catch?.(() => {}) ?? Promise.resolve()
+  ]);
+}
+
+setBootProgress(4, "Loading logo");
+
 brandLogo.src = appLogo;
 titlebarLogo.src = appLogo;
+await waitForImageReady(bootLogo);
+setBootProgress(18, "Preparing interface");
 
 const currentVersion = packageInfo.version;
 const latestReleaseUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest";
@@ -150,8 +194,10 @@ function migrateLocalStorageConfig() {
 }
 
 appConfig = await loadAppConfig();
+setBootProgress(42, "Loading settings");
 migrateLocalStorageConfig();
 const identity = loadIdentity();
+setBootProgress(55, "Loading identity");
 
 ownId.textContent = identity.id;
 nicknameInput.value = identity.nickname || "";
@@ -358,6 +404,7 @@ function createContactBadges({ pinned = false, trusted = false, blocked = false,
 }
 
 contacts = loadContacts();
+setBootProgress(68, "Loading contacts");
 
 function setStatus(kind, text) {
   statusDot.className = `status-dot ${kind}`;
@@ -1493,13 +1540,17 @@ window.addEventListener("beforeunload", () => {
 });
 
 refreshPeers();
+setBootProgress(82, "Rendering chat");
 peer = createPeer();
+setBootProgress(90, "Starting peer");
 checkForUpdates();
 
-function finishBootScreen() {
+async function finishBootScreen() {
+  await waitForVisualReady();
+  setBootProgress(100, "Ready");
+
   requestAnimationFrame(() => {
     const logoRect = titlebarLogo.getBoundingClientRect();
-    const bootLogo = document.querySelector(".boot-logo");
     const bootRect = bootLogo?.getBoundingClientRect();
     const targetX = logoRect.left + logoRect.width / 2;
     const targetY = logoRect.top + logoRect.height / 2;

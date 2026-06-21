@@ -57,15 +57,19 @@ button {
     inset 0 -1px 0 rgba(0, 88, 132, 0.22),
     0 16px 34px rgba(3, 43, 68, 0.32);
   opacity: 1;
-  transition: opacity 140ms ease;
+  transition:
+    opacity 420ms ease,
+    filter 420ms ease;
 }
 
 body.app-loading:not(.app-boot-finish) .window-frame {
   opacity: 0;
+  filter: blur(4px);
 }
 
 body.app-boot-finish .window-frame {
   opacity: 1;
+  filter: blur(0);
 }
 
 .titlebar {
