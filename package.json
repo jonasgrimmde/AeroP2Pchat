@@ -4,9 +4,9 @@
   "description": "A clean Frutiger Aero styled Electron peer-to-peer chat client.",
   "main": "out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "preview": "electron-vite preview"
+    "dev": "node scripts/run-electron-vite.cjs dev",
+    "build": "node scripts/run-electron-vite.cjs build",
+    "preview": "node scripts/run-electron-vite.cjs preview"
   },
   "dependencies": {
     "peerjs": "^1.5.5"
