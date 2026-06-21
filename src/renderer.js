@@ -33,7 +33,7 @@ function setStatus(kind, text) {
 }
 
 function formatTime(date = new Date()) {
-  return date.toLocaleTimeString("de-DE", {
+  return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit"
   });
@@ -56,7 +56,7 @@ function addChatMessage({ text, sender, peerId, time }) {
 
   const meta = document.createElement("span");
   meta.className = "bubble-meta";
-  meta.textContent = `${sender === "me" ? "Du" : peerId} · ${time ?? formatTime()}`;
+  meta.textContent = `${sender === "me" ? "You" : peerId} · ${time ?? formatTime()}`;
 
   const body = document.createElement("p");
   body.textContent = text;
@@ -73,9 +73,9 @@ function refreshPeers() {
   if (connections.size === 0) {
     const empty = document.createElement("span");
     empty.className = "empty-peer";
-    empty.textContent = "Noch keine Verbindung";
+    empty.textContent = "No connection yet";
     peerList.append(empty);
-    chatTitle.textContent = "Bereit fuer Verbindung";
+    chatTitle.textContent = "Ready to connect";
     messageInput.disabled = true;
     sendButton.disabled = true;
     return;
@@ -93,7 +93,7 @@ function refreshPeers() {
     peerList.append(button);
   }
 
-  chatTitle.textContent = activePeerId ? `Verbunden mit ${activePeerId}` : "Peer verbunden";
+  chatTitle.textContent = activePeerId ? `Connected to ${activePeerId}` : "Peer connected";
   messageInput.disabled = false;
   sendButton.disabled = false;
 }
@@ -108,11 +108,11 @@ function registerConnection(conn) {
   connections.set(peerId, conn);
   activePeerId = peerId;
   refreshPeers();
-  setStatus("pending", `Verbinde mit ${peerId}...`);
+  setStatus("pending", `Connecting to ${peerId}...`);
 
   conn.on("open", () => {
-    setStatus("online", `Verbunden mit ${peerId}`);
-    addSystemMessage(`Verbindung mit ${peerId} steht.`);
+    setStatus("online", `Connected to ${peerId}`);
+    addSystemMessage(`Connection with ${peerId} is ready.`);
     refreshPeers();
   });
 
@@ -134,36 +134,36 @@ function registerConnection(conn) {
     if (activePeerId === peerId) {
       activePeerId = connections.keys().next().value ?? null;
     }
-    addSystemMessage(`${peerId} hat die Verbindung beendet.`);
-    setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer verbunden" : "Bereit fuer Verbindung");
+    addSystemMessage(`${peerId} closed the connection.`);
+    setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
     refreshPeers();
   });
 
   conn.on("error", (error) => {
-    setStatus("offline", `Verbindungsfehler: ${error.message}`);
-    addSystemMessage(`Fehler mit ${peerId}: ${error.message}`);
+    setStatus("offline", `Connection error: ${error.message}`);
+    addSystemMessage(`Error with ${peerId}: ${error.message}`);
   });
 }
 
 peer.on("open", (id) => {
   myPeerId = id;
   ownId.textContent = id;
-  setStatus("pending", "Peer-ID bereit. Teile sie mit deinem Chat-Partner.");
+  setStatus("pending", "Peer ID ready. Share it with your chat partner.");
 });
 
 peer.on("connection", (conn) => {
-  addSystemMessage(`${conn.peer} moechte chatten.`);
+  addSystemMessage(`${conn.peer} wants to chat.`);
   registerConnection(conn);
 });
 
 peer.on("disconnected", () => {
-  setStatus("offline", "Signaling getrennt. Verbinde erneut...");
+  setStatus("offline", "Signaling disconnected. Reconnecting...");
   peer.reconnect();
 });
 
 peer.on("error", (error) => {
   setStatus("offline", error.message);
-  addSystemMessage(`PeerJS Fehler: ${error.message}`);
+  addSystemMessage(`PeerJS error: ${error.message}`);
 });
 
 copyId.addEventListener("click", async () => {
@@ -172,7 +172,7 @@ copyId.addEventListener("click", async () => {
   }
 
   await navigator.clipboard.writeText(myPeerId);
-  setStatus("pending", "Peer-ID kopiert.");
+  setStatus("pending", "Peer ID copied.");
 });
 
 connectForm.addEventListener("submit", (event) => {
@@ -180,7 +180,7 @@ connectForm.addEventListener("submit", (event) => {
 
   const remoteId = remoteIdInput.value.trim();
   if (!remoteId || remoteId === myPeerId) {
-    setStatus("offline", "Bitte eine andere Peer-ID eingeben.");
+    setStatus("offline", "Please enter a different peer ID.");
     return;
   }
 
@@ -202,7 +202,7 @@ messageForm.addEventListener("submit", (event) => {
 
   const conn = connections.get(activePeerId);
   if (!conn?.open) {
-    setStatus("offline", "Der aktive Peer ist noch nicht bereit.");
+    setStatus("offline", "The active peer is not ready yet.");
     return;
   }
 

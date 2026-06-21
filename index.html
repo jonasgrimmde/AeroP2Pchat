@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,7 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="connection-panel" aria-label="Verbindung">
+      <section class="connection-panel" aria-label="Connection">
         <div class="brand-row">
           <img id="brand-logo" class="brand-logo" alt="" aria-hidden="true" />
           <div>
@@ -18,17 +18,17 @@
         </div>
 
         <div class="id-card">
-          <span class="label">Meine ID</span>
+          <span class="label">My ID</span>
           <div class="id-row">
-            <code id="own-id">wird erstellt...</code>
-            <button id="copy-id" class="icon-button" type="button" title="Peer-ID kopieren" aria-label="Peer-ID kopieren">
+            <code id="own-id">creating...</code>
+            <button id="copy-id" class="icon-button" type="button" title="Copy peer ID" aria-label="Copy peer ID">
               <span aria-hidden="true">ID</span>
             </button>
           </div>
         </div>
 
         <form id="connect-form" class="connect-form">
-          <label for="remote-id">Verbinden</label>
+          <label for="remote-id">Connect</label>
           <div class="connect-row">
             <input id="remote-id" name="remote-id" autocomplete="off" spellcheck="false" placeholder="remote-peer-id" />
             <button id="connect-button" type="submit">Go</button>
@@ -39,14 +39,14 @@
           <span id="status-dot" class="status-dot pending" aria-hidden="true"></span>
           <div>
             <span class="label">Status</span>
-            <strong id="status-text">Initialisiere Peer...</strong>
+            <strong id="status-text">Initializing peer...</strong>
           </div>
         </div>
 
         <div class="peers-card">
           <span class="label">Friends</span>
           <div id="peer-list" class="peer-list">
-            <span class="empty-peer">Noch keine Verbindung</span>
+            <span class="empty-peer">No connection yet</span>
           </div>
         </div>
       </section>
@@ -55,16 +55,16 @@
         <header class="chat-header">
           <div>
             <span class="label">Chat</span>
-            <h2 id="chat-title">Bereit fuer Verbindung</h2>
+            <h2 id="chat-title">Ready to connect</h2>
           </div>
-          <button id="clear-chat" class="ghost-button" type="button">Leeren</button>
+          <button id="clear-chat" class="ghost-button" type="button">Clear</button>
         </header>
 
         <div id="messages" class="messages" aria-live="polite"></div>
 
         <form id="message-form" class="message-form">
-          <input id="message-input" name="message" autocomplete="off" placeholder="Nachricht schreiben..." disabled />
-          <button id="send-button" type="submit" disabled>Senden</button>
+          <input id="message-input" name="message" autocomplete="off" placeholder="Write a message..." disabled />
+          <button id="send-button" type="submit" disabled>Send</button>
         </form>
       </section>
     </main>
