@@ -153,9 +153,48 @@ function resetVersionFilesFromGitIndex() {
   }
 }
 
+function sleep(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function rmSyncWithRetry(targetPath, { required = false } = {}) {
+  const attempts = 5;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      fs.rmSync(targetPath, {
+        recursive: true,
+        force: true,
+        maxRetries: 3,
+        retryDelay: 250
+      });
+      return true;
+    } catch (error) {
+      lastError = error;
+      if (!["EBUSY", "EMFILE", "ENFILE", "ENOTEMPTY", "EPERM"].includes(error.code)) {
+        break;
+      }
+      sleep(250 * attempt);
+    }
+  }
+
+  const relativePath = path.relative(rootDir, targetPath) || targetPath;
+  if (required) {
+    throw lastError;
+  }
+
+  console.error(`${color("yellow", "WARN")} Could not fully clean ${relativePath}: ${lastError.message}`);
+  console.error(`${color("yellow", "WARN")} Continuing; close running app/windows if the build later cannot overwrite files.`);
+  return false;
+}
+
 function cleanBuildOutput() {
-  fs.rmSync(path.join(rootDir, "dist"), { recursive: true, force: true });
-  fs.rmSync(path.join(rootDir, "out"), { recursive: true, force: true });
+  rmSyncWithRetry(path.join(rootDir, "out"), { required: true });
+  rmSyncWithRetry(path.join(rootDir, "dist", "builder-effective-config.yaml"));
+  rmSyncWithRetry(path.join(rootDir, "dist", "installer"));
+  rmSyncWithRetry(path.join(rootDir, "dist", "win-unpacked"));
+  rmSyncWithRetry(path.join(rootDir, "dist", "linux-unpacked"));
 }
 
 function parseArgs() {
