@@ -193,7 +193,7 @@ function cleanBuildOutput() {
   rmSyncWithRetry(path.join(rootDir, "out"), { required: true });
   rmSyncWithRetry(path.join(rootDir, "dist", "builder-effective-config.yaml"));
   rmSyncWithRetry(path.join(rootDir, "dist", "installer"));
-  rmSyncWithRetry(path.join(rootDir, "dist", "win-unpacked"));
+  rmSyncWithRetry(path.join(rootDir, "dist", "build"));
   rmSyncWithRetry(path.join(rootDir, "dist", "linux-unpacked"));
 }
 
