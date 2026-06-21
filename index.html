@@ -97,6 +97,10 @@
           <h2 id="settings-title">Settings</h2>
           <button id="settings-close" class="ghost-button" type="button">Close</button>
         </header>
+        <label class="settings-field">
+          <span class="label">My nickname</span>
+          <input id="nickname-input" type="text" maxlength="32" placeholder="Nickname" />
+        </label>
         <span class="label">Blocked users</span>
         <div id="blocked-list" class="blocked-list"></div>
       </section>
@@ -110,6 +114,10 @@
       <button id="menu-pin" type="button" role="menuitem">
         <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
         <span>Pin</span>
+      </button>
+      <button id="menu-nickname" type="button" role="menuitem">
+        <i class="fa-solid fa-pen" aria-hidden="true"></i>
+        <span>Add nickname</span>
       </button>
       <button id="menu-block" type="button" role="menuitem">
         <i class="fa-solid fa-ban" aria-hidden="true"></i>

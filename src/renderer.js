@@ -31,10 +31,12 @@ const copyUpdateCommand = document.querySelector("#copy-update-command");
 const settingsButton = document.querySelector("#settings-button");
 const settingsModal = document.querySelector("#settings-modal");
 const settingsClose = document.querySelector("#settings-close");
+const nicknameInput = document.querySelector("#nickname-input");
 const blockedList = document.querySelector("#blocked-list");
 const contactMenu = document.querySelector("#contact-menu");
 const menuTrust = document.querySelector("#menu-trust");
 const menuPin = document.querySelector("#menu-pin");
+const menuNickname = document.querySelector("#menu-nickname");
 const menuBlock = document.querySelector("#menu-block");
 
 const connections = new Map();
@@ -91,11 +93,13 @@ function createIdentityId() {
 
 function loadIdentity() {
   if (appConfig.identity?.id && /^aero-[a-f0-9]{32}$/.test(appConfig.identity.id)) {
+    appConfig.identity.nickname = sanitizeNickname(appConfig.identity.nickname);
     return appConfig.identity;
   }
 
   const identity = {
     id: createIdentityId(),
+    nickname: "",
     createdAt: new Date().toISOString()
   };
   appConfig.identity = identity;
@@ -137,9 +141,14 @@ const identity = loadIdentity();
 
 ownId.textContent = identity.id;
 remoteIdInput.placeholder = "friend-aero-id";
+nicknameInput.value = identity.nickname || "";
 
 function isValidAeroId(value) {
   return /^aero-[a-f0-9]{32}$/.test(String(value || "").trim());
+}
+
+function sanitizeNickname(value) {
+  return String(value || "").trim().slice(0, 32);
 }
 
 function loadContacts() {
@@ -152,6 +161,8 @@ function loadContacts() {
     .map((contact) => ({
       id: contact.id,
       label: contact.label || contact.id,
+      remoteNickname: sanitizeNickname(contact.remoteNickname),
+      customLabel: Boolean(contact.customLabel),
       pinned: contact.pinned !== false,
       trusted: Boolean(contact.trusted),
       blocked: Boolean(contact.blocked),
@@ -176,11 +187,18 @@ function upsertContact(id, updates = {}) {
   const existing = findContact(id);
   if (existing) {
     Object.assign(existing, updates);
-    existing.label = updates.label || existing.label || id;
+    if (updates.label) {
+      existing.label = updates.label;
+    } else if (!existing.label) {
+      existing.label = existing.remoteNickname || id;
+    }
   } else {
+    const label = updates.label || updates.remoteNickname || id;
     contacts.push({
       id,
-      label: updates.label || id,
+      label,
+      remoteNickname: updates.remoteNickname || "",
+      customLabel: Boolean(updates.customLabel),
       pinned: updates.pinned ?? true,
       trusted: Boolean(updates.trusted),
       blocked: Boolean(updates.blocked),
@@ -200,6 +218,31 @@ function upsertContact(id, updates = {}) {
 
 function pinContact(id, label = id) {
   return Boolean(upsertContact(id, { label, pinned: true }));
+}
+
+function rememberRemoteIdentity(id, nickname) {
+  const remoteNickname = sanitizeNickname(nickname);
+  if (!isValidAeroId(id) || !remoteNickname) {
+    return;
+  }
+
+  const existing = findContact(id);
+  upsertContact(id, {
+    remoteNickname,
+    label: existing?.customLabel ? existing.label : remoteNickname,
+    pinned: existing?.pinned ?? true
+  });
+}
+
+function setContactNickname(id, nickname) {
+  const cleanNickname = sanitizeNickname(nickname);
+  const existing = findContact(id);
+  upsertContact(id, {
+    label: cleanNickname || existing?.remoteNickname || id,
+    customLabel: Boolean(cleanNickname),
+    pinned: true
+  });
+  refreshPeers();
 }
 
 function removeContact(id) {
@@ -410,6 +453,7 @@ function createChatMetadata() {
   return {
     app: "Aero P2P Chat",
     identityId: identity.id,
+    nickname: identity.nickname || "",
     protocol: PROTOCOL_VERSION,
     version: currentVersion
   };
@@ -417,7 +461,7 @@ function createChatMetadata() {
 
 function getPeerLabel(peerId, conn) {
   const identityId = conn?.metadata?.identityId || peerId;
-  return findContact(identityId)?.label || identityId;
+  return findContact(identityId)?.label || sanitizeNickname(conn?.metadata?.nickname) || identityId;
 }
 
 function getPeerIdentityId(peerId, conn) {
@@ -431,10 +475,11 @@ function openContactMenu(event, id) {
   const contact = findContact(id);
   menuTrust.querySelector("span").textContent = contact?.trusted ? "Untrust" : "Trust";
   menuPin.querySelector("span").textContent = contact?.pinned ? "Unpin" : "Pin";
+  menuNickname.querySelector("span").textContent = contact?.customLabel ? "Edit nickname" : "Add nickname";
   menuBlock.querySelector("span").textContent = contact?.blocked ? "Unblock" : "Block";
 
-  contactMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 150)}px`;
-  contactMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 110)}px`;
+  contactMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 164)}px`;
+  contactMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 132)}px`;
   contactMenu.classList.remove("hidden");
 }
 
@@ -786,6 +831,7 @@ function registerConnection(conn, options = {}) {
   const peerId = conn.peer;
   const direction = options.incoming ? "incoming" : "outgoing";
   const peerIdentityId = getPeerIdentityId(peerId, conn);
+  rememberRemoteIdentity(peerIdentityId, conn.metadata?.nickname);
 
   if (!isKnownChatConnection(conn)) {
     addSystemMessage(`Rejected unsupported connection from ${peerId}.`);
@@ -1053,6 +1099,7 @@ copyUpdateCommand.addEventListener("click", async () => {
 });
 
 settingsButton.addEventListener("click", () => {
+  nicknameInput.value = identity.nickname || "";
   renderBlockedList();
   settingsModal.classList.remove("hidden");
 });
@@ -1065,6 +1112,14 @@ settingsModal.addEventListener("click", (event) => {
   if (event.target === settingsModal) {
     settingsModal.classList.add("hidden");
   }
+});
+
+nicknameInput.addEventListener("change", () => {
+  identity.nickname = sanitizeNickname(nicknameInput.value);
+  nicknameInput.value = identity.nickname;
+  appConfig.identity = identity;
+  saveAppConfig();
+  setStatus("pending", identity.nickname ? `Nickname set to ${identity.nickname}.` : "Nickname cleared.");
 });
 
 menuTrust.addEventListener("click", () => {
@@ -1086,6 +1141,20 @@ menuPin.addEventListener("click", () => {
   const nextValue = !findContact(contextContactId)?.pinned;
   setPinned(contextContactId, nextValue);
   addSystemMessage(`${contextContactId} ${nextValue ? "pinned" : "unpinned"}.`);
+  closeContactMenu();
+});
+
+menuNickname.addEventListener("click", () => {
+  if (!contextContactId) {
+    return;
+  }
+
+  const contact = findContact(contextContactId);
+  const nextNickname = window.prompt("Nickname", contact?.customLabel ? contact.label : "");
+  if (nextNickname !== null) {
+    setContactNickname(contextContactId, nextNickname);
+    addSystemMessage(`${contextContactId} nickname ${sanitizeNickname(nextNickname) ? "saved" : "cleared"}.`);
+  }
   closeContactMenu();
 });
 
