@@ -1,4 +1,4 @@
-import Peer from "peerjs";
+import Peer, { util } from "peerjs";
 import appLogo from "../assets/app.png";
 import packageInfo from "../package.json";
 import "./styles.css";
@@ -23,18 +23,18 @@ const updateText = document.querySelector("#update-text");
 const updateButton = document.querySelector("#update-button");
 
 const connections = new Map();
+const CHAT_LABEL = "aero-p2p-chat";
+const MAX_MESSAGE_LENGTH = 4000;
+const HIGH_BUFFER_SIZE = 25;
 let activePeerId = null;
 let myPeerId = "";
+let peer = null;
 
 brandLogo.src = appLogo;
 
 const currentVersion = packageInfo.version;
 const latestReleaseUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest";
 const latestManifestUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/latest.yml";
-
-const peer = new Peer({
-  debug: 1
-});
 
 function setStatus(kind, text) {
   statusDot.className = `status-dot ${kind}`;
@@ -133,6 +133,36 @@ function addChatMessage({ text, sender, peerId, time }) {
   messages.scrollTop = messages.scrollHeight;
 }
 
+function isSupportedDataChannel() {
+  return Boolean(util.supports?.data && util.supports?.reliable);
+}
+
+function createChatMetadata() {
+  return {
+    app: "Aero P2P Chat",
+    version: currentVersion
+  };
+}
+
+function isKnownChatConnection(conn) {
+  if (conn.type !== "data") {
+    return false;
+  }
+
+  return conn.label === CHAT_LABEL || conn.metadata?.app === "Aero P2P Chat" || !conn.metadata;
+}
+
+function normalizeMessage(data) {
+  if (!data || data.type !== "chat-message" || typeof data.text !== "string") {
+    return null;
+  }
+
+  return {
+    text: data.text.slice(0, MAX_MESSAGE_LENGTH),
+    time: typeof data.time === "string" ? data.time : formatTime()
+  };
+}
+
 function refreshPeers() {
   peerList.replaceChildren();
 
@@ -159,13 +189,21 @@ function refreshPeers() {
     peerList.append(button);
   }
 
+  const activeConn = activePeerId ? connections.get(activePeerId) : null;
+  const canChat = Boolean(activeConn?.open);
   chatTitle.textContent = activePeerId ? `Connected to ${activePeerId}` : "Peer connected";
-  messageInput.disabled = false;
-  sendButton.disabled = false;
+  messageInput.disabled = !canChat;
+  sendButton.disabled = !canChat;
 }
 
 function registerConnection(conn) {
   const peerId = conn.peer;
+
+  if (!isKnownChatConnection(conn)) {
+    addSystemMessage(`Rejected unsupported connection from ${peerId}.`);
+    conn.close();
+    return;
+  }
 
   if (connections.has(peerId)) {
     connections.get(peerId).close();
@@ -183,15 +221,16 @@ function registerConnection(conn) {
   });
 
   conn.on("data", (data) => {
-    if (!data || data.type !== "chat-message") {
+    const message = normalizeMessage(data);
+    if (!message) {
       return;
     }
 
     addChatMessage({
-      text: String(data.text ?? ""),
+      text: message.text,
       sender: "them",
       peerId,
-      time: data.time
+      time: message.time
     });
   });
 
@@ -211,26 +250,45 @@ function registerConnection(conn) {
   });
 }
 
-peer.on("open", (id) => {
-  myPeerId = id;
-  ownId.textContent = id;
-  setStatus("pending", "Peer ID ready. Share it with your chat partner.");
-});
+function createPeer() {
+  if (!isSupportedDataChannel()) {
+    ownId.textContent = "unsupported";
+    setStatus("offline", "WebRTC DataChannels are not supported here.");
+    addSystemMessage(`Unsupported WebRTC runtime: ${util.browser}`);
+    return null;
+  }
 
-peer.on("connection", (conn) => {
-  addSystemMessage(`${conn.peer} wants to chat.`);
-  registerConnection(conn);
-});
+  const nextPeer = new Peer({
+    debug: 1
+  });
 
-peer.on("disconnected", () => {
-  setStatus("offline", "Signaling disconnected. Reconnecting...");
-  peer.reconnect();
-});
+  nextPeer.on("open", (id) => {
+    myPeerId = id;
+    ownId.textContent = id;
+    setStatus("pending", "Peer ID ready. Share it with your chat partner.");
+  });
 
-peer.on("error", (error) => {
-  setStatus("offline", error.message);
-  addSystemMessage(`PeerJS error: ${error.message}`);
-});
+  nextPeer.on("connection", (conn) => {
+    addSystemMessage(`${conn.peer} wants to chat.`);
+    registerConnection(conn);
+  });
+
+  nextPeer.on("disconnected", () => {
+    setStatus("offline", "Signaling disconnected. Reconnecting...");
+    nextPeer.reconnect();
+  });
+
+  nextPeer.on("error", (error) => {
+    setStatus("offline", error.message);
+    addSystemMessage(`PeerJS error: ${error.message}`);
+  });
+
+  nextPeer.on("close", () => {
+    setStatus("offline", "Peer closed.");
+  });
+
+  return nextPeer;
+}
 
 copyId.addEventListener("click", async () => {
   if (!myPeerId) {
@@ -245,12 +303,19 @@ connectForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const remoteId = remoteIdInput.value.trim();
+  if (!peer?.open) {
+    setStatus("offline", "Your peer is not ready yet.");
+    return;
+  }
+
   if (!remoteId || remoteId === myPeerId) {
     setStatus("offline", "Please enter a different peer ID.");
     return;
   }
 
   const conn = peer.connect(remoteId, {
+    label: CHAT_LABEL,
+    metadata: createChatMetadata(),
     reliable: true,
     serialization: "json"
   });
@@ -272,15 +337,26 @@ messageForm.addEventListener("submit", (event) => {
     return;
   }
 
+  if (conn.bufferSize > HIGH_BUFFER_SIZE) {
+    setStatus("pending", "Waiting for the send buffer to drain...");
+    return;
+  }
+
   const payload = {
     type: "chat-message",
-    text,
+    text: text.slice(0, MAX_MESSAGE_LENGTH),
     time: formatTime()
   };
 
-  conn.send(payload);
+  try {
+    conn.send(payload);
+  } catch (error) {
+    setStatus("offline", `Send failed: ${error.message}`);
+    return;
+  }
+
   addChatMessage({
-    text,
+    text: payload.text,
     sender: "me",
     peerId: activePeerId,
     time: payload.time
@@ -297,4 +373,12 @@ updateButton.addEventListener("click", () => {
   window.open(latestReleaseUrl, "_blank", "noopener");
 });
 
+window.addEventListener("beforeunload", () => {
+  for (const conn of connections.values()) {
+    conn.close();
+  }
+  peer?.destroy();
+});
+
+peer = createPeer();
 checkForUpdates();
