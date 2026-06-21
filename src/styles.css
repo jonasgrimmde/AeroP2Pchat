@@ -60,8 +60,12 @@ button {
   transition: opacity 140ms ease;
 }
 
-body.app-loading .window-frame {
+body.app-loading:not(.app-boot-finish) .window-frame {
   opacity: 0;
+}
+
+body.app-boot-finish .window-frame {
+  opacity: 1;
 }
 
 .titlebar {

@@ -1496,6 +1496,26 @@ refreshPeers();
 peer = createPeer();
 checkForUpdates();
 
-requestAnimationFrame(() => {
-  document.body.classList.remove("app-loading");
-});
+function finishBootScreen() {
+  requestAnimationFrame(() => {
+    const logoRect = titlebarLogo.getBoundingClientRect();
+    const bootLogo = document.querySelector(".boot-logo");
+    const bootRect = bootLogo?.getBoundingClientRect();
+    const targetX = logoRect.left + logoRect.width / 2;
+    const targetY = logoRect.top + logoRect.height / 2;
+    const currentX = bootRect ? bootRect.left + bootRect.width / 2 : window.innerWidth / 2;
+    const currentY = bootRect ? bootRect.top + bootRect.height / 2 : window.innerHeight / 2;
+
+    document.body.style.setProperty("--boot-delta-x", `${targetX - currentX}px`);
+    document.body.style.setProperty("--boot-delta-y", `${targetY - currentY}px`);
+    document.body.classList.add("app-boot-finish");
+
+    window.setTimeout(() => {
+      document.body.classList.remove("app-loading", "app-boot-finish");
+      document.body.style.removeProperty("--boot-delta-x");
+      document.body.style.removeProperty("--boot-delta-y");
+    }, 1040);
+  });
+}
+
+finishBootScreen();
