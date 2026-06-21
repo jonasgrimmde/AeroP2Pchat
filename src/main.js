@@ -52,7 +52,7 @@ function assertTrustedInstallerUrl(rawUrl) {
   return url;
 }
 
-function downloadFile(url, targetPath, redirects = 0) {
+function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
   return new Promise((resolve, reject) => {
     const request = get(url, (response) => {
       if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
@@ -62,7 +62,7 @@ function downloadFile(url, targetPath, redirects = 0) {
           return;
         }
 
-        downloadFile(new URL(response.headers.location, url), targetPath, redirects + 1).then(resolve, reject);
+        downloadFile(new URL(response.headers.location, url), targetPath, onProgress, redirects + 1).then(resolve, reject);
         return;
       }
 
@@ -73,8 +73,36 @@ function downloadFile(url, targetPath, redirects = 0) {
       }
 
       const file = createWriteStream(targetPath);
+      const totalBytes = Number(response.headers["content-length"]) || 0;
+      let receivedBytes = 0;
+
+      response.on("data", (chunk) => {
+        receivedBytes += chunk.length;
+        if (totalBytes > 0) {
+          onProgress({
+            phase: "download",
+            percent: Math.min(100, Math.round((receivedBytes / totalBytes) * 100)),
+            receivedBytes,
+            totalBytes
+          });
+        } else {
+          onProgress({
+            phase: "download",
+            percent: null,
+            receivedBytes,
+            totalBytes: null
+          });
+        }
+      });
+
       response.pipe(file);
       file.on("finish", () => {
+        onProgress({
+          phase: "download",
+          percent: 100,
+          receivedBytes: totalBytes || receivedBytes,
+          totalBytes: totalBytes || receivedBytes
+        });
         file.close(resolve);
       });
       file.on("error", reject);
@@ -84,9 +112,9 @@ function downloadFile(url, targetPath, redirects = 0) {
   });
 }
 
-async function installWindowsUpdate(rawUrl, version) {
+async function installWindowsUpdate(rawUrl, version, onProgress = () => {}) {
   if (process.platform !== "win32") {
-    throw new Error("Silent setup updates are only available on Windows.");
+    throw new Error("Setup updates are only available on Windows.");
   }
   if (!app.isPackaged) {
     throw new Error("Update install is only available in the packaged app.");
@@ -98,13 +126,15 @@ async function installWindowsUpdate(rawUrl, version) {
   const scriptPath = join(updateDir, "install-update.ps1");
   const appExePath = process.execPath;
 
-  await downloadFile(url, setupPath);
+  onProgress({ phase: "download", percent: 0, receivedBytes: 0, totalBytes: null });
+  await downloadFile(url, setupPath, onProgress);
+  onProgress({ phase: "install", percent: 100 });
   await writeFile(scriptPath, [
     "$ErrorActionPreference = 'Stop'",
-    "Start-Sleep -Seconds 1",
+    "Start-Sleep -Seconds 2",
     `$setup = ${JSON.stringify(setupPath)}`,
     `$app = ${JSON.stringify(appExePath)}`,
-    "$args = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS')",
+    "$args = @('/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS')",
     "Start-Process -FilePath $setup -ArgumentList $args -Wait",
     "Start-Process -FilePath $app"
   ].join("\r\n"));
@@ -122,7 +152,7 @@ async function installWindowsUpdate(rawUrl, version) {
   });
   updater.unref();
 
-  setTimeout(() => app.quit(), 250);
+  setTimeout(() => app.quit(), 500);
   return { ok: true };
 }
 
@@ -159,7 +189,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle("install-update", (_event, details) => installWindowsUpdate(details.url, details.version));
+  ipcMain.handle("install-update", (event, details) => installWindowsUpdate(details.url, details.version, (progress) => {
+    event.sender.send("update-progress", progress);
+  }));
   ipcMain.handle("load-config", () => loadConfig());
   ipcMain.handle("save-config", (_event, config) => saveConfig(config));
   ipcMain.handle("get-config-path", () => getConfigPath());

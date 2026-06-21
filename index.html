@@ -135,10 +135,15 @@
           <h2 id="settings-title">Settings</h2>
           <button id="settings-close" class="ghost-button" type="button">Close</button>
         </header>
-        <label class="settings-field">
+        <div class="settings-field">
           <span class="label">My nickname</span>
-          <input id="nickname-input" type="text" maxlength="32" placeholder="Nickname" />
-        </label>
+          <div class="settings-row">
+            <input id="nickname-input" type="text" maxlength="32" placeholder="Nickname" />
+            <button id="save-nickname" type="button">Save</button>
+          </div>
+        </div>
+        <span class="label">Contact nicknames</span>
+        <div id="contact-nickname-list" class="contact-nickname-list"></div>
         <span class="label">Blocked users</span>
         <div id="blocked-list" class="blocked-list"></div>
       </section>

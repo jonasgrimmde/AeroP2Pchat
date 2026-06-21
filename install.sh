@@ -203,6 +203,48 @@ confirm_keep_user_data() {
   esac
 }
 
+find_running_app_pids() {
+  if command -v pgrep >/dev/null 2>&1; then
+    pgrep -f "$APPIMAGE_PATH" 2>/dev/null || true
+    return
+  fi
+
+  ps -eo pid=,args= 2>/dev/null | awk -v app="$APPIMAGE_PATH" 'index($0, app) > 0 { print $1 }' || true
+}
+
+close_running_instances() {
+  if ! is_installed; then
+    return
+  fi
+
+  pids="$(find_running_app_pids | tr '\n' ' ')"
+  if [ -z "$pids" ]; then
+    return
+  fi
+
+  info "Closing running ${APP_NAME} instances..."
+  # shellcheck disable=SC2086
+  kill $pids >/dev/null 2>&1 || true
+
+  wait_seconds=0
+  while [ "$wait_seconds" -lt 10 ]; do
+    remaining="$(find_running_app_pids | tr '\n' ' ')"
+    if [ -z "$remaining" ]; then
+      ok "Running instances closed."
+      return
+    fi
+    sleep 1
+    wait_seconds=$((wait_seconds + 1))
+  done
+
+  remaining="$(find_running_app_pids | tr '\n' ' ')"
+  if [ -n "$remaining" ]; then
+    warn "Forcing remaining ${APP_NAME} instances to close."
+    # shellcheck disable=SC2086
+    kill -9 $remaining >/dev/null 2>&1 || true
+  fi
+}
+
 show_menu() {
   title
   tmp_manifest="$(mktemp)"
@@ -281,6 +323,7 @@ install_app() {
   fi
 
   download "$APPIMAGE_URL" "$tmp_appimage"
+  close_running_instances
   chmod +x "$tmp_appimage"
   mv "$tmp_appimage" "$APPIMAGE_PATH"
   printf '%s\n' "$latest_version" > "$VERSION_PATH"

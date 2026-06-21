@@ -39,6 +39,8 @@ const settingsButton = document.querySelector("#settings-button");
 const settingsModal = document.querySelector("#settings-modal");
 const settingsClose = document.querySelector("#settings-close");
 const nicknameInput = document.querySelector("#nickname-input");
+const saveNickname = document.querySelector("#save-nickname");
+const contactNicknameList = document.querySelector("#contact-nickname-list");
 const blockedList = document.querySelector("#blocked-list");
 const contactMenu = document.querySelector("#contact-menu");
 const menuTrust = document.querySelector("#menu-trust");
@@ -62,6 +64,7 @@ let peer = null;
 let availableUpdate = null;
 let contacts = [];
 let contextContactId = "";
+let removeUpdateProgressListener = null;
 
 brandLogo.src = appLogo;
 titlebarLogo.src = appLogo;
@@ -256,6 +259,7 @@ function setContactNickname(id, nickname) {
     pinned: true
   });
   refreshPeers();
+  renderContactNicknameList();
 }
 
 function removeContact(id) {
@@ -655,11 +659,22 @@ function refreshPeers() {
     remove.addEventListener("click", () => {
       removeContact(contact.id);
     });
+
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "contact-edit";
+    edit.title = "Edit nickname";
+    edit.setAttribute("aria-label", "Edit nickname");
+    edit.append(renderIcon("fa-solid fa-pen"));
+    edit.addEventListener("click", () => {
+      openSettings(contact.id);
+    });
+
     row.addEventListener("contextmenu", (event) => {
       openContactMenu(event, contact.id);
     });
 
-    row.append(name, remove);
+    row.append(name, edit, remove);
     peerList.append(row);
   }
 
@@ -1018,6 +1033,91 @@ function renderBlockedList() {
   }
 }
 
+function renderContactNicknameList(focusContactId = "") {
+  contactNicknameList.replaceChildren();
+  const editableContacts = contacts.filter((contact) => !contact.blocked);
+
+  if (editableContacts.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "empty-peer";
+    empty.textContent = "No contacts yet";
+    contactNicknameList.append(empty);
+    return;
+  }
+
+  for (const contact of editableContacts) {
+    const row = document.createElement("div");
+    row.className = "contact-nickname-item";
+
+    const details = document.createElement("div");
+    details.className = "contact-nickname-details";
+
+    const currentName = document.createElement("strong");
+    currentName.textContent = contact.label;
+
+    const id = document.createElement("code");
+    id.textContent = contact.id;
+
+    details.append(currentName, id);
+
+    const editor = document.createElement("div");
+    editor.className = "contact-nickname-editor";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 32;
+    input.placeholder = contact.remoteNickname || "Nickname";
+    input.value = contact.customLabel ? contact.label : "";
+    input.dataset.contactId = contact.id;
+    input.setAttribute("aria-label", `Nickname for ${contact.label}`);
+
+    const save = document.createElement("button");
+    save.type = "button";
+    save.textContent = "Save";
+    save.addEventListener("click", () => {
+      setContactNickname(contact.id, input.value);
+      addSystemMessage(`${findContact(contact.id)?.label || contact.id} nickname saved.`);
+    });
+
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.title = "Clear nickname";
+    clear.setAttribute("aria-label", "Clear nickname");
+    clear.append(renderIcon("fa-solid fa-xmark"));
+    clear.addEventListener("click", () => {
+      input.value = "";
+      setContactNickname(contact.id, "");
+      addSystemMessage(`${contact.id} nickname cleared.`);
+    });
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        save.click();
+      }
+    });
+
+    editor.append(input, save, clear);
+    row.append(details, editor);
+    contactNicknameList.append(row);
+
+  }
+}
+
+function openSettings(focusContactId = "") {
+  nicknameInput.value = identity.nickname || "";
+  renderContactNicknameList(focusContactId);
+  renderBlockedList();
+  settingsModal.classList.remove("hidden");
+  if (focusContactId) {
+    requestAnimationFrame(() => {
+      const input = contactNicknameList.querySelector(`[data-contact-id="${focusContactId}"]`);
+      input?.focus();
+      input?.select();
+    });
+  }
+}
+
 function createPeer() {
   if (!isSupportedDataChannel()) {
     ownId.textContent = "unsupported";
@@ -1171,6 +1271,33 @@ function openLinuxUpdateModal() {
   updateModal.classList.remove("hidden");
 }
 
+function setUpdateButtonText(text) {
+  updateButton.textContent = text;
+  headerUpdateButton.textContent = text;
+}
+
+function startUpdateProgressListener() {
+  removeUpdateProgressListener?.();
+  removeUpdateProgressListener = window.aeroChat?.onUpdateProgress?.((progress) => {
+    if (progress?.phase === "download") {
+      const percentText = Number.isFinite(progress.percent) ? `${progress.percent}%` : "...";
+      setUpdateButtonText(`Downloading ${percentText}`);
+      setStatus("pending", `Downloading update ${percentText}`);
+      return;
+    }
+
+    if (progress?.phase === "install") {
+      setUpdateButtonText("Starting setup...");
+      setStatus("pending", "Starting update setup...");
+    }
+  }) || null;
+}
+
+function stopUpdateProgressListener() {
+  removeUpdateProgressListener?.();
+  removeUpdateProgressListener = null;
+}
+
 async function installAvailableUpdate() {
   if (!availableUpdate) {
     window.open(latestReleaseUrl, "_blank", "noopener");
@@ -1180,8 +1307,8 @@ async function installAvailableUpdate() {
   if (platform === "win32") {
     updateButton.disabled = true;
     headerUpdateButton.disabled = true;
-    updateButton.textContent = "Installing...";
-    headerUpdateButton.textContent = "Installing...";
+    startUpdateProgressListener();
+    setUpdateButtonText("Downloading 0%");
     setStatus("pending", "Downloading update installer...");
 
     try {
@@ -1189,8 +1316,10 @@ async function installAvailableUpdate() {
         url: availableUpdate.windowsUrl,
         version: availableUpdate.version
       });
-      setStatus("pending", "Installing update. The app will restart.");
+      setUpdateButtonText("Setup started");
+      setStatus("pending", "Setup started. The app will restart.");
     } catch (error) {
+      stopUpdateProgressListener();
       updateButton.disabled = false;
       headerUpdateButton.disabled = false;
       updateButton.textContent = "Install update";
@@ -1237,9 +1366,7 @@ copyUpdateCommand.addEventListener("click", async () => {
 });
 
 settingsButton.addEventListener("click", () => {
-  nicknameInput.value = identity.nickname || "";
-  renderBlockedList();
-  settingsModal.classList.remove("hidden");
+  openSettings();
 });
 
 settingsClose.addEventListener("click", () => {
@@ -1252,12 +1379,21 @@ settingsModal.addEventListener("click", (event) => {
   }
 });
 
-nicknameInput.addEventListener("change", () => {
+function saveOwnNickname() {
   identity.nickname = sanitizeNickname(nicknameInput.value);
   nicknameInput.value = identity.nickname;
   appConfig.identity = identity;
   saveAppConfig();
   setStatus("pending", identity.nickname ? `Nickname set to ${identity.nickname}.` : "Nickname cleared.");
+}
+
+saveNickname.addEventListener("click", saveOwnNickname);
+
+nicknameInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    saveOwnNickname();
+  }
 });
 
 menuTrust.addEventListener("click", () => {
@@ -1287,12 +1423,7 @@ menuNickname.addEventListener("click", () => {
     return;
   }
 
-  const contact = findContact(contextContactId);
-  const nextNickname = window.prompt("Nickname", contact?.customLabel ? contact.label : "");
-  if (nextNickname !== null) {
-    setContactNickname(contextContactId, nextNickname);
-    addSystemMessage(`${contextContactId} nickname ${sanitizeNickname(nextNickname) ? "saved" : "cleared"}.`);
-  }
+  openSettings(contextContactId);
   closeContactMenu();
 });
 
