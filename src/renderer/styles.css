@@ -81,18 +81,18 @@ body.app-boot-finish .window-frame {
   padding: 5px 6px 5px 9px;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(183, 246, 255, 0.72) 46%, rgba(77, 184, 224, 0.72) 47%, rgba(31, 139, 194, 0.58)),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 46px);
+    linear-gradient(180deg, rgba(132, 224, 246, 0.88), rgba(78, 188, 226, 0.86) 54%, rgba(34, 145, 199, 0.82)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 46px);
   -webkit-app-region: drag;
 }
 
 .titlebar::after {
   content: "";
   position: absolute;
-  inset: 1px 80px auto 8px;
-  height: 14px;
+  inset: auto 82px 2px 8px;
+  height: 1px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.14));
+  background: rgba(255, 255, 255, 0.26);
   pointer-events: none;
 }
 
@@ -143,8 +143,8 @@ body.app-boot-finish .window-frame {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 26% 0%, rgba(255, 255, 255, 0.78), transparent 9rem),
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    radial-gradient(circle at 18% -30%, rgba(255, 255, 255, 0.42), transparent 8rem),
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
   pointer-events: none;
 }
 
@@ -163,16 +163,16 @@ body.app-boot-finish .window-frame {
   height: 24px;
   border: 1px solid rgba(0, 95, 135, 0.28);
   border-radius: 5px;
-  background: linear-gradient(#ffffff, #caeff7 48%, #79cce5 49%, #38a8d0);
+  background: linear-gradient(#bdf2ff, #76d2ed 50%, #2a9ccc);
   color: #07364f;
   font-size: 11px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.56),
     0 3px 8px rgba(0, 72, 108, 0.14);
 }
 
 .window-controls button:hover {
-  background: linear-gradient(#ffffff, #e9fbff 48%, #97ebff 49%, #35bde9);
+  background: linear-gradient(#d8fbff, #8ee9ff 50%, #25b1de);
 }
 
 .window-controls .window-close {
