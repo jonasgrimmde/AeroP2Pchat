@@ -2,17 +2,39 @@
   "name": "aero-p2p-chat",
   "version": "0.1.0",
   "description": "A clean Frutiger Aero styled Electron peer-to-peer chat client.",
+  "author": "Jonas Grimm",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "node scripts/run-electron-vite.cjs dev",
-    "build": "node scripts/run-electron-vite.cjs build",
-    "preview": "node scripts/run-electron-vite.cjs preview"
+    "compile": "node scripts/run-electron-vite.cjs build",
+    "pack": "npm run compile && electron-builder --win --dir",
+    "setup": "node scripts/build-inno.cjs",
+    "build": "npm run pack && npm run setup",
+    "preview": "node scripts/run-electron-vite.cjs preview",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('out',{recursive:true,force:true})\""
+  },
+  "build": {
+    "appId": "de.jonasgrimm.aerop2pchat",
+    "productName": "Aero P2P Chat",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "artifactName": "Aero-P2P-Chat-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": "dir"
+    },
+    "asar": true
   },
   "dependencies": {
     "peerjs": "^1.5.5"
   },
   "devDependencies": {
     "electron": "^31.7.7",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
     "vite": "^5.4.20"
   }
