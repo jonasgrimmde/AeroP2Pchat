@@ -1,7 +1,7 @@
 import Peer, { util } from "peerjs";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import appLogo from "../assets/app.png";
-import packageInfo from "../package.json";
+import appLogo from "../../assets/app.png";
+import packageInfo from "../../package.json";
 import "./styles.css";
 
 const brandLogo = document.querySelector("#brand-logo");
