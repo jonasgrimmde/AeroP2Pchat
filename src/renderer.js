@@ -17,10 +17,16 @@ const messages = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message-input");
 const sendButton = document.querySelector("#send-button");
+const headerUpdateButton = document.querySelector("#header-update-button");
 const updateCard = document.querySelector("#update-card");
 const updateTitle = document.querySelector("#update-title");
 const updateText = document.querySelector("#update-text");
 const updateButton = document.querySelector("#update-button");
+const updateModal = document.querySelector("#update-modal");
+const modalText = document.querySelector("#modal-text");
+const modalClose = document.querySelector("#modal-close");
+const linuxCommand = document.querySelector("#linux-command");
+const copyUpdateCommand = document.querySelector("#copy-update-command");
 
 const connections = new Map();
 const CHAT_LABEL = "aero-p2p-chat";
@@ -29,12 +35,16 @@ const HIGH_BUFFER_SIZE = 25;
 let activePeerId = null;
 let myPeerId = "";
 let peer = null;
+let availableUpdate = null;
 
 brandLogo.src = appLogo;
 
 const currentVersion = packageInfo.version;
 const latestReleaseUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest";
 const latestManifestUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/latest.yml";
+const defaultWindowsSetupUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Windows-Setup.exe";
+const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- update";
+const platform = window.aeroChat?.platform ?? "browser";
 
 function setStatus(kind, text) {
   statusDot.className = `status-dot ${kind}`;
@@ -97,10 +107,17 @@ async function checkForUpdates() {
       return;
     }
 
+    availableUpdate = {
+      version: latestVersion,
+      windowsUrl: manifest.windowsUrl || defaultWindowsSetupUrl
+    };
+
     updateTitle.textContent = "Update available";
     updateText.textContent = `Version ${latestVersion} is ready. You are using ${currentVersion}.`;
-    updateCard.classList.remove("hidden");
+    updateButton.textContent = platform === "win32" ? "Install update" : "Show command";
+    headerUpdateButton.classList.remove("hidden");
   } catch {
+    headerUpdateButton.classList.add("hidden");
     updateCard.classList.add("hidden");
   }
 }
@@ -369,8 +386,63 @@ clearChat.addEventListener("click", () => {
   messages.replaceChildren();
 });
 
-updateButton.addEventListener("click", () => {
-  window.open(latestReleaseUrl, "_blank", "noopener");
+function openLinuxUpdateModal() {
+  modalText.textContent = `Run this command to update Aero P2P Chat to version ${availableUpdate?.version ?? "latest"}.`;
+  linuxCommand.textContent = linuxInstallCommand;
+  updateModal.classList.remove("hidden");
+}
+
+async function installAvailableUpdate() {
+  if (!availableUpdate) {
+    window.open(latestReleaseUrl, "_blank", "noopener");
+    return;
+  }
+
+  if (platform === "win32") {
+    updateButton.disabled = true;
+    headerUpdateButton.disabled = true;
+    updateButton.textContent = "Installing...";
+    headerUpdateButton.textContent = "Installing...";
+    setStatus("pending", "Downloading update installer...");
+
+    try {
+      await window.aeroChat.installUpdate({
+        url: availableUpdate.windowsUrl,
+        version: availableUpdate.version
+      });
+      setStatus("pending", "Installing update. The app will restart.");
+    } catch (error) {
+      updateButton.disabled = false;
+      headerUpdateButton.disabled = false;
+      updateButton.textContent = "Install update";
+      headerUpdateButton.textContent = "Update";
+      setStatus("offline", error.message || "Update failed.");
+    }
+    return;
+  }
+
+  openLinuxUpdateModal();
+}
+
+headerUpdateButton.addEventListener("click", installAvailableUpdate);
+updateButton.addEventListener("click", installAvailableUpdate);
+
+modalClose.addEventListener("click", () => {
+  updateModal.classList.add("hidden");
+});
+
+updateModal.addEventListener("click", (event) => {
+  if (event.target === updateModal) {
+    updateModal.classList.add("hidden");
+  }
+});
+
+copyUpdateCommand.addEventListener("click", async () => {
+  await navigator.clipboard.writeText(linuxInstallCommand);
+  copyUpdateCommand.textContent = "Copied";
+  setTimeout(() => {
+    copyUpdateCommand.textContent = "Copy command";
+  }, 1200);
 });
 
 window.addEventListener("beforeunload", () => {

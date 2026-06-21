@@ -1,9 +1,103 @@
-const { app, BrowserWindow, shell } = require("electron");
-const { join } = require("node:path");
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { createWriteStream } = require("node:fs");
+const { mkdtemp, writeFile } = require("node:fs/promises");
+const { get } = require("node:https");
+const { tmpdir } = require("node:os");
+const { basename, join } = require("node:path");
+const { spawn } = require("node:child_process");
 
 const windowIcon = process.platform === "win32"
   ? join(__dirname, "../../assets/app.ico")
   : join(__dirname, "../../assets/linux-icons/512x512.png");
+const releaseHost = "github.com";
+const releasePathPrefix = "/jonasgrimmde/AeroP2Pchat/releases/";
+
+function assertTrustedInstallerUrl(rawUrl) {
+  const url = new URL(rawUrl);
+  const isTrustedHost = url.hostname === releaseHost;
+  const isTrustedPath = url.pathname.startsWith(releasePathPrefix);
+  const isInstaller = basename(url.pathname) === "Aero-P2P-Chat-Windows-Setup.exe";
+
+  if (!isTrustedHost || !isTrustedPath || !isInstaller) {
+    throw new Error("Refused untrusted update URL.");
+  }
+
+  return url;
+}
+
+function downloadFile(url, targetPath, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    const request = get(url, (response) => {
+      if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
+        response.resume();
+        if (redirects >= 5) {
+          reject(new Error("Too many update download redirects."));
+          return;
+        }
+
+        downloadFile(new URL(response.headers.location, url), targetPath, redirects + 1).then(resolve, reject);
+        return;
+      }
+
+      if (response.statusCode !== 200) {
+        response.resume();
+        reject(new Error(`Update download failed with HTTP ${response.statusCode}.`));
+        return;
+      }
+
+      const file = createWriteStream(targetPath);
+      response.pipe(file);
+      file.on("finish", () => {
+        file.close(resolve);
+      });
+      file.on("error", reject);
+    });
+
+    request.on("error", reject);
+  });
+}
+
+async function installWindowsUpdate(rawUrl, version) {
+  if (process.platform !== "win32") {
+    throw new Error("Silent setup updates are only available on Windows.");
+  }
+  if (!app.isPackaged) {
+    throw new Error("Update install is only available in the packaged app.");
+  }
+
+  const url = assertTrustedInstallerUrl(rawUrl);
+  const updateDir = await mkdtemp(join(tmpdir(), "aero-p2p-update-"));
+  const setupPath = join(updateDir, `Aero-P2P-Chat-Setup-${version || "latest"}.exe`);
+  const scriptPath = join(updateDir, "install-update.ps1");
+  const appExePath = process.execPath;
+
+  await downloadFile(url, setupPath);
+  await writeFile(scriptPath, [
+    "$ErrorActionPreference = 'Stop'",
+    "Start-Sleep -Seconds 1",
+    `$setup = ${JSON.stringify(setupPath)}`,
+    `$app = ${JSON.stringify(appExePath)}`,
+    "$args = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS')",
+    "Start-Process -FilePath $setup -ArgumentList $args -Wait",
+    "Start-Process -FilePath $app"
+  ].join("\r\n"));
+
+  const updater = spawn("powershell.exe", [
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    scriptPath
+  ], {
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true
+  });
+  updater.unref();
+
+  setTimeout(() => app.quit(), 250);
+  return { ok: true };
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -36,6 +130,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle("install-update", (_event, details) => installWindowsUpdate(details.url, details.version));
   createWindow();
 
   app.on("activate", () => {

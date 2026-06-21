@@ -1,5 +1,6 @@
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("aeroChat", {
-  platform: "electron"
+  platform: process.platform,
+  installUpdate: (details) => ipcRenderer.invoke("install-update", details)
 });

@@ -14,6 +14,7 @@
           <div>
             <h1>Aero P2P</h1>
           </div>
+          <button id="header-update-button" class="header-update-button hidden" type="button">Update</button>
         </div>
 
         <div class="id-card">
@@ -46,7 +47,7 @@
           <span class="label">Update</span>
           <strong id="update-title">Update available</strong>
           <p id="update-text"></p>
-          <button id="update-button" type="button">Open release</button>
+          <button id="update-button" type="button">Update</button>
         </div>
 
         <div class="peers-card">
@@ -74,5 +75,17 @@
         </form>
       </section>
     </main>
+
+    <div id="update-modal" class="modal-layer hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <section class="modal-panel">
+        <header class="modal-header">
+          <h2 id="modal-title">Linux update</h2>
+          <button id="modal-close" class="ghost-button" type="button">Close</button>
+        </header>
+        <p id="modal-text"></p>
+        <code id="linux-command" class="command-box"></code>
+        <button id="copy-update-command" type="button">Copy command</button>
+      </section>
+    </div>
   </body>
 </html>
