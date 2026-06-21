@@ -122,6 +122,16 @@ Create a release:
 npm run release
 ```
 
+This bumps `26.1.0` to `26.2.0`.
+
+Create a patch release:
+
+```sh
+npm run patch
+```
+
+This bumps `26.1.0` to `26.1.1`.
+
 Build and upload Linux AppImage only:
 
 ```sh

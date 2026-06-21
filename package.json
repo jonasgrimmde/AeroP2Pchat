@@ -1,6 +1,6 @@
 {
   "name": "aero-p2p-chat",
-  "version": "0.1.0",
+  "version": "26.1.0",
   "description": "A clean Frutiger Aero styled Electron peer-to-peer chat client.",
   "author": "Jonas Grimm",
   "main": "out/main/index.js",
@@ -10,6 +10,7 @@
     "build": "node scripts/run-electron-vite.cjs build && electron-builder --win --dir",
     "setup": "npm run build && node scripts/build-inno.cjs",
     "release": "node scripts/release.cjs",
+    "patch": "node scripts/release.cjs --patch",
     "release:linux": "node scripts/release.cjs --linux-only --no-bump"
   },
   "release": {

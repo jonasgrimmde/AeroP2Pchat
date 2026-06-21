@@ -1,5 +1,6 @@
 import Peer from "peerjs";
 import appLogo from "../assets/app.png";
+import packageInfo from "../package.json";
 import "./styles.css";
 
 const brandLogo = document.querySelector("#brand-logo");
@@ -16,12 +17,20 @@ const messages = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message-input");
 const sendButton = document.querySelector("#send-button");
+const updateCard = document.querySelector("#update-card");
+const updateTitle = document.querySelector("#update-title");
+const updateText = document.querySelector("#update-text");
+const updateButton = document.querySelector("#update-button");
 
 const connections = new Map();
 let activePeerId = null;
 let myPeerId = "";
 
 brandLogo.src = appLogo;
+
+const currentVersion = packageInfo.version;
+const latestReleaseUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest";
+const latestManifestUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/latest.yml";
 
 const peer = new Peer({
   debug: 1
@@ -37,6 +46,63 @@ function formatTime(date = new Date()) {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function parseManifest(text) {
+  const manifest = {};
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^([a-zA-Z0-9_-]+):\s*(.*)$/.exec(line.trim());
+    if (!match) {
+      continue;
+    }
+
+    const key = match[1];
+    let value = match[2].trim();
+    if (value.startsWith("\"") && value.endsWith("\"")) {
+      value = JSON.parse(value);
+    }
+    manifest[key] = value;
+  }
+  return manifest;
+}
+
+function compareVersions(left, right) {
+  const leftParts = String(left).split(".").map((part) => Number(part) || 0);
+  const rightParts = String(right).split(".").map((part) => Number(part) || 0);
+
+  for (let index = 0; index < 3; index += 1) {
+    if ((leftParts[index] || 0) > (rightParts[index] || 0)) {
+      return 1;
+    }
+    if ((leftParts[index] || 0) < (rightParts[index] || 0)) {
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
+async function checkForUpdates() {
+  try {
+    const response = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      return;
+    }
+
+    const manifest = parseManifest(await response.text());
+    const latestVersion = manifest.version;
+    if (!latestVersion || compareVersions(latestVersion, currentVersion) <= 0) {
+      return;
+    }
+
+    updateTitle.textContent = "Update available";
+    updateText.textContent = `Version ${latestVersion} is ready. You are using ${currentVersion}.`;
+    updateCard.classList.remove("hidden");
+  } catch {
+    updateCard.classList.add("hidden");
+  }
 }
 
 function addSystemMessage(text) {
@@ -226,3 +292,9 @@ messageForm.addEventListener("submit", (event) => {
 clearChat.addEventListener("click", () => {
   messages.replaceChildren();
 });
+
+updateButton.addEventListener("click", () => {
+  window.open(latestReleaseUrl, "_blank", "noopener");
+});
+
+checkForUpdates();

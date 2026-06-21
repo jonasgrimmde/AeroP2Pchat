@@ -169,9 +169,12 @@ function bumpVersion(version, bump) {
   let major = Number(match[1]);
   let minor = Number(match[2]);
   let patch = Number(match[3]);
-  if (bump === "major") {
-    major += 1;
-    minor = 0;
+  if (major !== 26) {
+    major = 26;
+    minor = 1;
+    patch = 0;
+  } else if (bump === "major") {
+    minor += 1;
     patch = 0;
   } else if (bump === "minor") {
     minor += 1;
