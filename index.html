@@ -13,25 +13,25 @@
           <div class="orb" aria-hidden="true"></div>
           <div>
             <h1>Aero P2P</h1>
-            <p>Direkter Chat ueber WebRTC</p>
+            <p>P2P Chat</p>
           </div>
         </div>
 
         <div class="id-card">
-          <span class="label">Deine Peer-ID</span>
+          <span class="label">Meine ID</span>
           <div class="id-row">
             <code id="own-id">wird erstellt...</code>
             <button id="copy-id" class="icon-button" type="button" title="Peer-ID kopieren" aria-label="Peer-ID kopieren">
-              <span aria-hidden="true">Copy</span>
+              <span aria-hidden="true">ID</span>
             </button>
           </div>
         </div>
 
         <form id="connect-form" class="connect-form">
-          <label for="remote-id">Peer-ID verbinden</label>
+          <label for="remote-id">Verbinden</label>
           <div class="connect-row">
             <input id="remote-id" name="remote-id" autocomplete="off" spellcheck="false" placeholder="remote-peer-id" />
-            <button id="connect-button" type="submit">Verbinden</button>
+            <button id="connect-button" type="submit">Go</button>
           </div>
         </form>
 
@@ -44,7 +44,7 @@
         </div>
 
         <div class="peers-card">
-          <span class="label">Aktive Peers</span>
+          <span class="label">Friends</span>
           <div id="peer-list" class="peer-list">
             <span class="empty-peer">Noch keine Verbindung</span>
           </div>

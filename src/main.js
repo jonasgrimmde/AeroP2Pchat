@@ -3,10 +3,10 @@ const { join } = require("node:path");
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1120,
-    height: 760,
-    minWidth: 860,
-    minHeight: 620,
+    width: 760,
+    height: 560,
+    minWidth: 620,
+    minHeight: 440,
     title: "Aero P2P Chat",
     backgroundColor: "#c5f2ff",
     autoHideMenuBar: true,
