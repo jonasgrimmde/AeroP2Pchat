@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const { createWriteStream } = require("node:fs");
-const { mkdtemp, writeFile } = require("node:fs/promises");
+const { mkdir, mkdtemp, readFile, writeFile } = require("node:fs/promises");
 const { get } = require("node:https");
 const { tmpdir } = require("node:os");
 const { basename, join } = require("node:path");
@@ -11,6 +11,33 @@ const windowIcon = process.platform === "win32"
   : join(__dirname, "../../assets/linux-icons/512x512.png");
 const releaseHost = "github.com";
 const releasePathPrefix = "/jonasgrimmde/AeroP2Pchat/releases/";
+const configFileName = "config.json";
+
+if (process.env.AERO_CHAT_USER_DATA_DIR) {
+  app.setPath("userData", process.env.AERO_CHAT_USER_DATA_DIR);
+}
+
+function getConfigPath() {
+  return join(app.getPath("userData"), configFileName);
+}
+
+async function loadConfig() {
+  try {
+    return JSON.parse(await readFile(getConfigPath(), "utf8"));
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return {};
+    }
+    throw error;
+  }
+}
+
+async function saveConfig(config) {
+  const configPath = getConfigPath();
+  await mkdir(app.getPath("userData"), { recursive: true });
+  await writeFile(configPath, `${JSON.stringify(config || {}, null, 2)}\n`, "utf8");
+  return { ok: true, path: configPath };
+}
 
 function assertTrustedInstallerUrl(rawUrl) {
   const url = new URL(rawUrl);
@@ -131,6 +158,9 @@ function createWindow() {
 
 app.whenReady().then(() => {
   ipcMain.handle("install-update", (_event, details) => installWindowsUpdate(details.url, details.version));
+  ipcMain.handle("load-config", () => loadConfig());
+  ipcMain.handle("save-config", (_event, config) => saveConfig(config));
+  ipcMain.handle("get-config-path", () => getConfigPath());
   createWindow();
 
   app.on("activate", () => {

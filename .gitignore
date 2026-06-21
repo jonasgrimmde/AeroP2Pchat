@@ -3,3 +3,4 @@
 /dist
 *.iss.bak
 *.setup.log
+.dev-data

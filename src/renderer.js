@@ -1,4 +1,5 @@
 import Peer, { util } from "peerjs";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import appLogo from "../assets/app.png";
 import packageInfo from "../package.json";
 import "./styles.css";
@@ -27,17 +28,29 @@ const modalText = document.querySelector("#modal-text");
 const modalClose = document.querySelector("#modal-close");
 const linuxCommand = document.querySelector("#linux-command");
 const copyUpdateCommand = document.querySelector("#copy-update-command");
+const settingsButton = document.querySelector("#settings-button");
+const settingsModal = document.querySelector("#settings-modal");
+const settingsClose = document.querySelector("#settings-close");
+const blockedList = document.querySelector("#blocked-list");
+const contactMenu = document.querySelector("#contact-menu");
+const menuTrust = document.querySelector("#menu-trust");
+const menuPin = document.querySelector("#menu-pin");
+const menuBlock = document.querySelector("#menu-block");
 
 const connections = new Map();
 const pendingConnections = new Map();
 const CHAT_LABEL = "aero-p2p-chat";
 const PROTOCOL_VERSION = 1;
+const IDENTITY_STORAGE_KEY = "aero-p2p-chat.identity.v1";
+const CONTACTS_STORAGE_KEY = "aero-p2p-chat.contacts.v1";
 const MAX_MESSAGE_LENGTH = 4000;
 const HIGH_BUFFER_SIZE = 25;
 let activePeerId = null;
 let myPeerId = "";
 let peer = null;
 let availableUpdate = null;
+let contacts = [];
+let contextContactId = "";
 
 brandLogo.src = appLogo;
 
@@ -47,6 +60,212 @@ const latestManifestUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/
 const defaultWindowsSetupUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Windows-Setup.exe";
 const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- update";
 const platform = window.aeroChat?.platform ?? "browser";
+const peerConnectionConfig = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" }
+  ],
+  iceCandidatePoolSize: 2
+};
+let appConfig = {};
+
+async function loadAppConfig() {
+  if (window.aeroChat?.loadConfig) {
+    const loaded = await window.aeroChat.loadConfig();
+    return loaded && typeof loaded === "object" ? loaded : {};
+  }
+
+  return {};
+}
+
+function saveAppConfig() {
+  if (window.aeroChat?.saveConfig) {
+    window.aeroChat.saveConfig(appConfig).catch(() => {});
+  }
+}
+
+function createIdentityId() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return `aero-${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function loadIdentity() {
+  if (appConfig.identity?.id && /^aero-[a-f0-9]{32}$/.test(appConfig.identity.id)) {
+    return appConfig.identity;
+  }
+
+  const identity = {
+    id: createIdentityId(),
+    createdAt: new Date().toISOString()
+  };
+  appConfig.identity = identity;
+  saveAppConfig();
+  return identity;
+}
+
+function migrateLocalStorageConfig() {
+  let changed = false;
+
+  try {
+    const storedIdentity = JSON.parse(localStorage.getItem(IDENTITY_STORAGE_KEY) || "null");
+    if (!appConfig.identity && storedIdentity?.id && /^aero-[a-f0-9]{32}$/.test(storedIdentity.id)) {
+      appConfig.identity = storedIdentity;
+      changed = true;
+    }
+  } catch {
+    localStorage.removeItem(IDENTITY_STORAGE_KEY);
+  }
+
+  try {
+    const storedContacts = JSON.parse(localStorage.getItem(CONTACTS_STORAGE_KEY) || "null");
+    if (!appConfig.contacts && Array.isArray(storedContacts)) {
+      appConfig.contacts = storedContacts;
+      changed = true;
+    }
+  } catch {
+    localStorage.removeItem(CONTACTS_STORAGE_KEY);
+  }
+
+  if (changed) {
+    saveAppConfig();
+  }
+}
+
+appConfig = await loadAppConfig();
+migrateLocalStorageConfig();
+const identity = loadIdentity();
+
+ownId.textContent = identity.id;
+remoteIdInput.placeholder = "friend-aero-id";
+
+function isValidAeroId(value) {
+  return /^aero-[a-f0-9]{32}$/.test(String(value || "").trim());
+}
+
+function loadContacts() {
+  if (!Array.isArray(appConfig.contacts)) {
+    return [];
+  }
+
+  return appConfig.contacts
+    .filter((contact) => isValidAeroId(contact?.id) && contact.id !== identity.id)
+    .map((contact) => ({
+      id: contact.id,
+      label: contact.label || contact.id,
+      pinned: contact.pinned !== false,
+      trusted: Boolean(contact.trusted),
+      blocked: Boolean(contact.blocked),
+      pinnedAt: contact.pinnedAt || new Date().toISOString()
+    }));
+}
+
+function saveContacts() {
+  appConfig.contacts = contacts;
+  saveAppConfig();
+}
+
+function findContact(id) {
+  return contacts.find((contact) => contact.id === id);
+}
+
+function upsertContact(id, updates = {}) {
+  if (!isValidAeroId(id) || id === identity.id) {
+    return null;
+  }
+
+  const existing = findContact(id);
+  if (existing) {
+    Object.assign(existing, updates);
+    existing.label = updates.label || existing.label || id;
+  } else {
+    contacts.push({
+      id,
+      label: updates.label || id,
+      pinned: updates.pinned ?? true,
+      trusted: Boolean(updates.trusted),
+      blocked: Boolean(updates.blocked),
+      pinnedAt: new Date().toISOString()
+    });
+  }
+
+  contacts = contacts.sort((left, right) => {
+    if (left.blocked !== right.blocked) {
+      return Number(left.blocked) - Number(right.blocked);
+    }
+    return left.label.localeCompare(right.label);
+  });
+  saveContacts();
+  return findContact(id);
+}
+
+function pinContact(id, label = id) {
+  return Boolean(upsertContact(id, { label, pinned: true }));
+}
+
+function removeContact(id) {
+  const contact = findContact(id);
+  if (contact?.blocked) {
+    contact.pinned = false;
+  } else {
+    contacts = contacts.filter((entry) => entry.id !== id);
+  }
+  saveContacts();
+  refreshPeers();
+}
+
+function isTrusted(id) {
+  return Boolean(findContact(id)?.trusted);
+}
+
+function isBlocked(id) {
+  return Boolean(findContact(id)?.blocked);
+}
+
+function setTrusted(id, trusted) {
+  upsertContact(id, { trusted, pinned: true });
+  refreshPeers();
+}
+
+function setPinned(id, pinned) {
+  const contact = upsertContact(id, { pinned });
+  if (contact && !pinned && !contact.trusted && !contact.blocked) {
+    removeContact(id);
+    return;
+  }
+  refreshPeers();
+}
+
+function setBlocked(id, blocked) {
+  const contact = upsertContact(id, {
+    blocked,
+    trusted: blocked ? false : findContact(id)?.trusted || false,
+    pinned: blocked ? false : findContact(id)?.pinned ?? true
+  });
+
+  if (blocked) {
+    connections.get(id)?.close();
+    pendingConnections.get(id)?.conn.close();
+    removePeer(id);
+    addSystemMessage(`${contact.label} blocked.`);
+  }
+
+  saveContacts();
+  refreshPeers();
+  renderBlockedList();
+}
+
+function getVisibleContacts() {
+  return contacts.filter((contact) => contact.pinned && !contact.blocked);
+}
+
+function renderIcon(className) {
+  const icon = document.createElement("i");
+  icon.className = className;
+  icon.setAttribute("aria-hidden", "true");
+  return icon;
+}
+
+contacts = loadContacts();
 
 function setStatus(kind, text) {
   statusDot.className = `status-dot ${kind}`;
@@ -159,9 +378,38 @@ function isSupportedDataChannel() {
 function createChatMetadata() {
   return {
     app: "Aero P2P Chat",
+    identityId: identity.id,
     protocol: PROTOCOL_VERSION,
     version: currentVersion
   };
+}
+
+function getPeerLabel(peerId, conn) {
+  const identityId = conn?.metadata?.identityId || peerId;
+  return findContact(identityId)?.label || identityId;
+}
+
+function getPeerIdentityId(peerId, conn) {
+  return conn?.metadata?.identityId || peerId;
+}
+
+function openContactMenu(event, id) {
+  event.preventDefault();
+  contextContactId = id;
+
+  const contact = findContact(id);
+  menuTrust.querySelector("span").textContent = contact?.trusted ? "Untrust" : "Trust";
+  menuPin.querySelector("span").textContent = contact?.pinned ? "Unpin" : "Pin";
+  menuBlock.querySelector("span").textContent = contact?.blocked ? "Unblock" : "Block";
+
+  contactMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 150)}px`;
+  contactMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 110)}px`;
+  contactMenu.classList.remove("hidden");
+}
+
+function closeContactMenu() {
+  contactMenu.classList.add("hidden");
+  contextContactId = "";
 }
 
 function isKnownChatConnection(conn) {
@@ -209,23 +457,75 @@ function refreshPeers() {
   peerList.replaceChildren();
 
   if (connections.size === 0 && pendingConnections.size === 0) {
-    const empty = document.createElement("span");
-    empty.className = "empty-peer";
-    empty.textContent = "No connection yet";
-    peerList.append(empty);
+    if (contacts.length === 0) {
+      const empty = document.createElement("span");
+      empty.className = "empty-peer";
+      empty.textContent = "No connection yet";
+      peerList.append(empty);
+    }
     chatTitle.textContent = "Ready to connect";
     messageInput.disabled = true;
     sendButton.disabled = true;
-    return;
+  }
+
+  const visibleContactIds = new Set([
+    ...connections.keys(),
+    ...pendingConnections.keys()
+  ]);
+
+  for (const contact of getVisibleContacts()) {
+    if (visibleContactIds.has(contact.id)) {
+      continue;
+    }
+
+    const row = document.createElement("div");
+    row.className = "contact-item";
+
+    const name = document.createElement("button");
+    name.type = "button";
+    name.className = "contact-name";
+    if (contact.trusted) {
+      name.append(renderIcon("fa-solid fa-shield-halved"));
+    } else {
+      name.append(renderIcon("fa-solid fa-thumbtack"));
+    }
+    const label = document.createElement("span");
+    label.textContent = contact.label;
+    name.append(label);
+    name.addEventListener("click", () => {
+      connectToPeer(contact.id);
+    });
+    name.addEventListener("contextmenu", (event) => {
+      openContactMenu(event, contact.id);
+    });
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "contact-remove";
+    remove.textContent = "X";
+    remove.title = "Remove contact";
+    remove.addEventListener("click", () => {
+      removeContact(contact.id);
+    });
+    row.addEventListener("contextmenu", (event) => {
+      openContactMenu(event, contact.id);
+    });
+
+    row.append(name, remove);
+    peerList.append(row);
   }
 
   for (const [peerId, entry] of pendingConnections) {
+    const peerLabel = getPeerLabel(peerId, entry.conn);
     if (entry.direction === "incoming") {
       const row = document.createElement("div");
       row.className = "request-item";
 
       const name = document.createElement("span");
-      name.textContent = peerId;
+      name.append(renderIcon(isTrusted(getPeerIdentityId(peerId, entry.conn)) ? "fa-solid fa-shield-halved" : "fa-solid fa-user-plus"));
+      const label = document.createElement("span");
+      label.textContent = peerLabel;
+      name.append(label);
 
       const actions = document.createElement("div");
       actions.className = "request-actions";
@@ -246,6 +546,9 @@ function refreshPeers() {
 
       actions.append(accept, decline);
       row.append(name, actions);
+      row.addEventListener("contextmenu", (event) => {
+        openContactMenu(event, getPeerIdentityId(peerId, entry.conn));
+      });
       peerList.append(row);
       continue;
     }
@@ -253,26 +556,36 @@ function refreshPeers() {
     const waiting = document.createElement("button");
     waiting.type = "button";
     waiting.className = "peer-chip pending";
-    waiting.textContent = `${peerId} waiting...`;
-    waiting.disabled = true;
+    waiting.textContent = `${peerLabel} waiting...`;
+    waiting.setAttribute("aria-disabled", "true");
+    waiting.addEventListener("contextmenu", (event) => {
+      openContactMenu(event, getPeerIdentityId(peerId, entry.conn));
+    });
     peerList.append(waiting);
   }
 
   for (const [peerId, conn] of connections) {
+    const peerLabel = getPeerLabel(peerId, conn);
     const button = document.createElement("button");
     button.type = "button";
     button.className = peerId === activePeerId ? "peer-chip active" : "peer-chip";
-    button.textContent = conn.open ? peerId : `${peerId} ...`;
+    const label = document.createElement("span");
+    label.textContent = conn.open ? peerLabel : `${peerLabel} ...`;
+    button.append(renderIcon(isTrusted(getPeerIdentityId(peerId, conn)) ? "fa-solid fa-shield-halved" : "fa-solid fa-user"));
+    button.append(label);
     button.addEventListener("click", () => {
       activePeerId = peerId;
       refreshPeers();
+    });
+    button.addEventListener("contextmenu", (event) => {
+      openContactMenu(event, getPeerIdentityId(peerId, conn));
     });
     peerList.append(button);
   }
 
   const activeConn = activePeerId ? connections.get(activePeerId) : null;
   const canChat = Boolean(activeConn?.open);
-  chatTitle.textContent = activePeerId ? `Connected to ${activePeerId}` : "Ready to connect";
+  chatTitle.textContent = activePeerId ? `Connected to ${getPeerLabel(activePeerId, activeConn)}` : "Ready to connect";
   messageInput.disabled = !canChat;
   sendButton.disabled = !canChat;
 }
@@ -283,19 +596,22 @@ function acceptConnection(peerId) {
     return;
   }
 
+  const peerLabel = getPeerLabel(peerId, entry.conn);
+
   pendingConnections.delete(peerId);
   connections.set(peerId, entry.conn);
   activePeerId = peerId;
 
   if (entry.conn.open) {
     sendProtocolMessage(entry.conn, "connection-accepted");
-    setStatus("online", `Connected to ${peerId}`);
-    addSystemMessage(`Connection with ${peerId} accepted.`);
+    pinContact(getPeerIdentityId(peerId, entry.conn), getPeerLabel(peerId, entry.conn));
+    setStatus("online", `Connected to ${peerLabel}`);
+    addSystemMessage(`Connection with ${peerLabel} accepted.`);
   } else {
     entry.acceptOnOpen = true;
     pendingConnections.set(peerId, entry);
     connections.delete(peerId);
-    setStatus("pending", `Accepting ${peerId}...`);
+    setStatus("pending", `Accepting ${peerLabel}...`);
   }
 
   refreshPeers();
@@ -307,11 +623,13 @@ function declineConnection(peerId) {
     return;
   }
 
+  const peerLabel = getPeerLabel(peerId, entry.conn);
+
   sendProtocolMessage(entry.conn, "connection-declined");
   entry.conn.close();
   pendingConnections.delete(peerId);
   setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
-  addSystemMessage(`Connection request from ${peerId} declined.`);
+  addSystemMessage(`Connection request from ${peerLabel} declined.`);
   refreshPeers();
 }
 
@@ -321,20 +639,25 @@ function promoteOutgoingConnection(peerId) {
     return;
   }
 
+  const peerLabel = getPeerLabel(peerId, entry.conn);
+
   pendingConnections.delete(peerId);
   connections.set(peerId, entry.conn);
   activePeerId = peerId;
-  setStatus("online", `Connected to ${peerId}`);
-  addSystemMessage(`${peerId} accepted your request.`);
+  pinContact(getPeerIdentityId(peerId, entry.conn), peerLabel);
+  setStatus("online", `Connected to ${peerLabel}`);
+  addSystemMessage(`${peerLabel} accepted your request.`);
   refreshPeers();
 }
 
 function attachConnectionHandlers(conn, peerId) {
+  const peerLabel = () => getPeerLabel(peerId, conn);
+
   conn.on("open", () => {
     const pending = pendingConnections.get(peerId);
     if (pending?.direction === "outgoing") {
       sendProtocolMessage(conn, "connection-request");
-      setStatus("pending", `Waiting for ${peerId} to accept...`);
+      setStatus("pending", `Waiting for ${peerLabel()} to accept...`);
       refreshPeers();
       return;
     }
@@ -344,14 +667,15 @@ function attachConnectionHandlers(conn, peerId) {
       connections.set(peerId, conn);
       activePeerId = peerId;
       sendProtocolMessage(conn, "connection-accepted");
-      setStatus("online", `Connected to ${peerId}`);
-      addSystemMessage(`Connection with ${peerId} accepted.`);
+      pinContact(getPeerIdentityId(peerId, conn), peerLabel());
+      setStatus("online", `Connected to ${peerLabel()}`);
+      addSystemMessage(`Connection with ${peerLabel()} accepted.`);
       refreshPeers();
       return;
     }
 
     if (connections.has(peerId)) {
-      setStatus("online", `Connected to ${peerId}`);
+      setStatus("online", `Connected to ${peerLabel()}`);
       refreshPeers();
     }
   });
@@ -369,8 +693,8 @@ function attachConnectionHandlers(conn, peerId) {
     if (data?.type === "connection-declined") {
       pendingConnections.delete(peerId);
       conn.close();
-      setStatus("offline", `${peerId} declined your request.`);
-      addSystemMessage(`${peerId} declined your connection request.`);
+      setStatus("offline", `${peerLabel()} declined your request.`);
+      addSystemMessage(`${peerLabel()} declined your connection request.`);
       refreshPeers();
       return;
     }
@@ -395,24 +719,31 @@ function attachConnectionHandlers(conn, peerId) {
     }
 
     removePeer(peerId);
-    addSystemMessage(`${peerId} closed the connection.`);
+    addSystemMessage(`${peerLabel()} closed the connection.`);
     setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
     refreshPeers();
   });
 
   conn.on("error", (error) => {
     setStatus("offline", `Connection error: ${error.message}`);
-    addSystemMessage(`Error with ${peerId}: ${error.message}`);
+    addSystemMessage(`Error with ${peerLabel()}: ${error.message}`);
   });
 }
 
 function registerConnection(conn, options = {}) {
   const peerId = conn.peer;
   const direction = options.incoming ? "incoming" : "outgoing";
+  const peerIdentityId = getPeerIdentityId(peerId, conn);
 
   if (!isKnownChatConnection(conn)) {
     addSystemMessage(`Rejected unsupported connection from ${peerId}.`);
     conn.close();
+    return;
+  }
+
+  if (direction === "incoming" && isBlocked(peerIdentityId)) {
+    conn.close();
+    setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
     return;
   }
 
@@ -427,67 +758,21 @@ function registerConnection(conn, options = {}) {
   attachConnectionHandlers(conn, peerId);
 
   if (direction === "incoming") {
-    setStatus("pending", `Connection request from ${peerId}`);
-    addSystemMessage(`${peerId} wants to chat. Accept the request to start.`);
+    if (isTrusted(peerIdentityId)) {
+      acceptConnection(peerId);
+      return;
+    }
+
+    setStatus("pending", `Connection request from ${getPeerLabel(peerId, conn)}`);
+    addSystemMessage(`${getPeerLabel(peerId, conn)} wants to chat. Accept the request to start.`);
   } else {
-    setStatus("pending", `Sending request to ${peerId}...`);
+    setStatus("pending", `Sending request to ${getPeerLabel(peerId, conn)}...`);
   }
 
   refreshPeers();
 }
 
-function createPeer() {
-  if (!isSupportedDataChannel()) {
-    ownId.textContent = "unsupported";
-    setStatus("offline", "WebRTC DataChannels are not supported here.");
-    addSystemMessage(`Unsupported WebRTC runtime: ${util.browser}`);
-    return null;
-  }
-
-  const nextPeer = new Peer({
-    debug: 1
-  });
-
-  nextPeer.on("open", (id) => {
-    myPeerId = id;
-    ownId.textContent = id;
-    setStatus("pending", "Peer ID ready. Share it with your chat partner.");
-  });
-
-  nextPeer.on("connection", (conn) => {
-    registerConnection(conn, { incoming: true });
-  });
-
-  nextPeer.on("disconnected", () => {
-    setStatus("offline", "Signaling disconnected. Reconnecting...");
-    nextPeer.reconnect();
-  });
-
-  nextPeer.on("error", (error) => {
-    setStatus("offline", error.message);
-    addSystemMessage(`PeerJS error: ${error.message}`);
-  });
-
-  nextPeer.on("close", () => {
-    setStatus("offline", "Peer closed.");
-  });
-
-  return nextPeer;
-}
-
-copyId.addEventListener("click", async () => {
-  if (!myPeerId) {
-    return;
-  }
-
-  await navigator.clipboard.writeText(myPeerId);
-  setStatus("pending", "Peer ID copied.");
-});
-
-connectForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  const remoteId = remoteIdInput.value.trim();
+function connectToPeer(remoteId) {
   if (!peer?.open) {
     setStatus("offline", "Your peer is not ready yet.");
     return;
@@ -505,7 +790,108 @@ connectForm.addEventListener("submit", (event) => {
     serialization: "json"
   });
   registerConnection(conn);
+}
+
+function renderBlockedList() {
+  blockedList.replaceChildren();
+  const blockedContacts = contacts.filter((contact) => contact.blocked);
+
+  if (blockedContacts.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "empty-peer";
+    empty.textContent = "No blocked users";
+    blockedList.append(empty);
+    return;
+  }
+
+  for (const contact of blockedContacts) {
+    const row = document.createElement("div");
+    row.className = "blocked-item";
+
+    const name = document.createElement("span");
+    name.textContent = contact.label;
+
+    const unblock = document.createElement("button");
+    unblock.type = "button";
+    unblock.textContent = "Unblock";
+    unblock.addEventListener("click", () => {
+      setBlocked(contact.id, false);
+      addSystemMessage(`${contact.label} unblocked.`);
+    });
+
+    row.append(name, unblock);
+    blockedList.append(row);
+  }
+}
+
+function createPeer() {
+  if (!isSupportedDataChannel()) {
+    ownId.textContent = "unsupported";
+    setStatus("offline", "WebRTC DataChannels are not supported here.");
+    addSystemMessage(`Unsupported WebRTC runtime: ${util.browser}`);
+    return null;
+  }
+
+  const nextPeer = new Peer(identity.id, {
+    debug: 1,
+    config: peerConnectionConfig
+  });
+
+  nextPeer.on("open", (id) => {
+    myPeerId = id;
+    ownId.textContent = identity.id;
+    setStatus("pending", "Aero ID ready. Share it with your chat partner.");
+  });
+
+  nextPeer.on("connection", (conn) => {
+    registerConnection(conn, { incoming: true });
+  });
+
+  nextPeer.on("disconnected", () => {
+    setStatus("offline", "Signaling disconnected. Reconnecting...");
+    nextPeer.reconnect();
+  });
+
+  nextPeer.on("error", (error) => {
+    if (error.type === "unavailable-id") {
+      setStatus("offline", "This Aero ID is already online in another app window.");
+      addSystemMessage("Close the other running instance or reset app data to create a new Aero ID.");
+      return;
+    }
+
+    setStatus("offline", error.message);
+    addSystemMessage(`PeerJS error: ${error.message}`);
+  });
+
+  nextPeer.on("close", () => {
+    setStatus("offline", "Peer closed.");
+  });
+
+  return nextPeer;
+}
+
+copyId.addEventListener("click", async () => {
+  if (!myPeerId) {
+    return;
+  }
+
+  await navigator.clipboard.writeText(identity.id);
+  setStatus("pending", "Aero ID copied.");
+});
+
+connectForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const remoteId = remoteIdInput.value.trim();
+  if (!isValidAeroId(remoteId)) {
+    setStatus("offline", "Please enter a valid Aero ID.");
+    return;
+  }
+
+  pinContact(remoteId);
+  connectToPeer(remoteId);
   remoteIdInput.value = "";
+  refreshPeers();
 });
 
 messageForm.addEventListener("submit", (event) => {
@@ -614,6 +1000,70 @@ copyUpdateCommand.addEventListener("click", async () => {
   }, 1200);
 });
 
+settingsButton.addEventListener("click", () => {
+  renderBlockedList();
+  settingsModal.classList.remove("hidden");
+});
+
+settingsClose.addEventListener("click", () => {
+  settingsModal.classList.add("hidden");
+});
+
+settingsModal.addEventListener("click", (event) => {
+  if (event.target === settingsModal) {
+    settingsModal.classList.add("hidden");
+  }
+});
+
+menuTrust.addEventListener("click", () => {
+  if (!contextContactId) {
+    return;
+  }
+
+  const nextValue = !isTrusted(contextContactId);
+  setTrusted(contextContactId, nextValue);
+  addSystemMessage(`${findContact(contextContactId)?.label || contextContactId} ${nextValue ? "trusted" : "untrusted"}.`);
+  closeContactMenu();
+});
+
+menuPin.addEventListener("click", () => {
+  if (!contextContactId) {
+    return;
+  }
+
+  const nextValue = !findContact(contextContactId)?.pinned;
+  setPinned(contextContactId, nextValue);
+  addSystemMessage(`${contextContactId} ${nextValue ? "pinned" : "unpinned"}.`);
+  closeContactMenu();
+});
+
+menuBlock.addEventListener("click", () => {
+  if (!contextContactId) {
+    return;
+  }
+
+  const nextValue = !isBlocked(contextContactId);
+  setBlocked(contextContactId, nextValue);
+  if (!nextValue) {
+    addSystemMessage(`${contextContactId} unblocked.`);
+  }
+  closeContactMenu();
+});
+
+document.addEventListener("click", (event) => {
+  if (!contactMenu.contains(event.target)) {
+    closeContactMenu();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeContactMenu();
+    updateModal.classList.add("hidden");
+    settingsModal.classList.add("hidden");
+  }
+});
+
 window.addEventListener("beforeunload", () => {
   for (const conn of connections.values()) {
     conn.close();
@@ -624,5 +1074,6 @@ window.addEventListener("beforeunload", () => {
   peer?.destroy();
 });
 
+refreshPeers();
 peer = createPeer();
 checkForUpdates();

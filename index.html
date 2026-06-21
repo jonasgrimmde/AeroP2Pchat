@@ -15,6 +15,9 @@
             <h1>Aero P2P</h1>
           </div>
           <button id="header-update-button" class="header-update-button hidden" type="button">Update</button>
+          <button id="settings-button" class="settings-button" type="button" title="Settings" aria-label="Settings">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+          </button>
         </div>
 
         <div class="id-card">
@@ -86,6 +89,32 @@
         <code id="linux-command" class="command-box"></code>
         <button id="copy-update-command" type="button">Copy command</button>
       </section>
+    </div>
+
+    <div id="settings-modal" class="modal-layer hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <section class="modal-panel">
+        <header class="modal-header">
+          <h2 id="settings-title">Settings</h2>
+          <button id="settings-close" class="ghost-button" type="button">Close</button>
+        </header>
+        <span class="label">Blocked users</span>
+        <div id="blocked-list" class="blocked-list"></div>
+      </section>
+    </div>
+
+    <div id="contact-menu" class="context-menu hidden" role="menu">
+      <button id="menu-trust" type="button" role="menuitem">
+        <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+        <span>Trust</span>
+      </button>
+      <button id="menu-pin" type="button" role="menuitem">
+        <i class="fa-solid fa-thumbtack" aria-hidden="true"></i>
+        <span>Pin</span>
+      </button>
+      <button id="menu-block" type="button" role="menuitem">
+        <i class="fa-solid fa-ban" aria-hidden="true"></i>
+        <span>Block</span>
+      </button>
     </div>
   </body>
 </html>
