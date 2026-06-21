@@ -6,19 +6,11 @@
   "main": "out/main/index.js",
   "scripts": {
     "dev": "node scripts/run-electron-vite.cjs dev",
-    "compile": "node scripts/run-electron-vite.cjs build",
-    "pack": "electron-builder --dir",
-    "pack:win": "npm run compile && electron-builder --win --dir",
-    "pack:linux": "npm run compile && electron-builder --linux AppImage",
-    "setup": "node scripts/build-inno.cjs",
-    "build": "npm run pack:win && npm run setup",
-    "build:linux": "npm run pack:linux",
+    "test": "node --check src/main.js && node --check src/preload.js && node --check scripts/build-inno.cjs && node --check scripts/release.cjs && node --check scripts/run-electron-vite.cjs",
+    "build": "node scripts/run-electron-vite.cjs build && electron-builder --win --dir",
+    "setup": "npm run build && node scripts/build-inno.cjs",
     "release": "node scripts/release.cjs",
-    "release:linux": "node scripts/release.cjs --linux-only --no-bump",
-    "patch": "node scripts/release.cjs --patch",
-    "preflight": "node --check src/main.js && node --check src/preload.js && node --check scripts/build-inno.cjs && node --check scripts/release.cjs && node --check scripts/run-electron-vite.cjs",
-    "preview": "node scripts/run-electron-vite.cjs preview",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('out',{recursive:true,force:true})\""
+    "release:linux": "node scripts/release.cjs --linux-only --no-bump"
   },
   "release": {
     "owner": "jonasgrimmde",

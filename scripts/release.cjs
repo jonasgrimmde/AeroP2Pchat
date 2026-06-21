@@ -134,6 +134,11 @@ function resetVersionFilesFromGitIndex() {
   }
 }
 
+function cleanBuildOutput() {
+  fs.rmSync(path.join(rootDir, "dist"), { recursive: true, force: true });
+  fs.rmSync(path.join(rootDir, "out"), { recursive: true, force: true });
+}
+
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
@@ -560,7 +565,8 @@ async function releaseLinuxAppImage({ token, owner, repo, version }) {
   logSuccess(`package.json/package-lock.json set to ${version}`);
 
   logHeader("Build");
-  run("npm", ["run", "build:linux"]);
+  run("node", ["scripts/run-electron-vite.cjs", "build"]);
+  run("npx", ["electron-builder", "--linux", "AppImage"]);
   const appImageUploadPath = createUploadCopy(findAppImage(), linuxUploadName);
 
   logHeader("GitHub");
@@ -618,7 +624,7 @@ async function main() {
     logInfo("Mode", `${options.linuxOnly ? "linux appimage" : options.draft ? "draft" : "published"}${options.prerelease ? ", prerelease" : ""}`);
 
     logHeader("Preflight");
-    run("npm", ["run", "preflight"]);
+    run("npm", ["run", "test"]);
     logStep("Resolve GitHub token");
     token = getGitHubToken();
     if (!token) {
@@ -640,8 +646,9 @@ async function main() {
     const pkg = readJson(packagePath);
 
     logHeader("Build");
-    run("npm", ["run", "clean"]);
-    run("npm", ["run", "build"]);
+    cleanBuildOutput();
+    logSuccess("Cleaned dist and out");
+    run("npm", ["run", "setup"]);
 
     const setupPath = path.join(rootDir, "dist", "installer", `Aero-P2P-Chat-Setup-${nextVersion}.exe`);
     if (!fs.existsSync(setupPath)) {
