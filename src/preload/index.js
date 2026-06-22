@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("aeroChat", {
   saveConfig: (config) => ipcRenderer.invoke("save-config", config),
   getConfigPath: () => ipcRenderer.invoke("get-config-path"),
   showNotification: (details) => ipcRenderer.invoke("show-app-notification", details),
+  closeNotification: (id) => ipcRenderer.invoke("close-app-notification", id),
   onNotificationAction: (callback) => {
     const listener = (_event, action) => callback(action);
     ipcRenderer.on("notification-action", listener);

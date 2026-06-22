@@ -682,6 +682,22 @@ function showAppNotification(details) {
   window.aeroChat?.showNotification?.(details).catch(() => {});
 }
 
+function closeAppNotification(id) {
+  if (!id) {
+    return;
+  }
+
+  window.aeroChat?.closeNotification?.(id).catch(() => {});
+}
+
+function getCallNotificationId(callId) {
+  return callId ? `call-${callId}` : "";
+}
+
+function closeCallNotification(callId = callState.callId) {
+  closeAppNotification(getCallNotificationId(callId));
+}
+
 function notifyIncomingMessage(peerId, text) {
   const conn = connections.get(peerId);
   showAppNotification({
@@ -695,6 +711,7 @@ function notifyIncomingMessage(peerId, text) {
 function notifyIncomingCall(peerId, callId) {
   const conn = connections.get(peerId);
   showAppNotification({
+    id: getCallNotificationId(callId),
     kind: "call",
     peerId,
     callId,
@@ -1096,6 +1113,7 @@ async function acceptVoiceCall() {
   const callId = callState.callId;
   const conn = connections.get(peerId);
 
+  closeCallNotification(callId);
   setCallState("connecting", { peerId, callId });
 
   try {
@@ -1114,6 +1132,7 @@ async function acceptVoiceCall() {
       attachMediaConnectionHandlers(callState.incomingMediaConn, peerId, callId);
     }
   } catch (error) {
+    closeCallNotification(callId);
     sendProtocolMessage(conn, "call-declined", { callId, reason: "microphone-error" });
     addSystemMessage(`Could not start microphone: ${error.message}`);
     resetCallState();
@@ -1125,6 +1144,7 @@ function declineVoiceCall() {
     return;
   }
 
+  closeCallNotification();
   const conn = connections.get(callState.peerId);
   sendProtocolMessage(conn, "call-declined", { callId: callState.callId });
   addSystemMessage(`Call from ${getPeerLabel(callState.peerId, conn)} declined.`);
@@ -1169,6 +1189,7 @@ function endVoiceCall({ notifyPeer = true, message = "" } = {}) {
   const callId = callState.callId;
   const conn = peerId ? connections.get(peerId) : null;
 
+  closeCallNotification(callId);
   if (notifyPeer && conn?.open && callId) {
     sendProtocolMessage(conn, "call-ended", { callId });
   }

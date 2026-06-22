@@ -20,6 +20,7 @@ let appConfig = {};
 let forceQuit = false;
 const notificationWindows = [];
 const notificationWindowById = new Map();
+const notificationDetailsById = new Map();
 
 app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 
@@ -289,6 +290,7 @@ function closeNotificationWindow(win) {
   for (const [id, notificationWindow] of notificationWindowById) {
     if (notificationWindow === win) {
       notificationWindowById.delete(id);
+      notificationDetailsById.delete(id);
     }
   }
   if (!win.isDestroyed()) {
@@ -336,7 +338,7 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
       height: 100%;
       border: 1px solid rgba(255,255,255,.82);
       border-radius: 8px;
-      padding: 10px;
+      padding: 8px;
       background:
         linear-gradient(145deg, rgba(251,255,255,.97), rgba(179,239,252,.95)),
         radial-gradient(circle at 14% 0%, rgba(255,255,255,.86), transparent 8rem);
@@ -348,7 +350,7 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
       grid-template-columns: 30px minmax(0,1fr) 24px;
       align-items: center;
       gap: 8px;
-      margin-bottom: 7px;
+      margin-bottom: 5px;
     }
     .icon {
       display: grid;
@@ -407,7 +409,7 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
     }
     input {
       min-width: 0;
-      height: 28px;
+      height: 26px;
       border: 1px solid rgba(68,151,181,.35);
       border-radius: 5px;
       padding: 0 8px;
@@ -523,8 +525,14 @@ function showAppNotification(details = {}) {
     title: String(details.title || ""),
     body: String(details.body || "")
   };
+  const existingWindow = notificationWindowById.get(notification.id);
+  if (existingWindow && !existingWindow.isDestroyed()) {
+    positionNotificationWindows();
+    return { ok: true, id: notification.id, existing: true };
+  }
+
   const width = 342;
-  const height = kind === "call" ? 118 : 126;
+  const height = kind === "call" ? 96 : 118;
   const win = new BrowserWindow({
     width,
     height,
@@ -547,16 +555,23 @@ function showAppNotification(details = {}) {
 
   notificationWindows.push(win);
   notificationWindowById.set(notification.id, win);
+  notificationDetailsById.set(notification.id, notification);
   win.on("closed", () => {
     const index = notificationWindows.indexOf(win);
     if (index !== -1) {
       notificationWindows.splice(index, 1);
     }
     notificationWindowById.delete(notification.id);
+    notificationDetailsById.delete(notification.id);
     positionNotificationWindows();
   });
 
-  const soundUrl = findNotificationSound(kind === "call" ? "ringtone" : "notification");
+  const hasOtherCallNotification = Array.from(notificationDetailsById.entries()).some(([id, item]) => {
+    const notificationWindow = notificationWindowById.get(id);
+    return id !== notification.id && item.kind === "call" && notificationWindow && !notificationWindow.isDestroyed();
+  });
+  const shouldPlaySound = kind !== "call" || !hasOtherCallNotification;
+  const soundUrl = shouldPlaySound ? findNotificationSound(kind === "call" ? "ringtone" : "notification") : "";
   const logoUrl = findNotificationLogo();
   win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(createNotificationHtml(notification, soundUrl, logoUrl))}`);
   win.once("ready-to-show", () => {
