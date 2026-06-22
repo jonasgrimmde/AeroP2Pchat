@@ -53,6 +53,15 @@ const autostartOpen = document.querySelector("#autostart-open");
 const autostartHidden = document.querySelector("#autostart-hidden");
 const autostartModeGroup = document.querySelector("#autostart-mode-group");
 const closeToTrayToggle = document.querySelector("#close-to-tray-toggle");
+const notificationsToggle = document.querySelector("#notifications-toggle");
+const messageNotificationsToggle = document.querySelector("#message-notifications-toggle");
+const callNotificationsToggle = document.querySelector("#call-notifications-toggle");
+const focusedNotificationsToggle = document.querySelector("#focused-notifications-toggle");
+const soundsToggle = document.querySelector("#sounds-toggle");
+const messageSoundToggle = document.querySelector("#message-sound-toggle");
+const ringtoneSoundToggle = document.querySelector("#ringtone-sound-toggle");
+const callEventSoundToggle = document.querySelector("#call-event-sound-toggle");
+const connectedSoundToggle = document.querySelector("#connected-sound-toggle");
 const contactNicknameList = document.querySelector("#contact-nickname-list");
 const blockedList = document.querySelector("#blocked-list");
 const appMenu = document.querySelector("#app-menu");
@@ -102,9 +111,14 @@ document.body.append(remoteAudio);
 const callJoinAudio = new Audio("sound/call-join.ogg");
 const callLeaveAudio = new Audio("sound/call-leave.ogg");
 const connectedAudio = new Audio("sound/connected.ogg");
+const messageAudio = new Audio("sound/message.ogg");
+const ringtoneAudio = new Audio("sound/ringtone.ogg");
 callJoinAudio.preload = "auto";
 callLeaveAudio.preload = "auto";
 connectedAudio.preload = "auto";
+messageAudio.preload = "auto";
+ringtoneAudio.preload = "auto";
+ringtoneAudio.loop = true;
 let localVoiceAudioContext = null;
 const callState = {
   peerId: null,
@@ -316,10 +330,35 @@ function normalizeAppSettings() {
   }
 
   appConfig.appSettings = {
-    autostart: Boolean(appConfig.appSettings.autostart),
-    startHidden: Boolean(appConfig.appSettings.startHidden && appConfig.appSettings.autostart),
+    autostart: appConfig.appSettings.autostart !== false,
+    startHidden: appConfig.appSettings.startHidden !== false,
     closeToTray: appConfig.appSettings.closeToTray !== false
   };
+
+  if (!appConfig.notificationSettings || typeof appConfig.notificationSettings !== "object") {
+    appConfig.notificationSettings = {};
+  }
+  appConfig.notificationSettings = {
+    enabled: appConfig.notificationSettings.enabled !== false,
+    messages: appConfig.notificationSettings.messages !== false,
+    calls: appConfig.notificationSettings.calls !== false,
+    showWhenFocused: Boolean(appConfig.notificationSettings.showWhenFocused)
+  };
+
+  if (!appConfig.soundSettings || typeof appConfig.soundSettings !== "object") {
+    appConfig.soundSettings = {};
+  }
+  appConfig.soundSettings = {
+    enabled: appConfig.soundSettings.enabled !== false,
+    messages: appConfig.soundSettings.messages !== false,
+    ringtone: appConfig.soundSettings.ringtone !== false,
+    callEvents: appConfig.soundSettings.callEvents !== false,
+    connected: appConfig.soundSettings.connected !== false
+  };
+
+  if (!appConfig.appSettings.autostart) {
+    appConfig.appSettings.startHidden = false;
+  }
 }
 
 function renderAppSettings() {
@@ -331,6 +370,25 @@ function renderAppSettings() {
   autostartHidden.disabled = !appConfig.appSettings.autostart;
   autostartModeGroup.classList.toggle("disabled", !appConfig.appSettings.autostart);
   closeToTrayToggle.checked = appConfig.appSettings.closeToTray;
+
+  notificationsToggle.checked = appConfig.notificationSettings.enabled;
+  messageNotificationsToggle.checked = appConfig.notificationSettings.messages;
+  callNotificationsToggle.checked = appConfig.notificationSettings.calls;
+  focusedNotificationsToggle.checked = appConfig.notificationSettings.showWhenFocused;
+  for (const toggle of [messageNotificationsToggle, callNotificationsToggle, focusedNotificationsToggle]) {
+    toggle.disabled = !appConfig.notificationSettings.enabled;
+    toggle.closest(".settings-check")?.classList.toggle("disabled", !appConfig.notificationSettings.enabled);
+  }
+
+  soundsToggle.checked = appConfig.soundSettings.enabled;
+  messageSoundToggle.checked = appConfig.soundSettings.messages;
+  ringtoneSoundToggle.checked = appConfig.soundSettings.ringtone;
+  callEventSoundToggle.checked = appConfig.soundSettings.callEvents;
+  connectedSoundToggle.checked = appConfig.soundSettings.connected;
+  for (const toggle of [messageSoundToggle, ringtoneSoundToggle, callEventSoundToggle, connectedSoundToggle]) {
+    toggle.disabled = !appConfig.soundSettings.enabled;
+    toggle.closest(".settings-check")?.classList.toggle("disabled", !appConfig.soundSettings.enabled);
+  }
 }
 
 function saveAppSettings(updates = {}) {
@@ -339,6 +397,22 @@ function saveAppSettings(updates = {}) {
   if (!appConfig.appSettings.autostart) {
     appConfig.appSettings.startHidden = false;
   }
+  normalizeAppSettings();
+  renderAppSettings();
+  saveAppConfig();
+}
+
+function saveNotificationSettings(updates = {}) {
+  normalizeAppSettings();
+  Object.assign(appConfig.notificationSettings, updates);
+  normalizeAppSettings();
+  renderAppSettings();
+  saveAppConfig();
+}
+
+function saveSoundSettings(updates = {}) {
+  normalizeAppSettings();
+  Object.assign(appConfig.soundSettings, updates);
   normalizeAppSettings();
   renderAppSettings();
   saveAppConfig();
@@ -709,11 +783,55 @@ function addChatMessage({ id, text, sender, peerId, time }) {
 }
 
 function showAppNotification(details) {
-  if (document.visibilityState === "visible" && document.hasFocus()) {
+  normalizeAppSettings();
+  if (!appConfig.notificationSettings.enabled) {
+    return false;
+  }
+
+  if (!appConfig.notificationSettings.showWhenFocused && document.visibilityState === "visible" && document.hasFocus()) {
+    return false;
+  }
+
+  window.aeroChat?.showNotification?.({
+    ...details,
+    showWhenFocused: appConfig.notificationSettings.showWhenFocused
+  }).catch(() => {});
+  return true;
+}
+
+function shouldPlaySound(key) {
+  normalizeAppSettings();
+  return Boolean(appConfig.soundSettings.enabled && appConfig.soundSettings[key]);
+}
+
+function playSound(audio, key) {
+  if (!shouldPlaySound(key)) {
     return;
   }
 
-  window.aeroChat?.showNotification?.(details).catch(() => {});
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
+function isAppFocused() {
+  return document.visibilityState === "visible" && document.hasFocus();
+}
+
+function playMessageFallbackSound() {
+  if (isAppFocused()) {
+    return;
+  }
+
+  playSound(messageAudio, "messages");
+}
+
+function playLocalRingtone() {
+  playSound(ringtoneAudio, "ringtone");
+}
+
+function stopLocalRingtone() {
+  ringtoneAudio.pause();
+  ringtoneAudio.currentTime = 0;
 }
 
 function closeAppNotification(id) {
@@ -730,36 +848,48 @@ function getCallNotificationId(callId) {
 
 function closeCallNotification(callId = callState.callId) {
   closeAppNotification(getCallNotificationId(callId));
-}
-
-function playCallEventSound(audio) {
-  audio.currentTime = 0;
-  audio.play().catch(() => {});
+  stopLocalRingtone();
 }
 
 function playCallJoinSound() {
-  playCallEventSound(callJoinAudio);
+  playSound(callJoinAudio, "callEvents");
 }
 
 function playCallLeaveSound() {
-  playCallEventSound(callLeaveAudio);
+  playSound(callLeaveAudio, "callEvents");
 }
 
 function playConnectedSound() {
-  playCallEventSound(connectedAudio);
+  playSound(connectedAudio, "connected");
 }
 
 function notifyIncomingMessage(peerId, text) {
+  normalizeAppSettings();
+  if (!appConfig.notificationSettings.messages) {
+    playMessageFallbackSound();
+    return;
+  }
+
   const conn = connections.get(peerId);
-  showAppNotification({
+  const shown = showAppNotification({
     kind: "message",
     peerId,
     title: getPeerLabel(peerId, conn),
-    body: text
+    body: text,
+    silent: !shouldPlaySound("messages")
   });
+  if (!shown) {
+    playMessageFallbackSound();
+  }
 }
 
 function notifyIncomingCall(peerId, callId) {
+  normalizeAppSettings();
+  if (!appConfig.notificationSettings.calls) {
+    playLocalRingtone();
+    return;
+  }
+
   const conn = connections.get(peerId);
   showAppNotification({
     id: getCallNotificationId(callId),
@@ -767,7 +897,8 @@ function notifyIncomingCall(peerId, callId) {
     peerId,
     callId,
     title: "Incoming voice call",
-    body: `${getPeerLabel(peerId, conn)} is calling`
+    body: `${getPeerLabel(peerId, conn)} is calling`,
+    silent: !shouldPlaySound("ringtone")
   });
 }
 
@@ -932,6 +1063,7 @@ function resetCallState() {
   localStream?.getTracks().forEach((track) => track.stop());
   localVoiceAudioContext?.close().catch(() => {});
   localVoiceAudioContext = null;
+  stopLocalRingtone();
   clearRemoteAudio();
   refreshCallUi();
 }
@@ -2232,6 +2364,42 @@ autostartHidden.addEventListener("change", () => {
 
 closeToTrayToggle.addEventListener("change", () => {
   saveAppSettings({ closeToTray: closeToTrayToggle.checked });
+});
+
+notificationsToggle.addEventListener("change", () => {
+  saveNotificationSettings({ enabled: notificationsToggle.checked });
+});
+
+messageNotificationsToggle.addEventListener("change", () => {
+  saveNotificationSettings({ messages: messageNotificationsToggle.checked });
+});
+
+callNotificationsToggle.addEventListener("change", () => {
+  saveNotificationSettings({ calls: callNotificationsToggle.checked });
+});
+
+focusedNotificationsToggle.addEventListener("change", () => {
+  saveNotificationSettings({ showWhenFocused: focusedNotificationsToggle.checked });
+});
+
+soundsToggle.addEventListener("change", () => {
+  saveSoundSettings({ enabled: soundsToggle.checked });
+});
+
+messageSoundToggle.addEventListener("change", () => {
+  saveSoundSettings({ messages: messageSoundToggle.checked });
+});
+
+ringtoneSoundToggle.addEventListener("change", () => {
+  saveSoundSettings({ ringtone: ringtoneSoundToggle.checked });
+});
+
+callEventSoundToggle.addEventListener("change", () => {
+  saveSoundSettings({ callEvents: callEventSoundToggle.checked });
+});
+
+connectedSoundToggle.addEventListener("change", () => {
+  saveSoundSettings({ connected: connectedSoundToggle.checked });
 });
 
 navigator.mediaDevices?.addEventListener?.("devicechange", () => {

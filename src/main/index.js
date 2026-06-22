@@ -53,8 +53,8 @@ function getConfigPath() {
 
 function getDefaultAppSettings() {
   return {
-    autostart: false,
-    startHidden: false,
+    autostart: true,
+    startHidden: true,
     closeToTray: true
   };
 }
@@ -196,8 +196,8 @@ function createTray() {
   return tray;
 }
 
-function shouldSuppressNotification() {
-  return Boolean(mainWindow?.isVisible() && mainWindow?.isFocused());
+function shouldSuppressNotification({ showWhenFocused = false } = {}) {
+  return Boolean(!showWhenFocused && mainWindow?.isVisible() && mainWindow?.isFocused());
 }
 
 function getRendererAssetPath(fileName) {
@@ -552,7 +552,7 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
 }
 
 function showAppNotification(details = {}) {
-  if (shouldSuppressNotification()) {
+  if (shouldSuppressNotification({ showWhenFocused: Boolean(details.showWhenFocused) })) {
     return { ok: true, suppressed: true };
   }
 
@@ -610,7 +610,7 @@ function showAppNotification(details = {}) {
     const notificationWindow = notificationWindowById.get(id);
     return id !== notification.id && item.kind === "call" && notificationWindow && !notificationWindow.isDestroyed();
   });
-  const shouldPlaySound = kind !== "call" || !hasOtherCallNotification;
+  const shouldPlaySound = !details.silent && (kind !== "call" || !hasOtherCallNotification);
   const soundUrl = shouldPlaySound ? findNotificationSound(kind === "call" ? "ringtone" : "message") : "";
   const logoUrl = findNotificationLogo();
   win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(createNotificationHtml(notification, soundUrl, logoUrl))}`);

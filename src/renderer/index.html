@@ -379,49 +379,108 @@
           <h2 id="settings-title">Settings</h2>
           <button id="settings-close" class="ghost-button" type="button">Close</button>
         </header>
-        <div class="settings-field">
-          <span class="label">My nickname</span>
-          <div class="settings-row">
-            <input id="nickname-input" type="text" maxlength="32" placeholder="Nickname" />
-            <button id="save-nickname" type="button">Save</button>
-          </div>
-        </div>
-        <div class="settings-field">
-          <span class="label">Voice devices</span>
-          <div class="device-settings">
-            <label for="microphone-select">Microphone</label>
-            <select id="microphone-select"></select>
-            <label for="speaker-select">Output</label>
-            <select id="speaker-select"></select>
-          </div>
-        </div>
-        <div class="settings-field">
-          <span class="label">App behavior</span>
-          <div class="settings-options">
-            <label class="settings-check">
-              <input id="autostart-toggle" type="checkbox" />
-              <span>Start Aero P2P Chat when I sign in</span>
-            </label>
-            <div class="settings-choice" id="autostart-mode-group">
-              <label>
-                <input id="autostart-open" type="radio" name="autostart-mode" value="open" />
-                <span>Start opened</span>
+        <div class="settings-grid">
+          <section class="settings-section">
+            <h3>Profile</h3>
+            <div class="settings-field">
+              <span class="label">My nickname</span>
+              <div class="settings-row">
+                <input id="nickname-input" type="text" maxlength="32" placeholder="Nickname" />
+                <button id="save-nickname" type="button">Save</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h3>Startup & tray</h3>
+            <div class="settings-options">
+              <label class="settings-check">
+                <input id="autostart-toggle" type="checkbox" />
+                <span>Start Aero P2P Chat when I sign in</span>
               </label>
-              <label>
-                <input id="autostart-hidden" type="radio" name="autostart-mode" value="hidden" />
-                <span>Start hidden</span>
+              <div class="settings-choice" id="autostart-mode-group">
+                <label>
+                  <input id="autostart-open" type="radio" name="autostart-mode" value="open" />
+                  <span>Start opened</span>
+                </label>
+                <label>
+                  <input id="autostart-hidden" type="radio" name="autostart-mode" value="hidden" />
+                  <span>Start hidden</span>
+                </label>
+              </div>
+              <label class="settings-check">
+                <input id="close-to-tray-toggle" type="checkbox" />
+                <span>Keep running in tray when closing the window</span>
               </label>
             </div>
-            <label class="settings-check">
-              <input id="close-to-tray-toggle" type="checkbox" />
-              <span>Keep running in tray when closing the window</span>
-            </label>
+          </section>
+
+          <section class="settings-section">
+            <h3>Voice</h3>
+            <div class="device-settings">
+              <label for="microphone-select">Microphone</label>
+              <select id="microphone-select"></select>
+              <label for="speaker-select">Output</label>
+              <select id="speaker-select"></select>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h3>Notifications</h3>
+            <div class="settings-options">
+              <label class="settings-check">
+                <input id="notifications-toggle" type="checkbox" />
+                <span>Show desktop notifications</span>
+              </label>
+              <label class="settings-check">
+                <input id="message-notifications-toggle" type="checkbox" />
+                <span>Notify for new messages</span>
+              </label>
+              <label class="settings-check">
+                <input id="call-notifications-toggle" type="checkbox" />
+                <span>Notify for incoming calls</span>
+              </label>
+              <label class="settings-check">
+                <input id="focused-notifications-toggle" type="checkbox" />
+                <span>Show notifications while Aero is focused</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h3>Sounds</h3>
+            <div class="settings-options two-column">
+              <label class="settings-check">
+                <input id="sounds-toggle" type="checkbox" />
+                <span>Enable sounds</span>
+              </label>
+              <label class="settings-check">
+                <input id="message-sound-toggle" type="checkbox" />
+                <span>Message sound</span>
+              </label>
+              <label class="settings-check">
+                <input id="ringtone-sound-toggle" type="checkbox" />
+                <span>Incoming call ringtone</span>
+              </label>
+              <label class="settings-check">
+                <input id="call-event-sound-toggle" type="checkbox" />
+                <span>Call join/leave sounds</span>
+              </label>
+              <label class="settings-check">
+                <input id="connected-sound-toggle" type="checkbox" />
+                <span>Connected sound</span>
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h3>Contacts</h3>
+            <span class="label">Contact nicknames</span>
+            <div id="contact-nickname-list" class="contact-nickname-list"></div>
+            <span class="label">Blocked users</span>
+            <div id="blocked-list" class="blocked-list"></div>
+          </section>
           </div>
-        </div>
-        <span class="label">Contact nicknames</span>
-        <div id="contact-nickname-list" class="contact-nickname-list"></div>
-        <span class="label">Blocked users</span>
-        <div id="blocked-list" class="blocked-list"></div>
       </section>
     </div>
 

@@ -822,6 +822,8 @@ input:disabled {
   min-height: 0;
   overflow-y: auto;
   padding: 8px;
+  scrollbar-color: #24b8d8 rgba(181, 241, 248, 0.66);
+  scrollbar-width: thin;
   background:
     linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.28)),
     radial-gradient(circle at 16% 14%, rgba(127, 224, 255, 0.22), transparent 13rem);
@@ -915,11 +917,17 @@ input:disabled {
 
 .modal-panel {
   width: min(460px, 100%);
+  max-height: min(680px, calc(100vh - 72px));
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: 7px;
   padding: 10px;
   background: linear-gradient(145deg, rgba(251, 255, 255, 0.96), rgba(186, 242, 255, 0.92));
   box-shadow: 0 18px 38px rgba(10, 76, 115, 0.26);
+}
+
+#settings-modal .modal-panel {
+  width: min(620px, 100%);
 }
 
 .modal-header {
@@ -940,6 +948,62 @@ input:disabled {
 .settings-field {
   display: block;
   margin-bottom: 10px;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 8px;
+  max-height: min(590px, calc(100vh - 130px));
+  overflow-y: auto;
+  padding-right: 3px;
+  scrollbar-color: #24b8d8 rgba(181, 241, 248, 0.66);
+  scrollbar-width: thin;
+}
+
+.settings-grid::-webkit-scrollbar,
+#messages::-webkit-scrollbar,
+.contact-nickname-list::-webkit-scrollbar,
+.blocked-list::-webkit-scrollbar {
+  width: 9px;
+}
+
+.settings-grid::-webkit-scrollbar-track,
+#messages::-webkit-scrollbar-track,
+.contact-nickname-list::-webkit-scrollbar-track,
+.blocked-list::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: linear-gradient(#dffbff, #b8eef5);
+  box-shadow: inset 0 0 0 1px rgba(54, 171, 190, 0.18);
+}
+
+.settings-grid::-webkit-scrollbar-thumb,
+#messages::-webkit-scrollbar-thumb,
+.contact-nickname-list::-webkit-scrollbar-thumb,
+.blocked-list::-webkit-scrollbar-thumb {
+  border: 2px solid rgba(219, 250, 255, 0.92);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #86f3d4, #25bddc 52%, #0a93c6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 8px rgba(15, 169, 201, 0.24);
+}
+
+.settings-section {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(78, 184, 205, 0.28);
+  border-radius: 7px;
+  background: rgba(241, 254, 255, 0.58);
+}
+
+.settings-section h3 {
+  margin: 0;
+  color: #0c5b78;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .settings-field input,
@@ -969,6 +1033,10 @@ input:disabled {
 .settings-options {
   display: grid;
   gap: 7px;
+}
+
+.settings-options.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .settings-check,
@@ -1008,6 +1076,15 @@ input:disabled {
   opacity: 0.56;
 }
 
+.settings-check.disabled {
+  opacity: 0.52;
+}
+
+.settings-check.disabled input,
+.settings-choice.disabled input {
+  cursor: default;
+}
+
 #save-nickname,
 .contact-nickname-editor button {
   height: 28px;
@@ -1026,9 +1103,11 @@ input:disabled {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 210px;
+  max-height: 170px;
   margin-bottom: 10px;
   overflow-y: auto;
+  scrollbar-color: #24b8d8 rgba(181, 241, 248, 0.66);
+  scrollbar-width: thin;
 }
 
 .contact-nickname-item {
@@ -1100,6 +1179,8 @@ input:disabled {
   gap: 5px;
   max-height: 220px;
   overflow-y: auto;
+  scrollbar-color: #24b8d8 rgba(181, 241, 248, 0.66);
+  scrollbar-width: thin;
 }
 
 .blocked-item {
