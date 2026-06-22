@@ -22,6 +22,13 @@ contextBridge.exposeInMainWorld("aeroChat", {
       ipcRenderer.removeListener("notification-action", listener);
     };
   },
+  onSystemShutdown: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on("system-shutdown", listener);
+    return () => {
+      ipcRenderer.removeListener("system-shutdown", listener);
+    };
+  },
   windowControl: (action) => ipcRenderer.invoke("window-control", action)
 });
 

@@ -1804,6 +1804,15 @@ function attachConnectionHandlers(conn, peerId) {
       return;
     }
 
+    if (data?.type === "connection-closed") {
+      conn.close();
+      removePeer(peerId);
+      setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+      addSystemMessage(`${peerLabel()} disconnected.`);
+      refreshPeers();
+      return;
+    }
+
     if (data?.type === "call-request") {
       handleIncomingCallRequest(peerId, data);
       return;
@@ -2506,15 +2515,47 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-window.addEventListener("beforeunload", () => {
+let realtimeCleanupStarted = false;
+
+function cleanupRealtimeConnections({ deferClose = false } = {}) {
+  if (realtimeCleanupStarted) {
+    return;
+  }
+
+  realtimeCleanupStarted = true;
   endVoiceCall({ notifyPeer: true });
-  for (const conn of connections.values()) {
-    conn.close();
+
+  const openConnections = Array.from(connections.values()).filter((conn) => conn?.open);
+  const pendingEntries = Array.from(pendingConnections.values());
+  for (const conn of openConnections) {
+    sendProtocolMessage(conn, "connection-closed");
   }
-  for (const entry of pendingConnections.values()) {
-    entry.conn.close();
+
+  const closeAll = () => {
+    for (const conn of connections.values()) {
+      conn.close();
+    }
+    for (const entry of pendingEntries) {
+      entry.conn.close();
+    }
+    connections.clear();
+    pendingConnections.clear();
+    peer?.destroy();
+  };
+
+  if (deferClose && openConnections.length > 0) {
+    setTimeout(closeAll, 120);
+  } else {
+    closeAll();
   }
-  peer?.destroy();
+}
+
+window.aeroChat?.onSystemShutdown?.(() => {
+  cleanupRealtimeConnections({ deferClose: true });
+});
+
+window.addEventListener("beforeunload", () => {
+  cleanupRealtimeConnections();
 });
 
 refreshPeers();

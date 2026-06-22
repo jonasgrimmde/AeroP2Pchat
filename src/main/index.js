@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, screen, shell, session } = require("electron");
+const { app, BrowserWindow, Menu, Tray, ipcMain, powerMonitor, screen, shell, session } = require("electron");
 const { createWriteStream, existsSync, readFileSync } = require("node:fs");
 const { mkdir, mkdtemp, readFile, rm, writeFile } = require("node:fs/promises");
 const { createHash } = require("node:crypto");
@@ -19,6 +19,8 @@ let mainWindow = null;
 let tray = null;
 let appConfig = {};
 let forceQuit = false;
+let systemShutdownStarted = false;
+let delayedQuitStarted = false;
 const notificationWindows = [];
 const notificationWindowById = new Map();
 const notificationDetailsById = new Map();
@@ -631,6 +633,15 @@ function closeAppNotification(id) {
   return { ok: true };
 }
 
+function notifyRendererShutdown(reason = "quit") {
+  systemShutdownStarted = true;
+  forceQuit = true;
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("system-shutdown", { reason });
+  }
+}
+
 function assertTrustedInstallerUrl(rawUrl) {
   const url = new URL(rawUrl);
   const isTrustedHost = url.hostname === releaseHost;
@@ -800,8 +811,14 @@ function createWindow({ hidden = false } = {}) {
   }
 
   mainWindow = win;
+  win.on("query-session-end", () => {
+    notifyRendererShutdown("session-end");
+  });
+  win.on("session-end", () => {
+    notifyRendererShutdown("session-end");
+  });
   win.on("close", (event) => {
-    if (forceQuit || !appConfig.appSettings?.closeToTray) {
+    if (forceQuit || systemShutdownStarted || !appConfig.appSettings?.closeToTray) {
       return;
     }
 
@@ -852,13 +869,30 @@ app.whenReady().then(async () => {
   });
   createWindow({ hidden: shouldStartHidden() });
 
+  powerMonitor.on("shutdown", () => {
+    notifyRendererShutdown("shutdown");
+  });
+
   app.on("activate", () => {
     showMainWindow();
   });
 });
 
+app.on("before-quit", (event) => {
+  if (delayedQuitStarted || systemShutdownStarted) {
+    return;
+  }
+
+  delayedQuitStarted = true;
+  notifyRendererShutdown("quit");
+  event.preventDefault();
+  setTimeout(() => {
+    app.quit();
+  }, 250);
+});
+
 app.on("window-all-closed", () => {
-  if (forceQuit || !appConfig.appSettings?.closeToTray) {
+  if (forceQuit || systemShutdownStarted || !appConfig.appSettings?.closeToTray) {
     app.quit();
   }
 });
