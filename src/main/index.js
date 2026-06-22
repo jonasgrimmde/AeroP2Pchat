@@ -608,7 +608,7 @@ function showAppNotification(details = {}) {
     return id !== notification.id && item.kind === "call" && notificationWindow && !notificationWindow.isDestroyed();
   });
   const shouldPlaySound = kind !== "call" || !hasOtherCallNotification;
-  const soundUrl = shouldPlaySound ? findNotificationSound(kind === "call" ? "ringtone" : "notification") : "";
+  const soundUrl = shouldPlaySound ? findNotificationSound(kind === "call" ? "ringtone" : "message") : "";
   const logoUrl = findNotificationLogo();
   win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(createNotificationHtml(notification, soundUrl, logoUrl))}`);
   win.once("ready-to-show", () => {

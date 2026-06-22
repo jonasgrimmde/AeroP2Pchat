@@ -98,6 +98,10 @@ remoteAudio.volume = 1;
 remoteAudio.preload = "auto";
 remoteAudio.style.display = "none";
 document.body.append(remoteAudio);
+const callJoinAudio = new Audio("sound/call-join.ogg");
+const callLeaveAudio = new Audio("sound/call-leave.ogg");
+callJoinAudio.preload = "auto";
+callLeaveAudio.preload = "auto";
 let localVoiceAudioContext = null;
 const callState = {
   peerId: null,
@@ -109,7 +113,8 @@ const callState = {
   acceptedIncomingCallId: "",
   muted: false,
   deafened: false,
-  mutedBeforeDeafen: null
+  mutedBeforeDeafen: null,
+  joined: false
 };
 
 function setBootProgress(percent, text) {
@@ -698,6 +703,19 @@ function closeCallNotification(callId = callState.callId) {
   closeAppNotification(getCallNotificationId(callId));
 }
 
+function playCallEventSound(audio) {
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
+function playCallJoinSound() {
+  playCallEventSound(callJoinAudio);
+}
+
+function playCallLeaveSound() {
+  playCallEventSound(callLeaveAudio);
+}
+
 function notifyIncomingMessage(peerId, text) {
   const conn = connections.get(peerId);
   showAppNotification({
@@ -869,7 +887,8 @@ function resetCallState() {
     acceptedIncomingCallId: "",
     muted: false,
     deafened: false,
-    mutedBeforeDeafen: null
+    mutedBeforeDeafen: null,
+    joined: false
   });
 
   mediaConn?.close();
@@ -1053,6 +1072,10 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
     remoteAudio.muted = callState.deafened;
     await applyAudioOutputDevice();
     remoteAudio.play().catch(() => {});
+    if (!callState.joined) {
+      callState.joined = true;
+      playCallJoinSound();
+    }
     setCallState("active");
     setStatus("online", `Voice call with ${getPeerLabel(peerId, connections.get(peerId))}`);
   });
@@ -1188,6 +1211,7 @@ function endVoiceCall({ notifyPeer = true, message = "" } = {}) {
   const peerId = callState.peerId;
   const callId = callState.callId;
   const conn = peerId ? connections.get(peerId) : null;
+  const wasJoined = callState.joined;
 
   closeCallNotification(callId);
   if (notifyPeer && conn?.open && callId) {
@@ -1195,6 +1219,9 @@ function endVoiceCall({ notifyPeer = true, message = "" } = {}) {
   }
 
   resetCallState();
+  if (wasJoined) {
+    playCallLeaveSound();
+  }
   if (message) {
     addSystemMessage(message);
   }
