@@ -48,6 +48,11 @@ const nicknameInput = document.querySelector("#nickname-input");
 const saveNickname = document.querySelector("#save-nickname");
 const microphoneSelect = document.querySelector("#microphone-select");
 const speakerSelect = document.querySelector("#speaker-select");
+const autostartToggle = document.querySelector("#autostart-toggle");
+const autostartOpen = document.querySelector("#autostart-open");
+const autostartHidden = document.querySelector("#autostart-hidden");
+const autostartModeGroup = document.querySelector("#autostart-mode-group");
+const closeToTrayToggle = document.querySelector("#close-to-tray-toggle");
 const contactNicknameList = document.querySelector("#contact-nickname-list");
 const blockedList = document.querySelector("#blocked-list");
 const appMenu = document.querySelector("#app-menu");
@@ -246,6 +251,7 @@ setBootProgress(55, "Loading identity");
 ownId.textContent = identity.id;
 nicknameInput.value = identity.nickname || "";
 normalizeAudioConfig();
+normalizeAppSettings();
 
 function isValidAeroId(value) {
   return /^aero-[a-f0-9]{32}$/.test(String(value || "").trim());
@@ -294,6 +300,40 @@ function normalizeAudioConfig() {
 
 function saveAudioConfig() {
   normalizeAudioConfig();
+  saveAppConfig();
+}
+
+function normalizeAppSettings() {
+  if (!appConfig.appSettings || typeof appConfig.appSettings !== "object") {
+    appConfig.appSettings = {};
+  }
+
+  appConfig.appSettings = {
+    autostart: Boolean(appConfig.appSettings.autostart),
+    startHidden: Boolean(appConfig.appSettings.startHidden && appConfig.appSettings.autostart),
+    closeToTray: appConfig.appSettings.closeToTray !== false
+  };
+}
+
+function renderAppSettings() {
+  normalizeAppSettings();
+  autostartToggle.checked = appConfig.appSettings.autostart;
+  autostartOpen.checked = !appConfig.appSettings.startHidden;
+  autostartHidden.checked = appConfig.appSettings.startHidden;
+  autostartOpen.disabled = !appConfig.appSettings.autostart;
+  autostartHidden.disabled = !appConfig.appSettings.autostart;
+  autostartModeGroup.classList.toggle("disabled", !appConfig.appSettings.autostart);
+  closeToTrayToggle.checked = appConfig.appSettings.closeToTray;
+}
+
+function saveAppSettings(updates = {}) {
+  normalizeAppSettings();
+  Object.assign(appConfig.appSettings, updates);
+  if (!appConfig.appSettings.autostart) {
+    appConfig.appSettings.startHidden = false;
+  }
+  normalizeAppSettings();
+  renderAppSettings();
   saveAppConfig();
 }
 
@@ -1837,6 +1877,7 @@ function renderContactNicknameList(focusContactId = "") {
 function openSettings(focusContactId = "") {
   nicknameInput.value = identity.nickname || "";
   refreshAudioDevices();
+  renderAppSettings();
   renderContactNicknameList(focusContactId);
   renderBlockedList();
   settingsModal.classList.remove("hidden");
@@ -2036,6 +2077,26 @@ speakerSelect.addEventListener("change", async () => {
   appConfig.audio.outputDeviceId = speakerSelect.value || "default";
   saveAudioConfig();
   await applyAudioOutputDevice();
+});
+
+autostartToggle.addEventListener("change", () => {
+  saveAppSettings({ autostart: autostartToggle.checked });
+});
+
+autostartOpen.addEventListener("change", () => {
+  if (autostartOpen.checked) {
+    saveAppSettings({ startHidden: false });
+  }
+});
+
+autostartHidden.addEventListener("change", () => {
+  if (autostartHidden.checked) {
+    saveAppSettings({ startHidden: true });
+  }
+});
+
+closeToTrayToggle.addEventListener("change", () => {
+  saveAppSettings({ closeToTray: closeToTrayToggle.checked });
 });
 
 navigator.mediaDevices?.addEventListener?.("devicechange", () => {

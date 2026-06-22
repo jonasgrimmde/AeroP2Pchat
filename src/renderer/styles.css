@@ -945,6 +945,48 @@ input:disabled {
   font-weight: 800;
 }
 
+.settings-options {
+  display: grid;
+  gap: 7px;
+}
+
+.settings-check,
+.settings-choice label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #16485e;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.settings-check input,
+.settings-choice input {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  box-shadow: none;
+}
+
+.settings-check span,
+.settings-choice span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  padding-left: 21px;
+}
+
+.settings-choice.disabled {
+  opacity: 0.56;
+}
+
 #save-nickname,
 .contact-nickname-editor button {
   height: 28px;

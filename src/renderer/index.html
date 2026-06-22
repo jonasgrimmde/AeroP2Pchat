@@ -395,6 +395,29 @@
             <select id="speaker-select"></select>
           </div>
         </div>
+        <div class="settings-field">
+          <span class="label">App behavior</span>
+          <div class="settings-options">
+            <label class="settings-check">
+              <input id="autostart-toggle" type="checkbox" />
+              <span>Start Aero P2P Chat when I sign in</span>
+            </label>
+            <div class="settings-choice" id="autostart-mode-group">
+              <label>
+                <input id="autostart-open" type="radio" name="autostart-mode" value="open" />
+                <span>Start opened</span>
+              </label>
+              <label>
+                <input id="autostart-hidden" type="radio" name="autostart-mode" value="hidden" />
+                <span>Start hidden</span>
+              </label>
+            </div>
+            <label class="settings-check">
+              <input id="close-to-tray-toggle" type="checkbox" />
+              <span>Keep running in tray when closing the window</span>
+            </label>
+          </div>
+        </div>
         <span class="label">Contact nicknames</span>
         <div id="contact-nickname-list" class="contact-nickname-list"></div>
         <span class="label">Blocked users</span>
