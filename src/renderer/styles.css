@@ -25,7 +25,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
   -webkit-app-region: no-drag;
 }
@@ -227,6 +228,7 @@ body.app-boot-finish .window-frame {
 
 .chat-panel {
   display: grid;
+  position: relative;
   grid-template-rows: 42px minmax(0, 1fr) 44px;
   min-width: 0;
   overflow: hidden;
@@ -392,7 +394,21 @@ input {
   box-shadow: inset 0 2px 5px rgba(18, 102, 133, 0.08);
 }
 
-input:focus {
+select {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid rgba(68, 151, 181, 0.35);
+  border-radius: 5px;
+  padding: 0 8px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.84);
+  color: #0c3143;
+  font-size: 12px;
+  box-shadow: inset 0 2px 5px rgba(18, 102, 133, 0.08);
+}
+
+input:focus,
+select:focus {
   border-color: rgba(0, 136, 191, 0.72);
   box-shadow:
     0 0 0 2px rgba(103, 221, 255, 0.24),
@@ -712,6 +728,69 @@ input:disabled {
   color: #7b2534;
 }
 
+.ghost-button.call {
+  color: #12633f;
+}
+
+.call-banner {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.62);
+  background: linear-gradient(90deg, rgba(232, 255, 245, 0.82), rgba(177, 244, 255, 0.76));
+  color: #16485e;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(10, 76, 115, 0.12);
+}
+
+.call-banner span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.call-banner-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.call-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 24px;
+  border: 1px solid rgba(0, 117, 157, 0.25);
+  border-radius: 5px;
+  padding: 0 8px;
+  background: linear-gradient(#fbffff, #9cf1ff 48%, #34b7e7 49%, #0f93c8);
+  color: #05384f;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 5px 10px rgba(0, 104, 148, 0.1);
+}
+
+.call-action.accept {
+  color: #11613d;
+}
+
+.call-action.decline,
+.call-action.hangup {
+  background: linear-gradient(#ffffff, #ffe7eb 48%, #ffb3c0);
+  color: #7b2534;
+}
+
 .messages {
   position: relative;
   min-height: 0;
@@ -846,6 +925,19 @@ input:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 7px;
+}
+
+.device-settings {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.device-settings label {
+  color: #245a72;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 #save-nickname,

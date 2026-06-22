@@ -307,6 +307,10 @@
             <h2 id="chat-title">Ready to connect</h2>
           </div>
           <div class="chat-actions">
+            <button id="call-chat" class="ghost-button call" type="button" disabled title="Start voice call">
+              <i class="fa-solid fa-phone" aria-hidden="true"></i>
+              <span>Call</span>
+            </button>
             <button id="disconnect-chat" class="ghost-button danger" type="button" disabled>
               <i class="fa-solid fa-plug-circle-xmark" aria-hidden="true"></i>
               <span>Disconnect</span>
@@ -317,6 +321,24 @@
             </button>
           </div>
         </header>
+
+        <div id="call-banner" class="call-banner hidden" aria-live="polite">
+          <span id="call-text">Voice call</span>
+          <div class="call-banner-actions">
+            <button id="call-accept" type="button" class="call-action accept hidden">
+              <i class="fa-solid fa-phone" aria-hidden="true"></i>
+              <span>Accept</span>
+            </button>
+            <button id="call-decline" type="button" class="call-action decline hidden">
+              <i class="fa-solid fa-phone-slash" aria-hidden="true"></i>
+              <span>Decline</span>
+            </button>
+            <button id="call-hangup" type="button" class="call-action hangup hidden">
+              <i class="fa-solid fa-phone-slash" aria-hidden="true"></i>
+              <span>Hang up</span>
+            </button>
+          </div>
+        </div>
 
         <div id="messages" class="messages empty" aria-live="polite" data-empty="Share your Aero ID or connect to a contact."></div>
 
@@ -354,6 +376,15 @@
           <div class="settings-row">
             <input id="nickname-input" type="text" maxlength="32" placeholder="Nickname" />
             <button id="save-nickname" type="button">Save</button>
+          </div>
+        </div>
+        <div class="settings-field">
+          <span class="label">Voice devices</span>
+          <div class="device-settings">
+            <label for="microphone-select">Microphone</label>
+            <select id="microphone-select"></select>
+            <label for="speaker-select">Output</label>
+            <select id="speaker-select"></select>
           </div>
         </div>
         <span class="label">Contact nicknames</span>

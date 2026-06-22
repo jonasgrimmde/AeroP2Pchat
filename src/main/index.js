@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, session } = require("electron");
 const { createWriteStream } = require("node:fs");
 const { mkdir, mkdtemp, readFile, writeFile } = require("node:fs/promises");
 const { get } = require("node:https");
@@ -217,6 +217,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const requestingWindow = BrowserWindow.fromWebContents(webContents);
+    callback(requestingWindow === mainWindow && permission === "media");
+  });
   ipcMain.handle("install-update", (event, details) => installWindowsUpdate(details.url, details.version, (progress) => {
     event.sender.send("update-progress", progress);
   }));

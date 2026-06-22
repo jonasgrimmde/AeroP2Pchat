@@ -18,8 +18,14 @@ const statusDot = document.querySelector("#status-dot");
 const statusText = document.querySelector("#status-text");
 const peerList = document.querySelector("#peer-list");
 const chatTitle = document.querySelector("#chat-title");
+const callChat = document.querySelector("#call-chat");
 const clearChat = document.querySelector("#clear-chat");
 const disconnectChat = document.querySelector("#disconnect-chat");
+const callBanner = document.querySelector("#call-banner");
+const callText = document.querySelector("#call-text");
+const callAccept = document.querySelector("#call-accept");
+const callDecline = document.querySelector("#call-decline");
+const callHangup = document.querySelector("#call-hangup");
 const messages = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message-input");
@@ -38,6 +44,8 @@ const settingsModal = document.querySelector("#settings-modal");
 const settingsClose = document.querySelector("#settings-close");
 const nicknameInput = document.querySelector("#nickname-input");
 const saveNickname = document.querySelector("#save-nickname");
+const microphoneSelect = document.querySelector("#microphone-select");
+const speakerSelect = document.querySelector("#speaker-select");
 const contactNicknameList = document.querySelector("#contact-nickname-list");
 const blockedList = document.querySelector("#blocked-list");
 const appMenu = document.querySelector("#app-menu");
@@ -66,6 +74,7 @@ const IDENTITY_STORAGE_KEY = "aero-p2p-chat.identity.v1";
 const CONTACTS_STORAGE_KEY = "aero-p2p-chat.contacts.v1";
 const MAX_MESSAGE_LENGTH = 4000;
 const HIGH_BUFFER_SIZE = 25;
+const VOICE_AUDIO_BITRATE = 64000;
 let activePeerId = null;
 let myPeerId = "";
 let peer = null;
@@ -74,6 +83,18 @@ let contacts = [];
 let contextContactId = "";
 let contextMessage = null;
 let removeUpdateProgressListener = null;
+const remoteAudio = new Audio();
+remoteAudio.autoplay = true;
+remoteAudio.playsInline = true;
+const callState = {
+  peerId: null,
+  callId: "",
+  status: "idle",
+  mediaConn: null,
+  incomingMediaConn: null,
+  localStream: null,
+  acceptedIncomingCallId: ""
+};
 
 function setBootProgress(percent, text) {
   const nextPercent = Math.max(0, Math.min(100, Math.round(percent)));
@@ -124,9 +145,20 @@ const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/jonasg
 const platform = window.aeroChat?.platform ?? "browser";
 const peerConnectionConfig = {
   iceServers: [
-    { urls: "stun:stun.l.google.com:19302" }
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: [
+        "turn:eu-0.turn.peerjs.com:3478",
+        "turn:us-0.turn.peerjs.com:3478"
+      ],
+      username: "peerjs",
+      credential: "peerjsp"
+    }
   ],
-  iceCandidatePoolSize: 2
+  iceCandidatePoolSize: 4,
+  bundlePolicy: "balanced",
+  rtcpMuxPolicy: "require",
+  sdpSemantics: "unified-plan"
 };
 let appConfig = {};
 
@@ -209,6 +241,7 @@ setBootProgress(55, "Loading identity");
 
 ownId.textContent = identity.id;
 nicknameInput.value = identity.nickname || "";
+normalizeAudioConfig();
 
 function isValidAeroId(value) {
   return /^aero-[a-f0-9]{32}$/.test(String(value || "").trim());
@@ -243,6 +276,20 @@ function loadContacts() {
 
 function saveContacts() {
   appConfig.contacts = contacts;
+  saveAppConfig();
+}
+
+function normalizeAudioConfig() {
+  if (!appConfig.audio || typeof appConfig.audio !== "object") {
+    appConfig.audio = {};
+  }
+
+  appConfig.audio.inputDeviceId = typeof appConfig.audio.inputDeviceId === "string" ? appConfig.audio.inputDeviceId : "default";
+  appConfig.audio.outputDeviceId = typeof appConfig.audio.outputDeviceId === "string" ? appConfig.audio.outputDeviceId : "default";
+}
+
+function saveAudioConfig() {
+  normalizeAudioConfig();
   saveAppConfig();
 }
 
@@ -583,6 +630,440 @@ function addChatMessage({ id, text, sender, peerId, time }) {
   refreshPeers();
 }
 
+function createCallId() {
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  return `call-${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function getActiveCallLabel() {
+  if (!callState.peerId) {
+    return "";
+  }
+
+  return getPeerLabel(callState.peerId, connections.get(callState.peerId));
+}
+
+function stopLocalCallStream() {
+  callState.localStream?.getTracks().forEach((track) => track.stop());
+  callState.localStream = null;
+}
+
+function clearRemoteAudio() {
+  remoteAudio.pause();
+  remoteAudio.srcObject = null;
+}
+
+function isCallBusy() {
+  return callState.status !== "idle";
+}
+
+function refreshCallUi() {
+  const activeConn = activePeerId ? connections.get(activePeerId) : null;
+  const canStartCall = Boolean(activeConn?.open && !isCallBusy());
+  callChat.disabled = !canStartCall;
+
+  callAccept.classList.add("hidden");
+  callDecline.classList.add("hidden");
+  callHangup.classList.add("hidden");
+
+  if (callState.status === "idle") {
+    callBanner.classList.add("hidden");
+    return;
+  }
+
+  callBanner.classList.remove("hidden");
+  const label = getActiveCallLabel() || "Peer";
+
+  if (callState.status === "incoming") {
+    callText.textContent = `${label} is calling`;
+    callAccept.classList.remove("hidden");
+    callDecline.classList.remove("hidden");
+    return;
+  }
+
+  if (callState.status === "outgoing") {
+    callText.textContent = `Calling ${label}...`;
+    callHangup.classList.remove("hidden");
+    return;
+  }
+
+  if (callState.status === "connecting") {
+    callText.textContent = `Connecting voice with ${label}...`;
+    callHangup.classList.remove("hidden");
+    return;
+  }
+
+  callText.textContent = `In voice call with ${label}`;
+  callHangup.classList.remove("hidden");
+}
+
+function setCallState(status, updates = {}) {
+  Object.assign(callState, updates, { status });
+  refreshCallUi();
+}
+
+function resetCallState() {
+  const mediaConn = callState.mediaConn;
+  const incomingMediaConn = callState.incomingMediaConn;
+  const localStream = callState.localStream;
+
+  Object.assign(callState, {
+    peerId: null,
+    callId: "",
+    status: "idle",
+    mediaConn: null,
+    incomingMediaConn: null,
+    localStream: null,
+    acceptedIncomingCallId: ""
+  });
+
+  mediaConn?.close();
+  if (incomingMediaConn && incomingMediaConn !== mediaConn) {
+    incomingMediaConn.close();
+  }
+  localStream?.getTracks().forEach((track) => track.stop());
+  clearRemoteAudio();
+  refreshCallUi();
+}
+
+async function applyAudioOutputDevice() {
+  if (!remoteAudio.setSinkId) {
+    return;
+  }
+
+  normalizeAudioConfig();
+  try {
+    await remoteAudio.setSinkId(appConfig.audio.outputDeviceId || "default");
+  } catch {
+    appConfig.audio.outputDeviceId = "default";
+    saveAudioConfig();
+    await remoteAudio.setSinkId("default").catch(() => {});
+  }
+}
+
+function createVoiceAudioConstraints() {
+  normalizeAudioConfig();
+  const deviceId = appConfig.audio.inputDeviceId;
+  const audio = {
+    echoCancellation: true,
+    noiseSuppression: false,
+    autoGainControl: false,
+    channelCount: { ideal: 1 },
+    sampleRate: { ideal: 48000 },
+    sampleSize: { ideal: 16 },
+    latency: { ideal: 0.02 }
+  };
+
+  if (deviceId && deviceId !== "default") {
+    audio.deviceId = { exact: deviceId };
+  }
+
+  return audio;
+}
+
+function improveVoiceSdp(sdp = "") {
+  const opusPayloads = Array.from(sdp.matchAll(/^a=rtpmap:(\d+) opus\/48000(?:\/\d+)?$/gim), (match) => match[1]);
+  let nextSdp = sdp;
+
+  if (!/^a=ptime:/im.test(nextSdp)) {
+    nextSdp = nextSdp.replace(/^(m=audio[^\r\n]*\r?\n)/im, "$1a=ptime:20\r\n");
+  }
+
+  for (const payload of opusPayloads) {
+    const fmtpPattern = new RegExp(`^a=fmtp:${payload} ([^\\r\\n]*)$`, "im");
+    const fmtpMatch = nextSdp.match(fmtpPattern);
+    const params = [
+      "minptime=10",
+      "useinbandfec=1",
+      "maxplaybackrate=48000",
+      "sprop-maxcapturerate=48000",
+      `maxaveragebitrate=${VOICE_AUDIO_BITRATE}`
+    ];
+
+    if (fmtpMatch) {
+      let line = fmtpMatch[0];
+      for (const param of params) {
+        const key = param.split("=")[0];
+        if (!new RegExp(`(?:^|;)${key}=`).test(line)) {
+          line += `;${param}`;
+        }
+      }
+      nextSdp = nextSdp.replace(fmtpPattern, line);
+      continue;
+    }
+
+    nextSdp = nextSdp.replace(
+      new RegExp(`^(a=rtpmap:${payload} opus\\/48000(?:\\/\\d+)?)$`, "im"),
+      `$1\r\na=fmtp:${payload} ${params.join(";")}`
+    );
+  }
+
+  return nextSdp;
+}
+
+async function tuneOutgoingAudio(mediaConn) {
+  const peerConnection = mediaConn?.peerConnection;
+  if (!peerConnection?.getSenders) {
+    return;
+  }
+
+  for (const sender of peerConnection.getSenders()) {
+    if (sender.track?.kind !== "audio" || !sender.getParameters || !sender.setParameters) {
+      continue;
+    }
+
+    const parameters = sender.getParameters();
+    parameters.encodings = parameters.encodings?.length ? parameters.encodings : [{}];
+    parameters.encodings[0].maxBitrate = VOICE_AUDIO_BITRATE;
+    parameters.encodings[0].priority = "high";
+    await sender.setParameters(parameters).catch(() => {});
+  }
+}
+
+async function getVoiceStream() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: createVoiceAudioConstraints(),
+    video: false
+  });
+  await refreshAudioDevices();
+  return stream;
+}
+
+function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
+  callState.mediaConn = mediaConn;
+  tuneOutgoingAudio(mediaConn);
+
+  mediaConn.on("stream", async (stream) => {
+    if (callState.peerId !== peerId || callState.callId !== callId) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
+    remoteAudio.srcObject = stream;
+    await applyAudioOutputDevice();
+    remoteAudio.play().catch(() => {});
+    setCallState("active");
+    setStatus("online", `Voice call with ${getPeerLabel(peerId, connections.get(peerId))}`);
+  });
+
+  mediaConn.on("close", () => {
+    if (callState.peerId === peerId && callState.callId === callId) {
+      endVoiceCall({ notifyPeer: false, message: "Voice call ended." });
+    }
+  });
+
+  mediaConn.on("error", (error) => {
+    if (callState.peerId === peerId && callState.callId === callId) {
+      addSystemMessage(`Voice call error: ${error.message}`);
+      endVoiceCall({ notifyPeer: true, message: "Voice call ended." });
+    }
+  });
+}
+
+async function startVoiceCall() {
+  if (!activePeerId || isCallBusy()) {
+    return;
+  }
+
+  const conn = connections.get(activePeerId);
+  if (!conn?.open) {
+    setStatus("offline", "The active peer is not ready yet.");
+    return;
+  }
+
+  const callId = createCallId();
+  setCallState("outgoing", { peerId: activePeerId, callId });
+  sendProtocolMessage(conn, "call-request", { callId });
+  addSystemMessage(`Calling ${getPeerLabel(activePeerId, conn)}...`);
+}
+
+function handleIncomingCallRequest(peerId, data) {
+  if (!connections.has(peerId) || typeof data.callId !== "string") {
+    return;
+  }
+
+  const conn = connections.get(peerId);
+  if (isCallBusy()) {
+    sendProtocolMessage(conn, "call-declined", { callId: data.callId, reason: "busy" });
+    return;
+  }
+
+  setCallState("incoming", { peerId, callId: data.callId });
+  addSystemMessage(`${getPeerLabel(peerId, conn)} is calling.`);
+}
+
+async function acceptVoiceCall() {
+  if (callState.status !== "incoming" || !callState.peerId) {
+    return;
+  }
+
+  const peerId = callState.peerId;
+  const callId = callState.callId;
+  const conn = connections.get(peerId);
+
+  setCallState("connecting", { peerId, callId });
+
+  try {
+    const stream = await getVoiceStream();
+    setCallState("connecting", {
+      peerId,
+      callId,
+      localStream: stream,
+      acceptedIncomingCallId: callId
+    });
+    sendProtocolMessage(conn, "call-accepted", { callId });
+
+    if (callState.incomingMediaConn?.metadata?.callId === callId) {
+      callState.incomingMediaConn.answer(stream);
+      tuneOutgoingAudio(callState.incomingMediaConn);
+      attachMediaConnectionHandlers(callState.incomingMediaConn, peerId, callId);
+    }
+  } catch (error) {
+    sendProtocolMessage(conn, "call-declined", { callId, reason: "microphone-error" });
+    addSystemMessage(`Could not start microphone: ${error.message}`);
+    resetCallState();
+  }
+}
+
+function declineVoiceCall() {
+  if (callState.status !== "incoming" || !callState.peerId) {
+    return;
+  }
+
+  const conn = connections.get(callState.peerId);
+  sendProtocolMessage(conn, "call-declined", { callId: callState.callId });
+  addSystemMessage(`Call from ${getPeerLabel(callState.peerId, conn)} declined.`);
+  resetCallState();
+}
+
+async function handleCallAccepted(peerId, data) {
+  if (callState.status !== "outgoing" || callState.peerId !== peerId || callState.callId !== data.callId) {
+    return;
+  }
+
+  try {
+    const stream = await getVoiceStream();
+    const mediaConn = peer.call(peerId, stream, {
+      metadata: {
+        ...createChatMetadata(),
+        callId: callState.callId
+      },
+      sdpTransform: improveVoiceSdp
+    });
+    setCallState("connecting", { localStream: stream, mediaConn });
+    attachMediaConnectionHandlers(mediaConn, peerId, callState.callId);
+  } catch (error) {
+    addSystemMessage(`Could not start microphone: ${error.message}`);
+    sendProtocolMessage(connections.get(peerId), "call-ended", { callId: callState.callId });
+    resetCallState();
+  }
+}
+
+function handleCallDeclined(peerId, data) {
+  if (callState.peerId !== peerId || callState.callId !== data.callId) {
+    return;
+  }
+
+  const label = getPeerLabel(peerId, connections.get(peerId));
+  addSystemMessage(data.reason === "busy" ? `${label} is busy.` : `${label} declined the call.`);
+  resetCallState();
+}
+
+function endVoiceCall({ notifyPeer = true, message = "" } = {}) {
+  const peerId = callState.peerId;
+  const callId = callState.callId;
+  const conn = peerId ? connections.get(peerId) : null;
+
+  if (notifyPeer && conn?.open && callId) {
+    sendProtocolMessage(conn, "call-ended", { callId });
+  }
+
+  resetCallState();
+  if (message) {
+    addSystemMessage(message);
+  }
+  setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+}
+
+function handleRemoteCallEnded(peerId, data) {
+  if (callState.peerId !== peerId || callState.callId !== data.callId) {
+    return;
+  }
+
+  endVoiceCall({ notifyPeer: false, message: "Voice call ended." });
+}
+
+function rejectIncomingMediaCall(mediaConn) {
+  mediaConn.answer();
+  mediaConn.close();
+}
+
+function handleIncomingMediaCall(mediaConn) {
+  const callId = mediaConn.metadata?.callId;
+  const peerId = mediaConn.peer;
+  if (
+    callState.peerId !== peerId ||
+    callState.callId !== callId ||
+    callState.acceptedIncomingCallId !== callId ||
+    !callState.localStream
+  ) {
+    rejectIncomingMediaCall(mediaConn);
+    return;
+  }
+
+  callState.incomingMediaConn = mediaConn;
+  mediaConn.answer(callState.localStream, { sdpTransform: improveVoiceSdp });
+  tuneOutgoingAudio(mediaConn);
+  attachMediaConnectionHandlers(mediaConn, peerId, callId);
+}
+
+function createDeviceOption(value, text) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = text;
+  return option;
+}
+
+function setSelectValueOrDefault(select, value) {
+  select.value = value;
+  if (select.value !== value) {
+    select.value = "default";
+  }
+}
+
+async function refreshAudioDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    microphoneSelect.replaceChildren(createDeviceOption("default", "Default microphone"));
+    speakerSelect.replaceChildren(createDeviceOption("default", "Default output"));
+    return;
+  }
+
+  normalizeAudioConfig();
+  const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+  const microphones = devices.filter((device) => device.kind === "audioinput");
+  const speakers = devices.filter((device) => device.kind === "audiooutput");
+
+  microphoneSelect.replaceChildren(createDeviceOption("default", "Default microphone"));
+  for (const [index, device] of microphones.entries()) {
+    if (device.deviceId === "default") {
+      continue;
+    }
+    microphoneSelect.append(createDeviceOption(device.deviceId, device.label || `Microphone ${index + 1}`));
+  }
+
+  speakerSelect.replaceChildren(createDeviceOption("default", "Default output"));
+  for (const [index, device] of speakers.entries()) {
+    if (device.deviceId === "default") {
+      continue;
+    }
+    speakerSelect.append(createDeviceOption(device.deviceId, device.label || `Output ${index + 1}`));
+  }
+
+  setSelectValueOrDefault(microphoneSelect, appConfig.audio.inputDeviceId);
+  setSelectValueOrDefault(speakerSelect, appConfig.audio.outputDeviceId);
+}
+
 function isSupportedDataChannel() {
   return Boolean(util.supports?.data && util.supports?.reliable);
 }
@@ -728,6 +1209,10 @@ function sendProtocolMessage(conn, type, extra = {}) {
 }
 
 function removePeer(peerId) {
+  if (callState.peerId === peerId) {
+    endVoiceCall({ notifyPeer: false, message: "Voice call ended." });
+  }
+
   connections.delete(peerId);
   pendingConnections.delete(peerId);
   if (activePeerId === peerId) {
@@ -749,6 +1234,7 @@ function refreshPeers() {
     chatTitle.textContent = "Ready to connect";
     messageInput.disabled = true;
     sendButton.disabled = true;
+    callChat.disabled = true;
     disconnectChat.disabled = true;
     renderChatHistory();
   }
@@ -918,6 +1404,7 @@ function refreshPeers() {
   sendButton.disabled = !canChat;
   disconnectChat.disabled = !canChat;
   updateConnectButton();
+  refreshCallUi();
   updateEmptyChatState();
 }
 
@@ -1036,6 +1523,26 @@ function attachConnectionHandlers(conn, peerId) {
       setStatus("offline", `${peerLabel()} declined your request.`);
       addSystemMessage(`${peerLabel()} declined your connection request.`);
       refreshPeers();
+      return;
+    }
+
+    if (data?.type === "call-request") {
+      handleIncomingCallRequest(peerId, data);
+      return;
+    }
+
+    if (data?.type === "call-accepted") {
+      handleCallAccepted(peerId, data);
+      return;
+    }
+
+    if (data?.type === "call-declined") {
+      handleCallDeclined(peerId, data);
+      return;
+    }
+
+    if (data?.type === "call-ended") {
+      handleRemoteCallEnded(peerId, data);
       return;
     }
 
@@ -1248,6 +1755,7 @@ function renderContactNicknameList(focusContactId = "") {
 
 function openSettings(focusContactId = "") {
   nicknameInput.value = identity.nickname || "";
+  refreshAudioDevices();
   renderContactNicknameList(focusContactId);
   renderBlockedList();
   settingsModal.classList.remove("hidden");
@@ -1282,6 +1790,10 @@ function createPeer() {
 
   nextPeer.on("connection", (conn) => {
     registerConnection(conn, { incoming: true });
+  });
+
+  nextPeer.on("call", (mediaConn) => {
+    handleIncomingMediaCall(mediaConn);
   });
 
   nextPeer.on("disconnected", () => {
@@ -1396,6 +1908,22 @@ clearChat.addEventListener("click", () => {
   renderChatHistory();
 });
 
+callChat.addEventListener("click", () => {
+  startVoiceCall();
+});
+
+callAccept.addEventListener("click", () => {
+  acceptVoiceCall();
+});
+
+callDecline.addEventListener("click", () => {
+  declineVoiceCall();
+});
+
+callHangup.addEventListener("click", () => {
+  endVoiceCall({ notifyPeer: true, message: "Voice call ended." });
+});
+
 disconnectChat.addEventListener("click", () => {
   if (!activePeerId) {
     return;
@@ -1408,6 +1936,21 @@ disconnectChat.addEventListener("click", () => {
   setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
   addSystemMessage(`Disconnected from ${peerLabel}.`);
   refreshPeers();
+});
+
+microphoneSelect.addEventListener("change", () => {
+  appConfig.audio.inputDeviceId = microphoneSelect.value || "default";
+  saveAudioConfig();
+});
+
+speakerSelect.addEventListener("change", async () => {
+  appConfig.audio.outputDeviceId = speakerSelect.value || "default";
+  saveAudioConfig();
+  await applyAudioOutputDevice();
+});
+
+navigator.mediaDevices?.addEventListener?.("devicechange", () => {
+  refreshAudioDevices();
 });
 
 function openLinuxUpdateModal() {
@@ -1642,6 +2185,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 window.addEventListener("beforeunload", () => {
+  endVoiceCall({ notifyPeer: true });
   for (const conn of connections.values()) {
     conn.close();
   }
@@ -1652,6 +2196,7 @@ window.addEventListener("beforeunload", () => {
 });
 
 refreshPeers();
+refreshAudioDevices();
 setBootProgress(82, "Rendering chat");
 peer = createPeer();
 setBootProgress(90, "Starting peer");
