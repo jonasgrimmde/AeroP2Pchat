@@ -56,6 +56,7 @@ const closeToTrayToggle = document.querySelector("#close-to-tray-toggle");
 const contactNicknameList = document.querySelector("#contact-nickname-list");
 const blockedList = document.querySelector("#blocked-list");
 const appMenu = document.querySelector("#app-menu");
+const appMenuUpdate = document.querySelector("#app-menu-update");
 const appMenuSettings = document.querySelector("#app-menu-settings");
 const contactMenu = document.querySelector("#contact-menu");
 const menuTrust = document.querySelector("#menu-trust");
@@ -163,7 +164,6 @@ setBootProgress(18, "Preparing interface");
 const currentVersion = packageInfo.version;
 const latestReleaseUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest";
 const latestManifestUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/latest.yml";
-const defaultWindowsSetupUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Windows-Setup.exe";
 const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- update";
 const platform = window.aeroChat?.platform ?? "browser";
 const peerConnectionConfig = {
@@ -634,6 +634,15 @@ function compareVersions(left, right) {
   return 0;
 }
 
+function clearUpdateAvailableUi() {
+  availableUpdate = null;
+  headerUpdateButton.classList.add("hidden");
+  updateCard.classList.add("hidden");
+  titlebarLogo.classList.remove("update-available");
+  titlebarLogo.removeAttribute("title");
+  appMenuUpdate.classList.add("hidden");
+}
+
 async function checkForUpdates() {
   try {
     const response = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
@@ -646,21 +655,32 @@ async function checkForUpdates() {
     const manifest = parseManifest(await response.text());
     const latestVersion = manifest.version;
     if (!latestVersion || compareVersions(latestVersion, currentVersion) <= 0) {
+      clearUpdateAvailableUi();
+      return;
+    }
+
+    const windowsUrl = manifest.windowsUrl || manifest.url || "";
+    if (platform === "win32" && !windowsUrl) {
+      clearUpdateAvailableUi();
       return;
     }
 
     availableUpdate = {
       version: latestVersion,
-      windowsUrl: manifest.windowsUrl || defaultWindowsSetupUrl
+      windowsUrl,
+      windowsSha256: manifest.windowsSha256 || manifest.sha256 || ""
     };
 
     updateTitle.textContent = "Update available";
     updateText.textContent = `Version ${latestVersion} is ready. You are using ${currentVersion}.`;
     updateButton.textContent = platform === "win32" ? "Install update" : "Show command";
-    headerUpdateButton.classList.remove("hidden");
-  } catch {
     headerUpdateButton.classList.add("hidden");
-    updateCard.classList.add("hidden");
+    titlebarLogo.classList.add("update-available");
+    titlebarLogo.title = `Update ${latestVersion} available`;
+    appMenuUpdate.classList.remove("hidden");
+    appMenuUpdate.querySelector("span").textContent = platform === "win32" ? `Install ${latestVersion}` : `Update ${latestVersion}`;
+  } catch {
+    clearUpdateAvailableUi();
   }
 }
 
@@ -2260,6 +2280,12 @@ function startUpdateProgressListener() {
     if (progress?.phase === "install") {
       setUpdateButtonText("Starting setup...");
       setStatus("pending", "Starting update setup...");
+      return;
+    }
+
+    if (progress?.phase === "verify") {
+      setUpdateButtonText("Verifying...");
+      setStatus("pending", "Verifying update download...");
     }
   }) || null;
 }
@@ -2285,7 +2311,8 @@ async function installAvailableUpdate() {
     try {
       await window.aeroChat.installUpdate({
         url: availableUpdate.windowsUrl,
-        version: availableUpdate.version
+        version: availableUpdate.version,
+        sha256: availableUpdate.windowsSha256
       });
       setUpdateButtonText("Setup started");
       setStatus("pending", "Setup started. The app will restart.");
@@ -2305,6 +2332,10 @@ async function installAvailableUpdate() {
 
 headerUpdateButton.addEventListener("click", installAvailableUpdate);
 updateButton.addEventListener("click", installAvailableUpdate);
+appMenuUpdate.addEventListener("click", () => {
+  installAvailableUpdate();
+  closeAppMenu();
+});
 
 windowMinimize.addEventListener("click", () => {
   window.aeroChat?.windowControl?.("minimize");

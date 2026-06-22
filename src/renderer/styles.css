@@ -127,6 +127,27 @@ body.app-boot-finish .window-frame {
     0 4px 10px rgba(0, 96, 140, 0.26);
 }
 
+.titlebar-logo.update-available {
+  animation: updateLogoPulse 1.45s ease-in-out infinite;
+}
+
+@keyframes updateLogoPulse {
+  0%,
+  100% {
+    box-shadow:
+      inset -4px -5px 8px rgba(0, 70, 110, 0.2),
+      0 0 0 2px rgba(255, 173, 58, 0.42),
+      0 3px 8px rgba(0, 96, 140, 0.22);
+  }
+
+  50% {
+    box-shadow:
+      inset -4px -5px 8px rgba(0, 70, 110, 0.2),
+      0 0 0 4px rgba(255, 173, 58, 0.88),
+      0 0 16px rgba(242, 138, 27, 0.55);
+  }
+}
+
 .titlebar-brand strong,
 .titlebar-brand span {
   display: block;

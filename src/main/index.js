@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, Tray, ipcMain, screen, shell, session } = require("electron");
 const { createWriteStream, existsSync, readFileSync } = require("node:fs");
 const { mkdir, mkdtemp, readFile, rm, writeFile } = require("node:fs/promises");
+const { createHash } = require("node:crypto");
 const { get } = require("node:https");
 const { tmpdir } = require("node:os");
 const { basename, dirname, join } = require("node:path");
@@ -703,7 +704,11 @@ function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
   });
 }
 
-async function installWindowsUpdate(rawUrl, version, onProgress = () => {}) {
+function getFileSha256(filePath) {
+  return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+}
+
+async function installWindowsUpdate(rawUrl, version, expectedSha256 = "", onProgress = () => {}) {
   if (process.platform !== "win32") {
     throw new Error("Setup updates are only available on Windows.");
   }
@@ -714,36 +719,33 @@ async function installWindowsUpdate(rawUrl, version, onProgress = () => {}) {
   const url = assertTrustedInstallerUrl(rawUrl);
   const updateDir = await mkdtemp(join(tmpdir(), "aero-p2p-update-"));
   const setupPath = join(updateDir, `Aero-P2P-Chat-Setup-${version || "latest"}.exe`);
-  const scriptPath = join(updateDir, "install-update.ps1");
-  const appExePath = process.execPath;
 
   onProgress({ phase: "download", percent: 0, receivedBytes: 0, totalBytes: null });
   await downloadFile(url, setupPath, onProgress);
+  onProgress({ phase: "verify", percent: 100 });
+  if (expectedSha256 && getFileSha256(setupPath).toLowerCase() !== String(expectedSha256).toLowerCase()) {
+    throw new Error("Update download checksum did not match latest.yml.");
+  }
   onProgress({ phase: "install", percent: 100 });
-  await writeFile(scriptPath, [
-    "$ErrorActionPreference = 'Stop'",
-    "Start-Sleep -Seconds 2",
-    `$setup = ${JSON.stringify(setupPath)}`,
-    `$app = ${JSON.stringify(appExePath)}`,
-    "$args = @('/SILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS')",
-    "Start-Process -FilePath $setup -ArgumentList $args -Wait",
-    "Start-Process -FilePath $app"
-  ].join("\r\n"));
 
-  const updater = spawn("powershell.exe", [
-    "-NoProfile",
-    "-ExecutionPolicy",
-    "Bypass",
-    "-File",
-    scriptPath
-  ], {
+  const setupArgs = [
+    "/SILENT",
+    "/SUPPRESSMSGBOXES",
+    "/NORESTART",
+    "/CLOSEAPPLICATIONS",
+    "/RESTARTAPPLICATIONS"
+  ];
+  const updater = spawn(setupPath, setupArgs, {
     detached: true,
     stdio: "ignore",
-    windowsHide: true
+    windowsHide: false
   });
   updater.unref();
 
-  setTimeout(() => app.quit(), 500);
+  setTimeout(() => {
+    forceQuit = true;
+    app.quit();
+  }, 900);
   return { ok: true };
 }
 
@@ -804,7 +806,7 @@ app.whenReady().then(async () => {
     const requestingWindow = BrowserWindow.fromWebContents(webContents);
     callback(requestingWindow === mainWindow && permission === "media");
   });
-  ipcMain.handle("install-update", (event, details) => installWindowsUpdate(details.url, details.version, (progress) => {
+  ipcMain.handle("install-update", (event, details) => installWindowsUpdate(details.url, details.version, details.sha256, (progress) => {
     event.sender.send("update-progress", progress);
   }));
   ipcMain.handle("load-config", () => loadConfig());
