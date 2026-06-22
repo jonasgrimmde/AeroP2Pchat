@@ -25,6 +25,8 @@ const callBanner = document.querySelector("#call-banner");
 const callText = document.querySelector("#call-text");
 const callAccept = document.querySelector("#call-accept");
 const callDecline = document.querySelector("#call-decline");
+const callMute = document.querySelector("#call-mute");
+const callDeafen = document.querySelector("#call-deafen");
 const callHangup = document.querySelector("#call-hangup");
 const messages = document.querySelector("#messages");
 const messageForm = document.querySelector("#message-form");
@@ -75,6 +77,7 @@ const CONTACTS_STORAGE_KEY = "aero-p2p-chat.contacts.v1";
 const MAX_MESSAGE_LENGTH = 4000;
 const HIGH_BUFFER_SIZE = 25;
 const VOICE_AUDIO_BITRATE = 64000;
+const VOICE_INPUT_GAIN = 1.25;
 let activePeerId = null;
 let myPeerId = "";
 let peer = null;
@@ -86,6 +89,11 @@ let removeUpdateProgressListener = null;
 const remoteAudio = new Audio();
 remoteAudio.autoplay = true;
 remoteAudio.playsInline = true;
+remoteAudio.volume = 1;
+remoteAudio.preload = "auto";
+remoteAudio.style.display = "none";
+document.body.append(remoteAudio);
+let localVoiceAudioContext = null;
 const callState = {
   peerId: null,
   callId: "",
@@ -93,7 +101,10 @@ const callState = {
   mediaConn: null,
   incomingMediaConn: null,
   localStream: null,
-  acceptedIncomingCallId: ""
+  acceptedIncomingCallId: "",
+  muted: false,
+  deafened: false,
+  mutedBeforeDeafen: null
 };
 
 function setBootProgress(percent, text) {
@@ -146,14 +157,7 @@ const platform = window.aeroChat?.platform ?? "browser";
 const peerConnectionConfig = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
-    {
-      urls: [
-        "turn:eu-0.turn.peerjs.com:3478",
-        "turn:us-0.turn.peerjs.com:3478"
-      ],
-      username: "peerjs",
-      credential: "peerjsp"
-    }
+    { urls: "stun:global.stun.twilio.com:3478" }
   ],
   iceCandidatePoolSize: 4,
   bundlePolicy: "balanced",
@@ -645,6 +649,7 @@ function getActiveCallLabel() {
 }
 
 function stopLocalCallStream() {
+  callState.localStream?._rawVoiceStream?.getTracks().forEach((track) => track.stop());
   callState.localStream?.getTracks().forEach((track) => track.stop());
   callState.localStream = null;
 }
@@ -652,6 +657,7 @@ function stopLocalCallStream() {
 function clearRemoteAudio() {
   remoteAudio.pause();
   remoteAudio.srcObject = null;
+  remoteAudio.load();
 }
 
 function isCallBusy() {
@@ -665,7 +671,17 @@ function refreshCallUi() {
 
   callAccept.classList.add("hidden");
   callDecline.classList.add("hidden");
+  callMute.classList.add("hidden");
+  callDeafen.classList.add("hidden");
   callHangup.classList.add("hidden");
+  callMute.classList.toggle("active", callState.muted);
+  callDeafen.classList.toggle("active", callState.deafened);
+  callMute.querySelector("span").textContent = callState.muted ? "Unmute" : "Mute";
+  callDeafen.querySelector("span").textContent = callState.deafened ? "Undeafen" : "Deafen";
+  callMute.title = callState.muted ? "Unmute microphone" : "Mute microphone";
+  callDeafen.title = callState.deafened ? "Undeafen" : "Deafen";
+  callMute.setAttribute("aria-label", callMute.title);
+  callDeafen.setAttribute("aria-label", callDeafen.title);
 
   if (callState.status === "idle") {
     callBanner.classList.add("hidden");
@@ -690,16 +706,22 @@ function refreshCallUi() {
 
   if (callState.status === "connecting") {
     callText.textContent = `Connecting voice with ${label}...`;
+    callMute.classList.remove("hidden");
+    callDeafen.classList.remove("hidden");
     callHangup.classList.remove("hidden");
     return;
   }
 
   callText.textContent = `In voice call with ${label}`;
+  callMute.classList.remove("hidden");
+  callDeafen.classList.remove("hidden");
   callHangup.classList.remove("hidden");
 }
 
 function setCallState(status, updates = {}) {
   Object.assign(callState, updates, { status });
+  applyLocalMuteState();
+  remoteAudio.muted = callState.deafened;
   refreshCallUi();
 }
 
@@ -715,15 +737,50 @@ function resetCallState() {
     mediaConn: null,
     incomingMediaConn: null,
     localStream: null,
-    acceptedIncomingCallId: ""
+    acceptedIncomingCallId: "",
+    muted: false,
+    deafened: false,
+    mutedBeforeDeafen: null
   });
 
   mediaConn?.close();
   if (incomingMediaConn && incomingMediaConn !== mediaConn) {
     incomingMediaConn.close();
   }
+  localStream?._rawVoiceStream?.getTracks().forEach((track) => track.stop());
   localStream?.getTracks().forEach((track) => track.stop());
+  localVoiceAudioContext?.close().catch(() => {});
+  localVoiceAudioContext = null;
   clearRemoteAudio();
+  refreshCallUi();
+}
+
+function applyLocalMuteState() {
+  callState.localStream?.getAudioTracks().forEach((track) => {
+    track.enabled = !callState.muted;
+  });
+}
+
+function setCallMuted(muted) {
+  callState.muted = Boolean(muted);
+  applyLocalMuteState();
+  refreshCallUi();
+}
+
+function setCallDeafened(deafened) {
+  const nextDeafened = Boolean(deafened);
+  if (nextDeafened && !callState.deafened) {
+    callState.mutedBeforeDeafen = callState.muted;
+    callState.muted = true;
+  }
+  if (!nextDeafened && callState.deafened) {
+    callState.muted = Boolean(callState.mutedBeforeDeafen);
+    callState.mutedBeforeDeafen = null;
+  }
+
+  callState.deafened = nextDeafened;
+  applyLocalMuteState();
+  remoteAudio.muted = callState.deafened;
   refreshCallUi();
 }
 
@@ -822,12 +879,34 @@ async function tuneOutgoingAudio(mediaConn) {
 }
 
 async function getVoiceStream() {
-  const stream = await navigator.mediaDevices.getUserMedia({
+  const rawStream = await navigator.mediaDevices.getUserMedia({
     audio: createVoiceAudioConstraints(),
     video: false
   });
   await refreshAudioDevices();
-  return stream;
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (typeof AudioContextClass !== "function") {
+    return rawStream;
+  }
+
+  try {
+    localVoiceAudioContext?.close().catch(() => {});
+    localVoiceAudioContext = new AudioContextClass();
+    await localVoiceAudioContext.resume().catch(() => {});
+    const source = localVoiceAudioContext.createMediaStreamSource(rawStream);
+    const gainNode = localVoiceAudioContext.createGain();
+    const destination = localVoiceAudioContext.createMediaStreamDestination();
+    gainNode.gain.value = VOICE_INPUT_GAIN;
+    source.connect(gainNode);
+    gainNode.connect(destination);
+    destination.stream._rawVoiceStream = rawStream;
+    return destination.stream;
+  } catch {
+    localVoiceAudioContext?.close().catch(() => {});
+    localVoiceAudioContext = null;
+    return rawStream;
+  }
 }
 
 function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
@@ -841,6 +920,8 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
     }
 
     remoteAudio.srcObject = stream;
+    remoteAudio.volume = 1;
+    remoteAudio.muted = callState.deafened;
     await applyAudioOutputDevice();
     remoteAudio.play().catch(() => {});
     setCallState("active");
@@ -1918,6 +1999,14 @@ callAccept.addEventListener("click", () => {
 
 callDecline.addEventListener("click", () => {
   declineVoiceCall();
+});
+
+callMute.addEventListener("click", () => {
+  setCallMuted(!callState.muted);
+});
+
+callDeafen.addEventListener("click", () => {
+  setCallDeafened(!callState.deafened);
 });
 
 callHangup.addEventListener("click", () => {

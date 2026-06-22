@@ -785,6 +785,11 @@ input:disabled {
   color: #11613d;
 }
 
+.call-action.toggle.active {
+  background: linear-gradient(#fff9e8, #ffd98a 48%, #ffba48);
+  color: #684000;
+}
+
 .call-action.decline,
 .call-action.hangup {
   background: linear-gradient(#ffffff, #ffe7eb 48%, #ffb3c0);
