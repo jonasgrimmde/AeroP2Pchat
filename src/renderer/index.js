@@ -126,6 +126,7 @@ const INCOMING_MESSAGE_WINDOW_MS = 5000;
 const MAX_INCOMING_MESSAGES_PER_WINDOW = 35;
 const CONNECT_ACTION_COOLDOWN_MS = 1200;
 const CALL_ACTION_COOLDOWN_MS = 900;
+const OUTGOING_CALL_TIMEOUT_MS = 45000;
 const DEFAULT_MIC_SENSITIVITY = 55;
 const DEFAULT_MIC_BOOST = 100;
 const DEFAULT_MIC_NOISE_REDUCTION = 55;
@@ -1962,7 +1963,7 @@ function scheduleOutgoingCallTimeout() {
       addSystemMessage(`No answer from ${label}. Call ended.`);
       endVoiceCall({ notifyPeer: true, message: "Call timed out." });
     }
-  }, 15000);
+  }, OUTGOING_CALL_TIMEOUT_MS);
 }
 
 function resetCallState() {
