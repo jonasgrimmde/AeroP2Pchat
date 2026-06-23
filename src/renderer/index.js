@@ -119,6 +119,13 @@ const CONTACTS_STORAGE_KEY = "aero-p2p-chat.contacts.v1";
 const MAX_MESSAGE_LENGTH = 4000;
 const HIGH_BUFFER_SIZE = 25;
 const VOICE_AUDIO_BITRATE = 64000;
+const MAX_CHAT_HISTORY_ITEMS = 500;
+const MESSAGE_SEND_INTERVAL_MS = 180;
+const MAX_QUEUED_OUTGOING_MESSAGES = 20;
+const INCOMING_MESSAGE_WINDOW_MS = 5000;
+const MAX_INCOMING_MESSAGES_PER_WINDOW = 35;
+const CONNECT_ACTION_COOLDOWN_MS = 1200;
+const CALL_ACTION_COOLDOWN_MS = 900;
 const DEFAULT_MIC_SENSITIVITY = 55;
 const DEFAULT_MIC_BOOST = 100;
 const DEFAULT_MIC_NOISE_REDUCTION = 55;
@@ -180,6 +187,11 @@ let localVoiceGateHoldUntil = 0;
 let outgoingCallTimeout = null;
 let lastFailedConnectId = "";
 const connectTimeouts = new Map();
+const outgoingMessageQueues = new Map();
+const outgoingMessageTimers = new Map();
+const outgoingMessageNextSendAt = new Map();
+const incomingMessageWindows = new Map();
+const actionCooldowns = new Map();
 let intentionalPeerDisconnect = false;
 let suppressPeerCloseMessages = false;
 const callState = {
@@ -895,6 +907,7 @@ function saveAppSettings(updates = {}) {
 function closeAllPeerConnections() {
   clearOutgoingCallTimeout();
   clearAllConnectTimeouts();
+  clearAllOutgoingMessageQueues();
   stopLocalRingtone();
   suppressPeerCloseMessages = true;
   try {
@@ -1256,6 +1269,20 @@ function setStatus(kind, text) {
   statusText.textContent = text;
 }
 
+function isActionOnCooldown(key, cooldownMs, feedback = "") {
+  const now = Date.now();
+  const nextAllowedAt = actionCooldowns.get(key) || 0;
+  if (now < nextAllowedAt) {
+    if (feedback) {
+      setStatus("pending", feedback);
+    }
+    return true;
+  }
+
+  actionCooldowns.set(key, now + cooldownMs);
+  return false;
+}
+
 function clearConnectTimeout(peerId) {
   const timeout = connectTimeouts.get(peerId);
   if (timeout) {
@@ -1340,6 +1367,105 @@ function getOutgoingPendingPeerId() {
   }
 
   return "";
+}
+
+function clearOutgoingMessageQueue(peerId) {
+  const timer = outgoingMessageTimers.get(peerId);
+  if (timer) {
+    clearTimeout(timer);
+  }
+  outgoingMessageTimers.delete(peerId);
+  outgoingMessageQueues.delete(peerId);
+  outgoingMessageNextSendAt.delete(peerId);
+}
+
+function clearAllOutgoingMessageQueues() {
+  for (const timer of outgoingMessageTimers.values()) {
+    clearTimeout(timer);
+  }
+  outgoingMessageTimers.clear();
+  outgoingMessageQueues.clear();
+  outgoingMessageNextSendAt.clear();
+}
+
+function scheduleOutgoingMessageDrain(peerId, delay = 0) {
+  if (outgoingMessageTimers.has(peerId)) {
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    outgoingMessageTimers.delete(peerId);
+    drainOutgoingMessageQueue(peerId);
+  }, Math.max(0, delay));
+  outgoingMessageTimers.set(peerId, timer);
+}
+
+function drainOutgoingMessageQueue(peerId) {
+  const queue = outgoingMessageQueues.get(peerId);
+  if (!queue?.length) {
+    clearOutgoingMessageQueue(peerId);
+    return;
+  }
+
+  const conn = connections.get(peerId);
+  if (!conn?.open) {
+    clearOutgoingMessageQueue(peerId);
+    setStatus("offline", "The active peer is not ready yet.");
+    return;
+  }
+
+  if (conn.bufferSize > HIGH_BUFFER_SIZE) {
+    setStatus("pending", "Waiting for the send buffer to drain...");
+    scheduleOutgoingMessageDrain(peerId, 350);
+    return;
+  }
+
+  const now = Date.now();
+  const nextSendAt = outgoingMessageNextSendAt.get(peerId) || 0;
+  if (now < nextSendAt) {
+    scheduleOutgoingMessageDrain(peerId, nextSendAt - now);
+    return;
+  }
+
+  const item = queue.shift();
+  try {
+    conn.send(item.payload);
+  } catch (error) {
+    clearOutgoingMessageQueue(peerId);
+    setStatus("offline", `Send failed: ${error.message}`);
+    return;
+  }
+
+  addChatMessage(item.message);
+  outgoingMessageNextSendAt.set(peerId, Date.now() + MESSAGE_SEND_INTERVAL_MS);
+
+  if (queue.length) {
+    scheduleOutgoingMessageDrain(peerId, MESSAGE_SEND_INTERVAL_MS);
+  } else {
+    outgoingMessageQueues.delete(peerId);
+    outgoingMessageNextSendAt.delete(peerId);
+  }
+}
+
+function shouldAcceptIncomingMessage(peerId) {
+  const now = Date.now();
+  const current = incomingMessageWindows.get(peerId);
+  if (!current || now - current.startedAt > INCOMING_MESSAGE_WINDOW_MS) {
+    incomingMessageWindows.set(peerId, { startedAt: now, count: 1, warned: false });
+    return true;
+  }
+
+  current.count += 1;
+  if (current.count <= MAX_INCOMING_MESSAGES_PER_WINDOW) {
+    return true;
+  }
+
+  if (!current.warned) {
+    current.warned = true;
+    setStatus("pending", "Too many messages from this contact. Slowing them down.");
+    addSystemMessage(`${getPeerLabel(peerId, connections.get(peerId))} is sending messages too quickly. Some messages were skipped.`);
+  }
+  return false;
 }
 
 function formatTime(date = new Date()) {
@@ -1524,9 +1650,18 @@ function addSystemMessage(text) {
 
 function addChatMessage({ id, text, sender, peerId, time }) {
   const item = { id: id ?? createMessageId(), text, sender, peerId, time: time ?? formatTime() };
-  ensureChatHistory(peerId).push(item);
+  const history = ensureChatHistory(peerId);
+  history.push(item);
+  const trimmed = history.length > MAX_CHAT_HISTORY_ITEMS;
+  if (trimmed) {
+    history.splice(0, history.length - MAX_CHAT_HISTORY_ITEMS);
+  }
 
   if (activePeerId === peerId) {
+    if (trimmed) {
+      renderChatHistory();
+      return;
+    }
     appendMessageRow(createChatMessage(item));
     return;
   }
@@ -1684,8 +1819,9 @@ function sendChatText(peerId, rawText) {
     return false;
   }
 
-  if (conn.bufferSize > HIGH_BUFFER_SIZE) {
-    setStatus("pending", "Waiting for the send buffer to drain...");
+  const queue = outgoingMessageQueues.get(peerId) || [];
+  if (queue.length >= MAX_QUEUED_OUTGOING_MESSAGES) {
+    setStatus("pending", "Slow down a bit. Message queue is full.");
     return false;
   }
 
@@ -1698,20 +1834,22 @@ function sendChatText(peerId, rawText) {
     time: formatTime()
   };
 
-  try {
-    conn.send(payload);
-  } catch (error) {
-    setStatus("offline", `Send failed: ${error.message}`);
-    return false;
-  }
-
-  addChatMessage({
-    id: messageId,
-    text: payload.text,
-    sender: "me",
-    peerId,
-    time: payload.time
+  queue.push({
+    payload,
+    message: {
+      id: messageId,
+      text: payload.text,
+      sender: "me",
+      peerId,
+      time: payload.time
+    }
   });
+  outgoingMessageQueues.set(peerId, queue);
+  scheduleOutgoingMessageDrain(peerId);
+
+  if (queue.length > 4) {
+    setStatus("pending", `Sending ${queue.length} queued messages...`);
+  }
   return true;
 }
 
@@ -2685,19 +2823,25 @@ function sendProtocolMessage(conn, type, extra = {}) {
     return false;
   }
 
-  conn.send({
-    type,
-    protocol: PROTOCOL_VERSION,
-    identityId: identity.id,
-    nickname: identity.nickname || "",
-    time: formatTime(),
-    ...extra
-  });
-  return true;
+  try {
+    conn.send({
+      type,
+      protocol: PROTOCOL_VERSION,
+      identityId: identity.id,
+      nickname: identity.nickname || "",
+      time: formatTime(),
+      ...extra
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function removePeer(peerId, { silent = false } = {}) {
   clearConnectTimeout(peerId);
+  clearOutgoingMessageQueue(peerId);
+  incomingMessageWindows.delete(peerId);
   if (callState.peerId === peerId) {
     endVoiceCall({ notifyPeer: false, message: silent ? "" : "Voice call ended.", silent });
   }
@@ -3069,6 +3213,9 @@ function attachConnectionHandlers(conn, peerId, direction) {
     if (!message || !connections.has(peerId)) {
       return;
     }
+    if (!shouldAcceptIncomingMessage(peerId)) {
+      return;
+    }
 
     addChatMessage({
       id: message.id,
@@ -3178,6 +3325,19 @@ function connectToPeer(remoteId) {
 
   if (!remoteId || remoteId === myPeerId) {
     setStatus("offline", "Please enter a different peer ID.");
+    return;
+  }
+
+  if (connections.has(remoteId)) {
+    activePeerId = remoteId;
+    renderChatHistory();
+    refreshPeers();
+    setStatus("online", `Already connected to ${getPeerLabel(remoteId, connections.get(remoteId))}.`);
+    return;
+  }
+
+  if (pendingConnections.has(remoteId)) {
+    setStatus("pending", `Already trying to connect to ${getPeerLabel(remoteId, pendingConnections.get(remoteId)?.conn)}...`);
     return;
   }
 
@@ -3404,6 +3564,9 @@ copyId.addEventListener("click", async () => {
 
 connectForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (isActionOnCooldown("connect", CONNECT_ACTION_COOLDOWN_MS, "Please wait before trying another connection.")) {
+    return;
+  }
 
   const remoteId = normalizeAeroId(remoteIdInput.value);
   if (!isValidAeroId(remoteId)) {
@@ -3418,6 +3581,10 @@ connectForm.addEventListener("submit", (event) => {
 });
 
 retryConnectButton?.addEventListener("click", () => {
+  if (isActionOnCooldown("connect", CONNECT_ACTION_COOLDOWN_MS, "Please wait before retrying.")) {
+    return;
+  }
+
   const remoteId = lastFailedConnectId || normalizeAeroId(remoteIdInput.value);
   if (!isValidAeroId(remoteId)) {
     hideConnectRetry();
@@ -3458,14 +3625,23 @@ clearChat.addEventListener("click", () => {
 });
 
 callChat.addEventListener("click", () => {
+  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+    return;
+  }
   startVoiceCall();
 });
 
 callAccept.addEventListener("click", () => {
+  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+    return;
+  }
   acceptVoiceCall();
 });
 
 callDecline.addEventListener("click", () => {
+  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+    return;
+  }
   declineVoiceCall();
 });
 
@@ -3478,6 +3654,9 @@ callDeafen.addEventListener("click", () => {
 });
 
 callHangup.addEventListener("click", () => {
+  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+    return;
+  }
   endVoiceCall({ notifyPeer: true, message: "Voice call ended." });
 });
 
