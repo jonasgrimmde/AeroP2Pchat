@@ -16,6 +16,7 @@ const remoteIdInput = document.querySelector("#remote-id");
 const connectButton = document.querySelector("#connect-button");
 const statusDot = document.querySelector("#status-dot");
 const statusText = document.querySelector("#status-text");
+const retryConnectButton = document.querySelector("#retry-connect");
 const appShell = document.querySelector(".app-shell");
 const sidebarResizer = document.querySelector("#sidebar-resizer");
 const peerList = document.querySelector("#peer-list");
@@ -170,6 +171,7 @@ let pendingVoiceSettingsReapply = null;
 let localVoiceGateIsOpen = false;
 let localVoiceGateHoldUntil = 0;
 let outgoingCallTimeout = null;
+let lastFailedConnectId = "";
 const callState = {
   peerId: null,
   callId: "",
@@ -1070,6 +1072,18 @@ function setStatus(kind, text) {
   titlebarSubtitle.textContent = text;
 }
 
+function hideConnectRetry() {
+  lastFailedConnectId = "";
+  retryConnectButton?.classList.add("hidden");
+}
+
+function showConnectRetry(peerId) {
+  lastFailedConnectId = normalizeAeroId(peerId);
+  if (retryConnectButton) {
+    retryConnectButton.classList.toggle("hidden", !lastFailedConnectId);
+  }
+}
+
 function formatTime(date = new Date()) {
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
@@ -1080,6 +1094,9 @@ function formatTime(date = new Date()) {
 function updateConnectButton() {
   const remoteId = normalizeAeroId(remoteIdInput.value);
   connectButton.disabled = !isValidAeroId(remoteId) || remoteId === identity.id || !peer?.open;
+  if (!remoteId || remoteId !== lastFailedConnectId) {
+    hideConnectRetry();
+  }
 }
 
 function ensureChatHistory(peerId) {
@@ -2627,10 +2644,11 @@ function promoteOutgoingConnection(peerId) {
   refreshPeers();
 }
 
-function attachConnectionHandlers(conn, peerId) {
+function attachConnectionHandlers(conn, peerId, direction) {
   const peerLabel = () => getPeerLabel(peerId, conn);
 
   conn.on("open", () => {
+    hideConnectRetry();
     const pending = pendingConnections.get(peerId);
     if (pending?.direction === "outgoing") {
       sendProtocolMessage(conn, "connection-request");
@@ -2640,6 +2658,7 @@ function attachConnectionHandlers(conn, peerId) {
     }
 
     if (pending?.acceptOnOpen) {
+      hideConnectRetry();
       pendingConnections.delete(peerId);
       connections.set(peerId, conn);
       activePeerId = peerId;
@@ -2655,6 +2674,7 @@ function attachConnectionHandlers(conn, peerId) {
     }
 
     if (connections.has(peerId)) {
+      hideConnectRetry();
       setStatus("online", `Connected to ${peerLabel()}`);
       refreshPeers();
     }
@@ -2744,6 +2764,15 @@ function attachConnectionHandlers(conn, peerId) {
   });
 
   conn.on("error", (error) => {
+    const offlineConnectError = direction === "outgoing" && ["peer-unavailable", "network"].includes(error?.type);
+    if (offlineConnectError) {
+      removePeer(peerId);
+      showConnectRetry(peerId);
+      setStatus("offline", "That contact is offline right now. Tap Retry to try again.");
+      addSystemMessage(`${peerLabel()} is offline right now.`);
+      return;
+    }
+
     setStatus("offline", `Connection error: ${error.message}`);
     addSystemMessage(`Error with ${peerLabel()}: ${error.message}`);
   });
@@ -2777,7 +2806,7 @@ function registerConnection(conn, options = {}) {
   }
 
   pendingConnections.set(peerId, { conn, direction });
-  attachConnectionHandlers(conn, peerId);
+  attachConnectionHandlers(conn, peerId, direction);
 
   if (direction === "incoming") {
     if (isTrusted(peerIdentityId)) {
@@ -2796,6 +2825,7 @@ function registerConnection(conn, options = {}) {
 
 function connectToPeer(remoteId) {
   remoteId = normalizeAeroId(remoteId);
+  hideConnectRetry();
 
   if (!peer?.open) {
     setStatus("offline", "Your peer is not ready yet.");
@@ -3017,6 +3047,17 @@ connectForm.addEventListener("submit", (event) => {
   connectToPeer(remoteId);
   remoteIdInput.value = "";
   refreshPeers();
+});
+
+retryConnectButton?.addEventListener("click", () => {
+  const remoteId = lastFailedConnectId || normalizeAeroId(remoteIdInput.value);
+  if (!isValidAeroId(remoteId)) {
+    hideConnectRetry();
+    return;
+  }
+
+  remoteIdInput.value = remoteId;
+  connectToPeer(remoteId);
 });
 
 remoteIdInput.addEventListener("input", () => {
