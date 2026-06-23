@@ -50,6 +50,8 @@ const nicknameInput = document.querySelector("#nickname-input");
 const saveNickname = document.querySelector("#save-nickname");
 const microphoneSelect = document.querySelector("#microphone-select");
 const speakerSelect = document.querySelector("#speaker-select");
+const remoteVolumeSlider = document.querySelector("#remote-volume-slider");
+const remoteVolumeLabel = document.querySelector("#remote-volume-label");
 const autostartToggle = document.querySelector("#autostart-toggle");
 const autostartOpen = document.querySelector("#autostart-open");
 const autostartHidden = document.querySelector("#autostart-hidden");
@@ -285,6 +287,7 @@ nicknameInput.value = identity.nickname || "";
 normalizeAudioConfig();
 normalizeAppSettings();
 applySidebarWidth(appConfig.appSettings.sidebarWidth);
+setRemoteVolume(appConfig.audio.remoteVolume);
 setupSidebarResizer();
 
 function isValidAeroId(value) {
@@ -347,11 +350,27 @@ function normalizeAudioConfig() {
 
   appConfig.audio.inputDeviceId = typeof appConfig.audio.inputDeviceId === "string" ? appConfig.audio.inputDeviceId : "default";
   appConfig.audio.outputDeviceId = typeof appConfig.audio.outputDeviceId === "string" ? appConfig.audio.outputDeviceId : "default";
+  appConfig.audio.remoteVolume = Number.isFinite(appConfig.audio.remoteVolume)
+    ? Math.max(0, Math.min(100, Math.round(appConfig.audio.remoteVolume)))
+    : 100;
 }
 
 function saveAudioConfig() {
   normalizeAudioConfig();
   saveAppConfig();
+}
+
+function setRemoteVolume(volume) {
+  normalizeAudioConfig();
+  const nextVolume = Math.max(0, Math.min(100, Math.round(volume)));
+  appConfig.audio.remoteVolume = nextVolume;
+  remoteAudio.volume = nextVolume / 100;
+  if (remoteVolumeSlider) {
+    remoteVolumeSlider.value = String(nextVolume);
+  }
+  if (remoteVolumeLabel) {
+    remoteVolumeLabel.textContent = `${nextVolume}%`;
+  }
 }
 
 function normalizeAppSettings() {
@@ -1311,8 +1330,8 @@ function createVoiceAudioConstraints() {
   const deviceId = appConfig.audio.inputDeviceId;
   const audio = {
     echoCancellation: true,
-    noiseSuppression: false,
-    autoGainControl: false,
+    noiseSuppression: true,
+    autoGainControl: true,
     channelCount: { ideal: 1 },
     sampleRate: { ideal: 48000 },
     sampleSize: { ideal: 16 },
@@ -1402,11 +1421,18 @@ async function getVoiceStream() {
     localVoiceAudioContext = new AudioContextClass();
     await localVoiceAudioContext.resume().catch(() => {});
     const source = localVoiceAudioContext.createMediaStreamSource(rawStream);
+    const compressor = localVoiceAudioContext.createDynamicsCompressor();
     const gainNode = localVoiceAudioContext.createGain();
     const destination = localVoiceAudioContext.createMediaStreamDestination();
+    compressor.threshold.value = -24;
+    compressor.knee.value = 18;
+    compressor.ratio.value = 3;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.25;
     gainNode.gain.value = VOICE_INPUT_GAIN;
     source.connect(gainNode);
-    gainNode.connect(destination);
+    gainNode.connect(compressor);
+    compressor.connect(destination);
     destination.stream._rawVoiceStream = rawStream;
     return destination.stream;
   } catch {
@@ -1427,7 +1453,7 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
     }
 
     remoteAudio.srcObject = stream;
-    remoteAudio.volume = 1;
+    setRemoteVolume(appConfig.audio.remoteVolume);
     remoteAudio.muted = callState.deafened;
     await applyAudioOutputDevice();
     remoteAudio.play().catch(() => {});
@@ -2544,6 +2570,15 @@ speakerSelect.addEventListener("change", async () => {
   appConfig.audio.outputDeviceId = speakerSelect.value || "default";
   saveAudioConfig();
   await applyAudioOutputDevice();
+});
+
+remoteVolumeSlider.addEventListener("input", () => {
+  setRemoteVolume(Number(remoteVolumeSlider.value || 0));
+});
+
+remoteVolumeSlider.addEventListener("change", () => {
+  setRemoteVolume(Number(remoteVolumeSlider.value || 0));
+  saveAudioConfig();
 });
 
 autostartToggle.addEventListener("change", () => {
