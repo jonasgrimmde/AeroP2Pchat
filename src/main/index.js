@@ -65,7 +65,8 @@ function getDefaultAppSettings() {
     autostart: true,
     startHidden: true,
     closeToTray: true,
-    sidebarWidth: defaultSidebarWidth
+    sidebarWidth: defaultSidebarWidth,
+    presenceStatus: "online"
   };
 }
 
@@ -95,6 +96,7 @@ function normalizeConfig(config = {}) {
     autostart: Boolean(settings.autostart),
     startHidden: Boolean(settings.startHidden),
     closeToTray: settings.closeToTray !== false,
+    presenceStatus: ["online", "dnd", "offline"].includes(settings.presenceStatus) ? settings.presenceStatus : "online",
     sidebarWidth: Number.isFinite(settings.sidebarWidth)
       ? Math.round(Math.max(minSidebarWidth, Math.min(maxSidebarWidth, settings.sidebarWidth)))
       : defaultSidebarWidth

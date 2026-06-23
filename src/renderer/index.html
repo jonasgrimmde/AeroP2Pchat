@@ -586,6 +586,21 @@
     </div>
 
     <div id="app-menu" class="context-menu hidden" role="menu">
+      <div class="context-menu-group" aria-label="Presence status">
+        <span class="context-menu-label">Status</span>
+        <button id="app-menu-online" class="presence-option" type="button" role="menuitemradio" aria-checked="false">
+          <span class="presence-dot online"></span>
+          <span>Online</span>
+        </button>
+        <button id="app-menu-dnd" class="presence-option" type="button" role="menuitemradio" aria-checked="false">
+          <span class="presence-dot dnd"></span>
+          <span>DND</span>
+        </button>
+        <button id="app-menu-offline" class="presence-option" type="button" role="menuitemradio" aria-checked="false">
+          <span class="presence-dot offline"></span>
+          <span>Offline</span>
+        </button>
+      </div>
       <button id="app-menu-update" class="hidden" type="button" role="menuitem">
         <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
         <span>Install update</span>

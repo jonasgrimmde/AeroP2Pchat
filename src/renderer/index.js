@@ -87,6 +87,9 @@ const connectedSoundToggle = document.querySelector("#connected-sound-toggle");
 const contactNicknameList = document.querySelector("#contact-nickname-list");
 const blockedList = document.querySelector("#blocked-list");
 const appMenu = document.querySelector("#app-menu");
+const appMenuOnline = document.querySelector("#app-menu-online");
+const appMenuDnd = document.querySelector("#app-menu-dnd");
+const appMenuOffline = document.querySelector("#app-menu-offline");
 const appMenuUpdate = document.querySelector("#app-menu-update");
 const appMenuSettings = document.querySelector("#app-menu-settings");
 const contactMenu = document.querySelector("#contact-menu");
@@ -172,6 +175,8 @@ let localVoiceGateIsOpen = false;
 let localVoiceGateHoldUntil = 0;
 let outgoingCallTimeout = null;
 let lastFailedConnectId = "";
+let intentionalPeerDisconnect = false;
+let suppressPeerCloseMessages = false;
 const callState = {
   peerId: null,
   callId: "",
@@ -649,6 +654,9 @@ function normalizeAppSettings() {
     autostart: appConfig.appSettings.autostart !== false,
     startHidden: appConfig.appSettings.startHidden !== false,
     closeToTray: appConfig.appSettings.closeToTray !== false,
+    presenceStatus: ["online", "dnd", "offline"].includes(appConfig.appSettings.presenceStatus)
+      ? appConfig.appSettings.presenceStatus
+      : "online",
     sidebarWidth: Number.isFinite(appConfig.appSettings.sidebarWidth) ? appConfig.appSettings.sidebarWidth : DEFAULT_SIDEBAR_WIDTH
   };
 
@@ -685,6 +693,7 @@ function normalizeAppSettings() {
 function renderAppSettings() {
   normalizeAppSettings();
   applySidebarWidth(appConfig.appSettings.sidebarWidth);
+  updatePresenceMenuState();
   autostartToggle.checked = appConfig.appSettings.autostart;
   autostartOpen.checked = !appConfig.appSettings.startHidden;
   autostartHidden.checked = appConfig.appSettings.startHidden;
@@ -711,6 +720,97 @@ function renderAppSettings() {
     toggle.disabled = !appConfig.soundSettings.enabled;
     toggle.closest(".settings-check")?.classList.toggle("disabled", !appConfig.soundSettings.enabled);
   }
+
+  syncPresenceStatusIndicator();
+}
+
+function syncPresenceStatusIndicator() {
+  if (callState.status !== "idle" || connections.size > 0 || pendingConnections.size > 0) {
+    return;
+  }
+
+  const presenceStatus = getPresenceStatus();
+  if (presenceStatus === "offline") {
+    setStatus("offline", "Offline");
+    return;
+  }
+
+  if (presenceStatus === "dnd") {
+    setStatus("dnd", "Do Not Disturb");
+    return;
+  }
+
+  setStatus("online", "Online");
+}
+
+function getPresenceStatus() {
+  normalizeAppSettings();
+  return appConfig.appSettings.presenceStatus;
+}
+
+function isPresenceOffline() {
+  return getPresenceStatus() === "offline";
+}
+
+function isPresenceDnd() {
+  return getPresenceStatus() === "dnd";
+}
+
+function updatePresenceMenuState() {
+  const presenceStatus = getPresenceStatus();
+  const entries = [
+    [appMenuOnline, "online"],
+    [appMenuDnd, "dnd"],
+    [appMenuOffline, "offline"]
+  ];
+
+  for (const [button, value] of entries) {
+    if (!button) {
+      continue;
+    }
+    const active = presenceStatus === value;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-checked", active ? "true" : "false");
+  }
+}
+
+function setPresenceStatus(status, { persist = false, force = false } = {}) {
+  normalizeAppSettings();
+  const nextStatus = ["online", "dnd", "offline"].includes(status) ? status : "online";
+  if (appConfig.appSettings.presenceStatus === nextStatus && !persist && !force) {
+    updatePresenceMenuState();
+    return;
+  }
+
+  appConfig.appSettings.presenceStatus = nextStatus;
+  updatePresenceMenuState();
+  updateConnectButton();
+  if (persist) {
+    saveAppSettings({ presenceStatus: nextStatus });
+  } else {
+    renderAppSettings();
+  }
+
+  if (nextStatus === "offline") {
+    closeAllPeerConnections();
+    if (peer?.open) {
+      intentionalPeerDisconnect = true;
+      peer.disconnect();
+    } else if (peer?.disconnected) {
+      intentionalPeerDisconnect = true;
+    }
+    setStatus("offline", "Offline");
+    hideConnectRetry();
+    return;
+  }
+
+  if (peer?.disconnected) {
+    peer.reconnect();
+  }
+
+  if (callState.status === "idle") {
+    setStatus(nextStatus, nextStatus === "dnd" ? "Do Not Disturb" : "Online");
+  }
 }
 
 function saveAppSettings(updates = {}) {
@@ -722,6 +822,22 @@ function saveAppSettings(updates = {}) {
   normalizeAppSettings();
   renderAppSettings();
   saveAppConfig();
+}
+
+function closeAllPeerConnections() {
+  clearOutgoingCallTimeout();
+  stopLocalRingtone();
+  suppressPeerCloseMessages = true;
+  try {
+    for (const conn of [...connections.values()]) {
+      conn.close();
+    }
+    for (const pending of [...pendingConnections.values()]) {
+      pending.conn.close();
+    }
+  } finally {
+    suppressPeerCloseMessages = false;
+  }
 }
 
 function getSidebarWidthBounds() {
@@ -1093,7 +1209,7 @@ function formatTime(date = new Date()) {
 
 function updateConnectButton() {
   const remoteId = normalizeAeroId(remoteIdInput.value);
-  connectButton.disabled = !isValidAeroId(remoteId) || remoteId === identity.id || !peer?.open;
+  connectButton.disabled = !isValidAeroId(remoteId) || remoteId === identity.id || !peer?.open || isPresenceOffline();
   if (!remoteId || remoteId !== lastFailedConnectId) {
     hideConnectRetry();
   }
@@ -1355,11 +1471,19 @@ function playCallLeaveSound() {
 }
 
 function playConnectedSound() {
+  if (isPresenceDnd()) {
+    return;
+  }
+
   playSound(connectedAudio, "connected");
 }
 
 function notifyIncomingMessage(peerId, text) {
   normalizeAppSettings();
+  if (isPresenceDnd() || isPresenceOffline()) {
+    return;
+  }
+
   if (!appConfig.notificationSettings.messages) {
     playMessageFallbackSound();
     return;
@@ -1380,6 +1504,10 @@ function notifyIncomingMessage(peerId, text) {
 
 function notifyIncomingCall(peerId, callId) {
   normalizeAppSettings();
+  if (isPresenceDnd() || isPresenceOffline()) {
+    return;
+  }
+
   if (!appConfig.notificationSettings.calls) {
     playLocalRingtone();
     return;
@@ -1400,6 +1528,11 @@ function notifyIncomingCall(peerId, callId) {
 function sendChatText(peerId, rawText) {
   const text = String(rawText || "").trim();
   if (!text) {
+    return false;
+  }
+
+  if (isPresenceOffline()) {
+    setStatus("offline", "Offline");
     return false;
   }
 
@@ -2020,6 +2153,11 @@ async function startVoiceCall() {
     return;
   }
 
+  if (isPresenceOffline()) {
+    setStatus("offline", "Offline");
+    return;
+  }
+
   const conn = connections.get(activePeerId);
   if (!conn?.open) {
     setStatus("offline", "The active peer is not ready yet.");
@@ -2034,7 +2172,7 @@ async function startVoiceCall() {
 }
 
 function handleIncomingCallRequest(peerId, data) {
-  if (!connections.has(peerId) || typeof data.callId !== "string") {
+  if (isPresenceOffline() || !connections.has(peerId) || typeof data.callId !== "string") {
     return;
   }
 
@@ -2051,6 +2189,11 @@ function handleIncomingCallRequest(peerId, data) {
 
 async function acceptVoiceCall() {
   if (callState.status !== "incoming" || !callState.peerId) {
+    return;
+  }
+
+  if (isPresenceOffline()) {
+    resetCallState();
     return;
   }
 
@@ -2101,6 +2244,11 @@ async function handleCallAccepted(peerId, data) {
     return;
   }
 
+  if (isPresenceOffline()) {
+    resetCallState();
+    return;
+  }
+
   clearOutgoingCallTimeout();
   try {
     const stream = await getVoiceStream();
@@ -2131,7 +2279,7 @@ function handleCallDeclined(peerId, data) {
   resetCallState();
 }
 
-function endVoiceCall({ notifyPeer = true, message = "" } = {}) {
+function endVoiceCall({ notifyPeer = true, message = "", silent = false } = {}) {
   clearOutgoingCallTimeout();
   const peerId = callState.peerId;
   const callId = callState.callId;
@@ -2144,13 +2292,13 @@ function endVoiceCall({ notifyPeer = true, message = "" } = {}) {
   }
 
   resetCallState();
-  if (wasJoined) {
+  if (wasJoined && !silent) {
     playCallLeaveSound();
   }
   if (message) {
     addSystemMessage(message);
   }
-  setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+  syncPresenceStatusIndicator();
 }
 
 function handleRemoteCallEnded(peerId, data) {
@@ -2168,6 +2316,11 @@ function rejectIncomingMediaCall(mediaConn) {
 }
 
 function handleIncomingMediaCall(mediaConn) {
+  if (isPresenceOffline()) {
+    rejectIncomingMediaCall(mediaConn);
+    return;
+  }
+
   const callId = mediaConn.metadata?.callId;
   const peerId = mediaConn.peer;
   if (
@@ -2378,9 +2531,9 @@ function sendProtocolMessage(conn, type, extra = {}) {
   return true;
 }
 
-function removePeer(peerId) {
+function removePeer(peerId, { silent = false } = {}) {
   if (callState.peerId === peerId) {
-    endVoiceCall({ notifyPeer: false, message: "Voice call ended." });
+    endVoiceCall({ notifyPeer: false, message: silent ? "" : "Voice call ended.", silent });
   }
 
   connections.delete(peerId);
@@ -2681,6 +2834,11 @@ function attachConnectionHandlers(conn, peerId, direction) {
   });
 
   conn.on("data", (data) => {
+    if (isPresenceOffline()) {
+      conn.close();
+      return;
+    }
+
     rememberConnectionIdentity(peerId, data);
 
     if (data?.type === "connection-request") {
@@ -2757,9 +2915,11 @@ function attachConnectionHandlers(conn, peerId, direction) {
       return;
     }
 
-    removePeer(peerId);
-    addSystemMessage(`${peerLabel()} closed the connection.`);
-    setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+    removePeer(peerId, { silent: suppressPeerCloseMessages || isPresenceOffline() });
+    if (!suppressPeerCloseMessages && !isPresenceOffline()) {
+      addSystemMessage(`${peerLabel()} closed the connection.`);
+      setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+    }
     refreshPeers();
   });
 
@@ -2781,6 +2941,10 @@ function attachConnectionHandlers(conn, peerId, direction) {
 function registerConnection(conn, options = {}) {
   const peerId = conn.peer;
   const direction = options.incoming ? "incoming" : "outgoing";
+  if (isPresenceOffline()) {
+    conn.close();
+    return;
+  }
   if (direction === "incoming") {
     rememberConnectionIdentity(peerId, conn.metadata);
   }
@@ -2832,6 +2996,11 @@ function connectToPeer(remoteId) {
     return;
   }
 
+  if (isPresenceOffline()) {
+    setStatus("offline", "You are offline. Switch to Online to connect.");
+    return;
+  }
+
   if (!remoteId || remoteId === myPeerId) {
     setStatus("offline", "Please enter a different peer ID.");
     return;
@@ -2876,6 +3045,8 @@ function renderBlockedList() {
     row.append(name, unblock);
     blockedList.append(row);
   }
+
+  syncPresenceStatusIndicator();
 }
 
 function renderContactNicknameList(focusContactId = "") {
@@ -2984,6 +3155,11 @@ function createPeer() {
     ownId.textContent = identity.id;
     setStatus("pending", "Aero ID ready. Share it with your chat partner.");
     updateConnectButton();
+    if (isPresenceOffline()) {
+      setPresenceStatus("offline", { force: true });
+      return;
+    }
+    syncPresenceStatusIndicator();
   });
 
   nextPeer.on("connection", (conn) => {
@@ -2995,8 +3171,16 @@ function createPeer() {
   });
 
   nextPeer.on("disconnected", () => {
+    if (intentionalPeerDisconnect) {
+      intentionalPeerDisconnect = false;
+      syncPresenceStatusIndicator();
+      return;
+    }
+
     setStatus("offline", "Signaling disconnected. Reconnecting...");
-    nextPeer.reconnect();
+    if (!isPresenceOffline()) {
+      nextPeer.reconnect();
+    }
   });
 
   nextPeer.on("error", (error) => {
@@ -3376,6 +3560,21 @@ headerUpdateButton.addEventListener("click", installAvailableUpdate);
 updateButton.addEventListener("click", installAvailableUpdate);
 appMenuUpdate.addEventListener("click", () => {
   installAvailableUpdate();
+  closeAppMenu();
+});
+
+appMenuOnline?.addEventListener("click", () => {
+  setPresenceStatus("online", { persist: true });
+  closeAppMenu();
+});
+
+appMenuDnd?.addEventListener("click", () => {
+  setPresenceStatus("dnd", { persist: true });
+  closeAppMenu();
+});
+
+appMenuOffline?.addEventListener("click", () => {
+  setPresenceStatus("offline", { persist: true });
   closeAppMenu();
 });
 
