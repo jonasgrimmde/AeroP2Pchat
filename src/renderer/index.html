@@ -265,7 +265,7 @@
         <div class="id-card">
           <span class="label">My Aero ID</span>
           <div class="id-row">
-            <code id="own-id">creating...</code>
+            <code id="own-id" class="auto-fit-text" data-fit-min="7" data-fit-max="11">creating...</code>
             <button id="copy-id" class="icon-button" type="button" title="Copy peer ID" aria-label="Copy peer ID">
               <i class="fa-regular fa-copy" aria-hidden="true"></i>
             </button>
@@ -276,7 +276,7 @@
           <label for="remote-id">Friend Aero ID</label>
           <div class="connect-row">
             <input id="remote-id" name="remote-id" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="aero-..." />
-            <button id="connect-button" type="submit" disabled>
+            <button id="connect-button" class="icon-only-button" type="submit" disabled title="Connect" aria-label="Connect">
               <i class="fa-solid fa-link" aria-hidden="true"></i>
               <span>Connect</span>
             </button>
@@ -323,18 +323,18 @@
         <header class="chat-header">
           <div class="chat-heading">
             <span id="chat-meta" class="chat-meta">Idle</span>
-            <h2 id="chat-title">No active chat</h2>
+            <h2 id="chat-title" class="auto-fit-text" data-fit-min="10" data-fit-max="16">No active chat</h2>
           </div>
           <div class="chat-actions">
-            <button id="call-chat" class="ghost-button call" type="button" disabled title="Start voice call">
+            <button id="call-chat" class="ghost-button call icon-only-button" type="button" disabled title="Start voice call" aria-label="Start voice call">
               <i class="fa-solid fa-phone" aria-hidden="true"></i>
               <span>Call</span>
             </button>
-            <button id="disconnect-chat" class="ghost-button danger" type="button" disabled>
+            <button id="disconnect-chat" class="ghost-button danger icon-only-button" type="button" disabled title="Disconnect" aria-label="Disconnect">
               <i class="fa-solid fa-plug-circle-xmark" aria-hidden="true"></i>
               <span>Disconnect</span>
             </button>
-            <button id="clear-chat" class="ghost-button" type="button">
+            <button id="clear-chat" class="ghost-button icon-only-button" type="button" title="Clear chat" aria-label="Clear chat">
               <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
               <span>Clear</span>
             </button>
@@ -346,28 +346,49 @@
           <span id="call-peer-name" class="call-peer-name">Peer</span>
           <span id="call-peer-status" class="call-peer-status hidden"></span>
           <div class="call-banner-actions">
-            <button id="call-accept" type="button" class="call-action accept hidden">
+            <button id="call-accept" type="button" class="call-action accept icon-only-button hidden" title="Accept call" aria-label="Accept call">
               <i class="fa-solid fa-phone" aria-hidden="true"></i>
               <span>Accept</span>
             </button>
-            <button id="call-decline" type="button" class="call-action decline hidden">
+            <button id="call-decline" type="button" class="call-action decline icon-only-button hidden" title="Decline call" aria-label="Decline call">
               <i class="fa-solid fa-phone-slash" aria-hidden="true"></i>
               <span>Decline</span>
             </button>
-            <button id="call-mute" type="button" class="call-action toggle hidden" title="Mute microphone" aria-label="Mute microphone">
+            <button id="call-mute" type="button" class="call-action toggle icon-only-button hidden" title="Mute microphone" aria-label="Mute microphone">
               <i class="fa-solid fa-microphone" aria-hidden="true"></i>
               <span>Mute</span>
             </button>
-            <button id="call-deafen" type="button" class="call-action toggle hidden" title="Deafen" aria-label="Deafen">
+            <button id="call-deafen" type="button" class="call-action toggle icon-only-button hidden" title="Deafen" aria-label="Deafen">
               <i class="fa-solid fa-headphones" aria-hidden="true"></i>
               <span>Deafen</span>
             </button>
-            <button id="call-hangup" type="button" class="call-action hangup hidden">
+            <button id="call-camera" type="button" class="call-action toggle icon-only-button hidden" title="Show camera" aria-label="Show camera">
+              <i class="fa-solid fa-video" aria-hidden="true"></i>
+              <span>Show Cam</span>
+            </button>
+            <button id="call-hangup" type="button" class="call-action hangup icon-only-button hidden" title="Hang up" aria-label="Hang up">
               <i class="fa-solid fa-phone-slash" aria-hidden="true"></i>
               <span>Hang up</span>
             </button>
           </div>
         </div>
+
+        <section id="call-stage" class="call-stage hidden" aria-label="Call stage">
+          <article id="local-participant-card" class="participant-card local">
+            <video id="local-video" class="participant-video hidden" autoplay muted playsinline></video>
+            <div class="participant-meta">
+              <strong id="local-participant-name" class="auto-fit-text" data-fit-min="9" data-fit-max="17">You</strong>
+              <span id="local-participant-status" class="auto-fit-text" data-fit-min="7" data-fit-max="9">You</span>
+            </div>
+          </article>
+          <article id="remote-participant-card" class="participant-card remote">
+            <video id="remote-video" class="participant-video hidden" autoplay playsinline></video>
+            <div class="participant-meta">
+              <strong id="remote-participant-name" class="auto-fit-text" data-fit-min="9" data-fit-max="17">Contact</strong>
+              <span id="remote-participant-status" class="auto-fit-text" data-fit-min="7" data-fit-max="9">Contact</span>
+            </div>
+          </article>
+        </section>
 
         <div id="messages" class="messages empty" aria-live="polite" data-empty="Share your Aero ID or connect to a contact."></div>
 
@@ -375,7 +396,7 @@
 
         <form id="message-form" class="message-form">
           <input id="message-input" name="message" autocomplete="off" placeholder="Write a message..." disabled />
-          <button id="send-button" type="submit" disabled>
+          <button id="send-button" class="icon-only-button" type="submit" disabled title="Send message" aria-label="Send message">
             <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
             <span>Send</span>
           </button>
