@@ -1266,6 +1266,10 @@ input:disabled {
     0 4px 12px rgba(34, 125, 158, 0.14);
 }
 
+.participant-card.hide-name.camera-on .participant-meta {
+  display: none;
+}
+
 .messages {
   grid-row: 4;
   position: relative;
@@ -2006,6 +2010,33 @@ input:disabled {
 
 .context-menu button.danger:hover {
   background: rgba(247, 122, 122, 0.28);
+}
+
+.participant-menu {
+  width: 220px;
+}
+
+.participant-menu-range {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 7px 2px;
+  color: #123f54;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.participant-menu-range input[type="range"] {
+  width: 100%;
+  margin: 0;
+}
+
+.participant-menu-range strong {
+  min-width: 38px;
+  text-align: right;
+  color: #33677d;
+  font-size: 10px;
 }
 
 @media (max-width: 700px) {

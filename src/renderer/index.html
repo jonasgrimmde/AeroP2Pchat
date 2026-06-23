@@ -684,5 +684,20 @@
         <span>Delete</span>
       </button>
     </div>
+
+    <div id="participant-menu" class="context-menu participant-menu hidden" role="menu">
+      <div class="context-menu-group">
+        <span class="context-menu-label">Volume</span>
+        <label class="participant-menu-range" for="participant-volume-slider">
+          <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+          <input id="participant-volume-slider" type="range" min="0" max="150" step="5" />
+          <strong id="participant-volume-value">100%</strong>
+        </label>
+      </div>
+      <button id="participant-toggle-name" type="button" role="menuitemcheckbox" aria-checked="true">
+        <i class="fa-solid fa-id-badge" aria-hidden="true"></i>
+        <span>Show Name</span>
+      </button>
+    </div>
   </body>
 </html>

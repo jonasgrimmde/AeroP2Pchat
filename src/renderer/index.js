@@ -123,6 +123,10 @@ const menuBlock = document.querySelector("#menu-block");
 const messageMenu = document.querySelector("#message-menu");
 const menuCopy = document.querySelector("#menu-copy");
 const menuDelete = document.querySelector("#menu-delete");
+const participantMenu = document.querySelector("#participant-menu");
+const participantVolumeSlider = document.querySelector("#participant-volume-slider");
+const participantVolumeValue = document.querySelector("#participant-volume-value");
+const participantToggleName = document.querySelector("#participant-toggle-name");
 const bootLogo = document.querySelector(".boot-logo");
 const bootStatus = document.querySelector("#boot-status");
 const bootProgressFill = document.querySelector("#boot-progress-fill");
@@ -142,7 +146,7 @@ const IDENTITY_STORAGE_KEY = "aero-p2p-chat.identity.v1";
 const CONTACTS_STORAGE_KEY = "aero-p2p-chat.contacts.v1";
 const MAX_MESSAGE_LENGTH = 4000;
 const HIGH_BUFFER_SIZE = 25;
-const VOICE_AUDIO_BITRATE = 64000;
+const VOICE_AUDIO_BITRATE = 96000;
 const CALL_PLACEHOLDER_VIDEO_FPS = 8;
 const CALL_CAMERA_WIDTH = 640;
 const CALL_CAMERA_HEIGHT = 640;
@@ -184,6 +188,7 @@ let ignoredUpdateVersion = "";
 let contacts = [];
 let contextContactId = "";
 let contextMessage = null;
+let contextParticipantTarget = null;
 let removeUpdateProgressListener = null;
 const remoteAudio = new Audio();
 remoteAudio.autoplay = true;
@@ -512,6 +517,10 @@ function loadContacts() {
       pinned: contact.pinned !== false,
       trusted: Boolean(contact.trusted),
       blocked: Boolean(contact.blocked),
+      playbackVolume: Number.isFinite(contact.playbackVolume)
+        ? Math.max(0, Math.min(150, Math.round(contact.playbackVolume)))
+        : 100,
+      showVideoName: contact.showVideoName !== false,
       pinnedAt: contact.pinnedAt || new Date().toISOString()
     }));
 }
@@ -616,18 +625,72 @@ function applyLiveVoiceSettingsToActiveStream() {
   return true;
 }
 
-function setRemoteVolume(volume) {
+function setRemoteVolume(volume, { persist = true } = {}) {
   normalizeAudioConfig();
   const nextVolume = Math.max(0, Math.min(100, Math.round(volume)));
-  appConfig.audio.remoteVolume = nextVolume;
+  if (persist) {
+    appConfig.audio.remoteVolume = nextVolume;
+  }
   remoteAudio.volume = nextVolume / 100;
   if (remoteVolumeSlider) {
-    remoteVolumeSlider.value = String(nextVolume);
+    remoteVolumeSlider.value = String(persist ? nextVolume : appConfig.audio.remoteVolume);
   }
   if (remoteVolumeLabel) {
-    remoteVolumeLabel.textContent = `${nextVolume}%`;
+    remoteVolumeLabel.textContent = `${persist ? nextVolume : appConfig.audio.remoteVolume}%`;
   }
-  updateRangeFill(remoteVolumeSlider, nextVolume, 0, 100);
+  updateRangeFill(remoteVolumeSlider, persist ? nextVolume : appConfig.audio.remoteVolume, 0, 100);
+}
+
+function getPeerPlaybackVolume(peerId = callState.peerId) {
+  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  return Number.isFinite(findContact(identityId)?.playbackVolume)
+    ? Math.max(0, Math.min(150, Math.round(findContact(identityId).playbackVolume)))
+    : 100;
+}
+
+function setPeerPlaybackVolume(peerId, volume) {
+  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  if (!identityId) {
+    return;
+  }
+
+  const nextVolume = Math.max(0, Math.min(150, Math.round(volume)));
+  upsertContact(identityId, { playbackVolume: nextVolume, pinned: true });
+  if (callState.peerId === peerId) {
+    setRemoteVolume(nextVolume, { persist: false });
+  }
+}
+
+function isOwnVideoNameVisible() {
+  if (!appConfig.callUi || typeof appConfig.callUi !== "object") {
+    appConfig.callUi = {};
+  }
+  return appConfig.callUi.showOwnVideoName !== false;
+}
+
+function setOwnVideoNameVisible(visible) {
+  if (!appConfig.callUi || typeof appConfig.callUi !== "object") {
+    appConfig.callUi = {};
+  }
+  appConfig.callUi.showOwnVideoName = visible !== false;
+  saveAppConfig();
+}
+
+function isPeerVideoNameVisible(peerId = callState.peerId) {
+  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  if (!identityId) {
+    return true;
+  }
+  return findContact(identityId)?.showVideoName !== false;
+}
+
+function setPeerVideoNameVisible(peerId, visible) {
+  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  if (!identityId) {
+    return;
+  }
+
+  upsertContact(identityId, { showVideoName: visible !== false, pinned: true });
 }
 
 function setMicSensitivity(value, { persist = false } = {}) {
@@ -1203,6 +1266,10 @@ function upsertContact(id, updates = {}) {
       pinned: updates.pinned ?? true,
       trusted: Boolean(updates.trusted),
       blocked: Boolean(updates.blocked),
+      playbackVolume: Number.isFinite(updates.playbackVolume)
+        ? Math.max(0, Math.min(150, Math.round(updates.playbackVolume)))
+        : 100,
+      showVideoName: updates.showVideoName !== false,
       pinnedAt: new Date().toISOString()
     });
   }
@@ -2416,6 +2483,8 @@ function refreshCallStage() {
   const remoteLabel = getRemoteParticipantLabel(stagePeerId);
   const showLocalVideo = inCallWithStagePeer && callState.localCameraEnabled && Boolean(callState.localCameraStream);
   const showRemoteVideo = inCallWithStagePeer && callState.remoteCameraEnabled && Boolean(callState.remoteStream);
+  const showLocalName = !showLocalVideo || isOwnVideoNameVisible() || Boolean(callState.localErrorMessage);
+  const showRemoteName = !showRemoteVideo || isPeerVideoNameVisible(stagePeerId);
 
   callStage?.classList.remove("hidden");
   if (localParticipantName) {
@@ -2432,6 +2501,8 @@ function refreshCallStage() {
   if (remoteParticipantStatus) {
     remoteParticipantStatus.textContent = "";
   }
+  localParticipantCard?.classList.toggle("hide-name", !showLocalName);
+  remoteParticipantCard?.classList.toggle("hide-name", !showRemoteName);
 
   setVideoElementStream(localVideo, showLocalVideo ? callState.localCameraStream : null);
   setVideoElementStream(remoteVideo, showRemoteVideo ? callState.remoteStream : null);
@@ -3472,7 +3543,7 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
 
     callState.remoteStream = stream;
     remoteAudio.srcObject = stream;
-    setRemoteVolume(appConfig.audio.remoteVolume);
+    setRemoteVolume(getPeerPlaybackVolume(peerId), { persist: false });
     remoteAudio.muted = callState.deafened;
     await applyAudioOutputDevice();
     remoteAudio.play().catch(() => {});
@@ -3821,6 +3892,7 @@ function openContactMenu(event, id) {
   event.preventDefault();
   closeMessageMenu();
   closeAppMenu();
+  closeParticipantMenu();
   contextContactId = id;
 
   const contact = findContact(id);
@@ -3843,6 +3915,7 @@ function openAppMenu(event) {
   event.preventDefault();
   closeContactMenu();
   closeMessageMenu();
+  closeParticipantMenu();
 
   const rect = titlebarLogo.getBoundingClientRect();
   appMenu.style.left = `${Math.min(rect.left, window.innerWidth - 164)}px`;
@@ -3858,6 +3931,7 @@ function openMessageMenu(event, messageItem) {
   event.preventDefault();
   closeContactMenu();
   closeAppMenu();
+  closeParticipantMenu();
 
   contextMessage = messageItem;
 
@@ -3869,6 +3943,36 @@ function openMessageMenu(event, messageItem) {
 function closeMessageMenu() {
   messageMenu.classList.add("hidden");
   contextMessage = null;
+}
+
+function openParticipantMenu(event, target) {
+  if (!target || callState.status === "idle") {
+    return;
+  }
+
+  event.preventDefault();
+  closeContactMenu();
+  closeAppMenu();
+  closeMessageMenu();
+  contextParticipantTarget = target;
+
+  const peerId = callState.peerId;
+  const peerVolume = getPeerPlaybackVolume(peerId);
+  const showName = target === "local" ? isOwnVideoNameVisible() : isPeerVideoNameVisible(peerId);
+
+  participantVolumeSlider.value = String(peerVolume);
+  participantVolumeValue.textContent = `${peerVolume}%`;
+  participantVolumeSlider.disabled = target === "local";
+  participantToggleName.setAttribute("aria-checked", String(showName));
+  participantToggleName.classList.toggle("hidden", target === "remote" ? !callState.remoteCameraEnabled : !callState.localCameraEnabled);
+  participantMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 202)}px`;
+  participantMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 120)}px`;
+  participantMenu.classList.remove("hidden");
+}
+
+function closeParticipantMenu() {
+  participantMenu.classList.add("hidden");
+  contextParticipantTarget = null;
 }
 
 function deleteMessageLocally(peerId, messageId) {
@@ -4873,6 +4977,14 @@ callHangup.addEventListener("click", () => {
   endVoiceCall({ notifyPeer: true, message: "Voice call ended." });
 });
 
+localParticipantCard?.addEventListener("contextmenu", (event) => {
+  openParticipantMenu(event, "local");
+});
+
+remoteParticipantCard?.addEventListener("contextmenu", (event) => {
+  openParticipantMenu(event, "remote");
+});
+
 disconnectChat.addEventListener("click", () => {
   if (!activePeerId) {
     return;
@@ -4970,6 +5082,31 @@ remoteVolumeSlider.addEventListener("input", () => {
 remoteVolumeSlider.addEventListener("change", () => {
   setRemoteVolume(Number(remoteVolumeSlider.value || 0));
   saveAudioConfig();
+});
+
+participantVolumeSlider?.addEventListener("input", () => {
+  if (!callState.peerId) {
+    return;
+  }
+
+  const nextVolume = Number(participantVolumeSlider.value || 100);
+  participantVolumeValue.textContent = `${nextVolume}%`;
+  setPeerPlaybackVolume(callState.peerId, nextVolume);
+});
+
+participantToggleName?.addEventListener("click", () => {
+  if (!contextParticipantTarget) {
+    return;
+  }
+
+  const nextValue = participantToggleName.getAttribute("aria-checked") !== "true";
+  participantToggleName.setAttribute("aria-checked", String(nextValue));
+  if (contextParticipantTarget === "local") {
+    setOwnVideoNameVisible(nextValue);
+  } else if (callState.peerId) {
+    setPeerVideoNameVisible(callState.peerId, nextValue);
+  }
+  refreshCallStage();
 });
 
 autostartToggle.addEventListener("change", () => {
@@ -5334,6 +5471,9 @@ document.addEventListener("click", (event) => {
   if (!messageMenu.contains(event.target)) {
     closeMessageMenu();
   }
+  if (!participantMenu.contains(event.target)) {
+    closeParticipantMenu();
+  }
 });
 
 document.addEventListener("keydown", (event) => {
@@ -5341,6 +5481,7 @@ document.addEventListener("keydown", (event) => {
     closeAppMenu();
     closeContactMenu();
     closeMessageMenu();
+    closeParticipantMenu();
     updateModal.classList.add("hidden");
     settingsModal.classList.add("hidden");
   }
