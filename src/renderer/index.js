@@ -5,6 +5,7 @@ import packageInfo from "../../package.json";
 import "./styles.css";
 
 const titlebarLogo = document.querySelector("#titlebar-logo");
+const titlebarPresence = document.querySelector("#titlebar-presence");
 const titlebarSubtitle = document.querySelector("#titlebar-subtitle");
 const windowMinimize = document.querySelector("#window-minimize");
 const windowMaximize = document.querySelector("#window-maximize");
@@ -694,6 +695,7 @@ function renderAppSettings() {
   normalizeAppSettings();
   applySidebarWidth(appConfig.appSettings.sidebarWidth);
   updatePresenceMenuState();
+  updateTitlebarPresenceIndicator();
   autostartToggle.checked = appConfig.appSettings.autostart;
   autostartOpen.checked = !appConfig.appSettings.startHidden;
   autostartHidden.checked = appConfig.appSettings.startHidden;
@@ -730,6 +732,7 @@ function syncPresenceStatusIndicator() {
   }
 
   const presenceStatus = getPresenceStatus();
+  updateTitlebarPresenceIndicator();
   if (presenceStatus === "offline") {
     setStatus("offline", "Offline");
     return;
@@ -774,6 +777,14 @@ function updatePresenceMenuState() {
   }
 }
 
+function updateTitlebarPresenceIndicator() {
+  if (!titlebarPresence) {
+    return;
+  }
+
+  titlebarPresence.className = `titlebar-presence ${getPresenceStatus()}`;
+}
+
 function setPresenceStatus(status, { persist = false, force = false } = {}) {
   normalizeAppSettings();
   const nextStatus = ["online", "dnd", "offline"].includes(status) ? status : "online";
@@ -784,6 +795,7 @@ function setPresenceStatus(status, { persist = false, force = false } = {}) {
 
   appConfig.appSettings.presenceStatus = nextStatus;
   updatePresenceMenuState();
+  updateTitlebarPresenceIndicator();
   updateConnectButton();
   if (persist) {
     saveAppSettings({ presenceStatus: nextStatus });

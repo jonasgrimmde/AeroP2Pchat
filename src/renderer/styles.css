@@ -101,10 +101,19 @@ body.app-boot-finish .window-frame {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
   gap: 7px;
   min-width: 0;
+}
+
+.titlebar-avatar {
+  position: relative;
+  width: 28px;
+  height: 32px;
+  display: grid;
+  place-items: start center;
+  -webkit-app-region: no-drag;
 }
 
 .titlebar-logo {
@@ -116,7 +125,6 @@ body.app-boot-finish .window-frame {
   box-shadow:
     inset -4px -5px 8px rgba(0, 70, 110, 0.2),
     0 3px 8px rgba(0, 96, 140, 0.22);
-  -webkit-app-region: no-drag;
   cursor: pointer;
 }
 
@@ -129,6 +137,47 @@ body.app-boot-finish .window-frame {
 
 .titlebar-logo.update-available {
   animation: updateLogoPulse 1.45s ease-in-out infinite;
+}
+
+.titlebar-presence {
+  position: absolute;
+  right: 0;
+  bottom: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 1px 2px rgba(0, 78, 112, 0.16),
+    0 0 0 1px rgba(29, 100, 126, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.02)),
+    var(--presence-color, #35d27e);
+}
+
+.titlebar-presence::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background:
+    url("/img/bubbles.png") center/cover no-repeat,
+    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.72), transparent 48%);
+  opacity: 0.96;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.titlebar-presence.online {
+  --presence-color: #35d27e;
+}
+
+.titlebar-presence.dnd {
+  --presence-color: #ffb347;
+}
+
+.titlebar-presence.offline {
+  --presence-color: #ff6876;
 }
 
 @keyframes updateLogoPulse {
