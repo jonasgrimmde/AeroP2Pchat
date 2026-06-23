@@ -177,7 +177,7 @@ body.app-boot-finish .window-frame {
 }
 
 .titlebar-presence.offline {
-  --presence-color: #ff6876;
+  --presence-color: #8c9aa3;
 }
 
 @keyframes updateLogoPulse {
@@ -603,7 +603,7 @@ input:disabled {
 }
 
 .status-dot.offline {
-  background: #ff6876;
+  background: #8c9aa3;
 }
 
 .peers-card {
@@ -1591,7 +1591,7 @@ input:disabled {
 }
 
 .presence-dot.offline {
-  background: #ff6876;
+  background: #8c9aa3;
 }
 
 .context-menu button:hover {
