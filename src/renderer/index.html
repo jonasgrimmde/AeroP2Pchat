@@ -298,6 +298,7 @@
 
         <div class="peers-card">
           <span class="label">Contacts</span>
+          <input id="contact-search" class="contact-search" type="search" autocomplete="off" placeholder="Search contacts" />
           <div id="peer-list" class="peer-list">
             <span class="empty-peer">No contacts yet</span>
           </div>
@@ -339,6 +340,7 @@
 
         <div id="call-banner" class="call-banner hidden" aria-live="polite">
           <span id="call-text">Voice call</span>
+          <span id="call-peer-status" class="call-peer-status hidden"></span>
           <div class="call-banner-actions">
             <button id="call-accept" type="button" class="call-action accept hidden">
               <i class="fa-solid fa-phone" aria-hidden="true"></i>
@@ -364,6 +366,8 @@
         </div>
 
         <div id="messages" class="messages empty" aria-live="polite" data-empty="Share your Aero ID or connect to a contact."></div>
+
+        <div id="typing-indicator" class="typing-indicator hidden" aria-live="polite"></div>
 
         <form id="message-form" class="message-form">
           <input id="message-input" name="message" autocomplete="off" placeholder="Write a message..." disabled />
@@ -420,12 +424,12 @@
                 </label>
                 <label>
                   <input id="autostart-hidden" type="radio" name="autostart-mode" value="hidden" />
-                  <span>Start hidden</span>
+                  <span>Start minimized to tray</span>
                 </label>
               </div>
               <label class="settings-check">
                 <input id="close-to-tray-toggle" type="checkbox" />
-                <span>Keep running in tray when closing the window</span>
+                <span>Close button sends Aero to tray</span>
               </label>
             </div>
           </section>
@@ -547,6 +551,10 @@
               <label class="settings-check">
                 <input id="focused-notifications-toggle" type="checkbox" />
                 <span>Show notifications while Aero is focused</span>
+              </label>
+              <label class="settings-check">
+                <input id="read-receipts-toggle" type="checkbox" />
+                <span>Send and show read receipts</span>
               </label>
             </div>
           </section>

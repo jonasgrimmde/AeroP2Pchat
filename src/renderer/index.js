@@ -5,6 +5,7 @@ import packageInfo from "../../package.json";
 import "./styles.css";
 
 const titlebarLogo = document.querySelector("#titlebar-logo");
+const titlebarAvatar = document.querySelector(".titlebar-avatar");
 const titlebarPresence = document.querySelector("#titlebar-presence");
 const titlebarSubtitle = document.querySelector("#titlebar-subtitle");
 const windowMinimize = document.querySelector("#window-minimize");
@@ -20,6 +21,7 @@ const statusText = document.querySelector("#status-text");
 const retryConnectButton = document.querySelector("#retry-connect");
 const appShell = document.querySelector(".app-shell");
 const sidebarResizer = document.querySelector("#sidebar-resizer");
+const contactSearchInput = document.querySelector("#contact-search");
 const peerList = document.querySelector("#peer-list");
 const chatTitle = document.querySelector("#chat-title");
 const callChat = document.querySelector("#call-chat");
@@ -27,12 +29,14 @@ const clearChat = document.querySelector("#clear-chat");
 const disconnectChat = document.querySelector("#disconnect-chat");
 const callBanner = document.querySelector("#call-banner");
 const callText = document.querySelector("#call-text");
+const callPeerStatus = document.querySelector("#call-peer-status");
 const callAccept = document.querySelector("#call-accept");
 const callDecline = document.querySelector("#call-decline");
 const callMute = document.querySelector("#call-mute");
 const callDeafen = document.querySelector("#call-deafen");
 const callHangup = document.querySelector("#call-hangup");
 const messages = document.querySelector("#messages");
+const typingIndicator = document.querySelector("#typing-indicator");
 const messageForm = document.querySelector("#message-form");
 const messageInput = document.querySelector("#message-input");
 const sendButton = document.querySelector("#send-button");
@@ -80,6 +84,7 @@ const notificationsToggle = document.querySelector("#notifications-toggle");
 const messageNotificationsToggle = document.querySelector("#message-notifications-toggle");
 const callNotificationsToggle = document.querySelector("#call-notifications-toggle");
 const focusedNotificationsToggle = document.querySelector("#focused-notifications-toggle");
+const readReceiptsToggle = document.querySelector("#read-receipts-toggle");
 const soundsToggle = document.querySelector("#sounds-toggle");
 const messageSoundToggle = document.querySelector("#message-sound-toggle");
 const ringtoneSoundToggle = document.querySelector("#ringtone-sound-toggle");
@@ -127,6 +132,8 @@ const MAX_INCOMING_MESSAGES_PER_WINDOW = 35;
 const CONNECT_ACTION_COOLDOWN_MS = 1200;
 const CALL_ACTION_COOLDOWN_MS = 900;
 const OUTGOING_CALL_TIMEOUT_MS = 45000;
+const TYPING_IDLE_MS = 1800;
+const TYPING_SEND_INTERVAL_MS = 1200;
 const DEFAULT_MIC_SENSITIVITY = 55;
 const DEFAULT_MIC_BOOST = 100;
 const DEFAULT_MIC_NOISE_REDUCTION = 55;
@@ -193,6 +200,10 @@ const outgoingMessageTimers = new Map();
 const outgoingMessageNextSendAt = new Map();
 const incomingMessageWindows = new Map();
 const actionCooldowns = new Map();
+const typingStates = new Map();
+const typingTimers = new Map();
+const localTypingTimers = new Map();
+const lastTypingSentAt = new Map();
 let intentionalPeerDisconnect = false;
 let suppressPeerCloseMessages = false;
 const callState = {
@@ -207,6 +218,10 @@ const callState = {
   deafened: false,
   mutedBeforeDeafen: null,
   joined: false
+};
+const remoteCallStatus = {
+  muted: false,
+  deafened: false
 };
 
 function setBootProgress(percent, text) {
@@ -711,6 +726,7 @@ function normalizeAppSettings() {
     autostart: appConfig.appSettings.autostart !== false,
     startHidden: appConfig.appSettings.startHidden !== false,
     closeToTray: appConfig.appSettings.closeToTray !== false,
+    readReceipts: appConfig.appSettings.readReceipts !== false,
     presenceStatus: ["online", "dnd", "offline"].includes(appConfig.appSettings.presenceStatus)
       ? appConfig.appSettings.presenceStatus
       : "online",
@@ -759,6 +775,7 @@ function renderAppSettings() {
   autostartHidden.disabled = !appConfig.appSettings.autostart;
   autostartModeGroup.classList.toggle("disabled", !appConfig.appSettings.autostart);
   closeToTrayToggle.checked = appConfig.appSettings.closeToTray;
+  readReceiptsToggle.checked = appConfig.appSettings.readReceipts;
 
   notificationsToggle.checked = appConfig.notificationSettings.enabled;
   messageNotificationsToggle.checked = appConfig.notificationSettings.messages;
@@ -1224,6 +1241,27 @@ function getVisibleContacts() {
   return contacts.filter((contact) => contact.pinned && !contact.blocked);
 }
 
+function getContactSearchQuery() {
+  return normalizeAeroId(contactSearchInput?.value || "");
+}
+
+function contactMatchesSearch(peerId, connOrContact = null) {
+  const query = getContactSearchQuery();
+  if (!query) {
+    return true;
+  }
+
+  const label = getPeerLabel(peerId, connOrContact);
+  return normalizeAeroId(`${peerId} ${label}`).includes(query);
+}
+
+function appendPeerSectionLabel(text) {
+  const label = document.createElement("span");
+  label.className = "peer-section-label";
+  label.textContent = text;
+  peerList.append(label);
+}
+
 function renderIcon(className) {
   const icon = document.createElement("i");
   icon.className = className;
@@ -1253,7 +1291,7 @@ function createContactBadges({ pinned = false, trusted = false, blocked = false,
     badges.append(createBadge("fa-solid fa-shield-halved", "Trusted", "trusted"));
   }
   if (pinned) {
-    badges.append(createBadge("fa-solid fa-thumbtack", "Pinned", "pinned"));
+    badges.append(createBadge("fa-solid fa-star", "Favorite", "pinned"));
   }
   if (blocked) {
     badges.append(createBadge("fa-solid fa-ban", "Blocked", "blocked"));
@@ -1326,8 +1364,8 @@ function showUnreachablePeerFeedback(peerId, { label = "", reason = "" } = {}) {
   }
 
   showConnectRetry(peerId);
-  setStatus("offline", `${peerLabel} is not reachable right now. Use Retry to try again.`);
-  addSystemMessage(reason || `${peerLabel} is not reachable right now.`);
+  setStatus("offline", `${peerLabel} is offline, unreachable, or not accepting connections. Use Retry to try again.`);
+  addSystemMessage(reason || `${peerLabel} is offline, unreachable, or not accepting connections right now.`);
   refreshPeers();
 }
 
@@ -1503,6 +1541,86 @@ function updateEmptyChatState() {
   messages.classList.toggle("empty", messages.childElementCount === 0);
 }
 
+function updateTypingIndicator() {
+  if (!typingIndicator) {
+    return;
+  }
+
+  if (!activePeerId || !typingStates.get(activePeerId)) {
+    typingIndicator.classList.add("hidden");
+    typingIndicator.textContent = "";
+    return;
+  }
+
+  typingIndicator.textContent = `${getPeerLabel(activePeerId, connections.get(activePeerId))} is typing...`;
+  typingIndicator.classList.remove("hidden");
+}
+
+function setRemoteTyping(peerId, typing) {
+  typingStates.set(peerId, Boolean(typing));
+  const existing = typingTimers.get(peerId);
+  if (existing) {
+    clearTimeout(existing);
+    typingTimers.delete(peerId);
+  }
+
+  if (typing) {
+    typingTimers.set(peerId, setTimeout(() => {
+      typingStates.delete(peerId);
+      typingTimers.delete(peerId);
+      updateTypingIndicator();
+    }, TYPING_IDLE_MS + 600));
+  }
+
+  updateTypingIndicator();
+}
+
+function sendTypingState(peerId, typing, { force = false } = {}) {
+  const conn = connections.get(peerId);
+  if (!conn?.open) {
+    return;
+  }
+
+  const now = Date.now();
+  if (!force && typing && now - (lastTypingSentAt.get(peerId) || 0) < TYPING_SEND_INTERVAL_MS) {
+    return;
+  }
+
+  lastTypingSentAt.set(peerId, now);
+  sendProtocolMessage(conn, "typing", { typing: Boolean(typing) });
+}
+
+function scheduleLocalTypingStop(peerId) {
+  const existing = localTypingTimers.get(peerId);
+  if (existing) {
+    clearTimeout(existing);
+  }
+
+  localTypingTimers.set(peerId, setTimeout(() => {
+    localTypingTimers.delete(peerId);
+    sendTypingState(peerId, false, { force: true });
+  }, TYPING_IDLE_MS));
+}
+
+function sendReadReceiptsForActiveChat() {
+  if (!appConfig.appSettings?.readReceipts || !activePeerId) {
+    return;
+  }
+
+  const conn = connections.get(activePeerId);
+  if (!conn?.open) {
+    return;
+  }
+
+  for (const item of ensureChatHistory(activePeerId)) {
+    if (item.sender !== "them" || item.readReceiptSent || !item.id) {
+      continue;
+    }
+    item.readReceiptSent = true;
+    sendProtocolMessage(conn, "message-read", { messageId: item.id });
+  }
+}
+
 function createSystemMessage(text) {
   const row = document.createElement("div");
   row.className = "message-row system";
@@ -1511,7 +1629,7 @@ function createSystemMessage(text) {
 }
 
 function createChatMessage(item) {
-  const { id, text, sender, peerId, time } = item;
+  const { id, text, sender, peerId, time, deliveryStatus = sender === "me" ? "sent" : "" } = item;
   const row = document.createElement("div");
   row.className = `message-row ${sender === "me" ? "mine" : "theirs"}`;
   row.dataset.messageId = id;
@@ -1522,6 +1640,14 @@ function createChatMessage(item) {
   const meta = document.createElement("span");
   meta.className = "bubble-meta";
   meta.textContent = `${sender === "me" ? "You" : getPeerLabel(peerId, connections.get(peerId))} · ${time ?? formatTime()}`;
+  if (sender === "me") {
+    const state = document.createElement("span");
+    state.className = `message-state ${deliveryStatus}`;
+    state.title = formatDeliveryStatus(deliveryStatus);
+    state.setAttribute("aria-label", formatDeliveryStatus(deliveryStatus));
+    state.append(...createDeliveryStatusIcons(deliveryStatus));
+    meta.append(state);
+  }
 
   const body = document.createElement("p");
   body.textContent = text;
@@ -1534,6 +1660,62 @@ function createChatMessage(item) {
   });
 
   return row;
+}
+
+function formatDeliveryStatus(status) {
+  if (status === "read") {
+    return appConfig.appSettings?.readReceipts ? "Read" : "Delivered";
+  }
+  if (status === "delivered") {
+    return "Delivered";
+  }
+  return "Sent";
+}
+
+function createDeliveryStatusIcons(status) {
+  const visibleStatus = status === "read" && !appConfig.appSettings?.readReceipts ? "delivered" : status;
+  const count = visibleStatus === "sent" ? 1 : 2;
+  return Array.from({ length: count }, () => {
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-check";
+    icon.setAttribute("aria-hidden", "true");
+    return icon;
+  });
+}
+
+function refreshMessageDeliveryState(peerId, messageId) {
+  if (activePeerId !== peerId) {
+    return;
+  }
+
+  const item = ensureChatHistory(peerId).find((message) => message.id === messageId);
+  const row = item ? messages.querySelector(`[data-message-id="${messageId}"]`) : null;
+  const state = row?.querySelector(".message-state");
+  if (!item || !state) {
+    return;
+  }
+
+  state.className = `message-state ${item.deliveryStatus || "sent"}`;
+  state.title = formatDeliveryStatus(item.deliveryStatus || "sent");
+  state.setAttribute("aria-label", formatDeliveryStatus(item.deliveryStatus || "sent"));
+  state.replaceChildren(...createDeliveryStatusIcons(item.deliveryStatus || "sent"));
+}
+
+function setMessageDeliveryState(peerId, messageId, status) {
+  const item = ensureChatHistory(peerId).find((message) => message.id === messageId && message.sender === "me");
+  if (!item) {
+    return;
+  }
+
+  const order = { sent: 0, delivered: 1, read: 2 };
+  const current = order[item.deliveryStatus || "sent"] ?? 0;
+  const next = order[status] ?? 0;
+  if (next < current) {
+    return;
+  }
+
+  item.deliveryStatus = status;
+  refreshMessageDeliveryState(peerId, messageId);
 }
 
 function appendMessageRow(row) {
@@ -1552,6 +1734,8 @@ function renderChatHistory() {
   }
 
   updateEmptyChatState();
+  updateTypingIndicator();
+  sendReadReceiptsForActiveChat();
 }
 
 function parseManifest(text) {
@@ -1842,7 +2026,8 @@ function sendChatText(peerId, rawText) {
       text: payload.text,
       sender: "me",
       peerId,
-      time: payload.time
+      time: payload.time,
+      deliveryStatus: "sent"
     }
   });
   outgoingMessageQueues.set(peerId, queue);
@@ -1902,6 +2087,17 @@ function refreshCallUi() {
   callDeafen.title = callState.deafened ? "Undeafen" : "Deafen";
   callMute.setAttribute("aria-label", callMute.title);
   callDeafen.setAttribute("aria-label", callDeafen.title);
+  const remoteStates = [
+    remoteCallStatus.muted ? "muted" : "",
+    remoteCallStatus.deafened ? "deafened" : ""
+  ].filter(Boolean);
+  if (remoteStates.length > 0 && callState.status !== "idle") {
+    callPeerStatus.textContent = remoteStates.join(" / ");
+    callPeerStatus.classList.remove("hidden");
+  } else {
+    callPeerStatus.textContent = "";
+    callPeerStatus.classList.add("hidden");
+  }
 
   if (callState.status === "idle") {
     callBanner.classList.add("hidden");
@@ -1985,6 +2181,9 @@ function resetCallState() {
     mutedBeforeDeafen: null,
     joined: false
   });
+  remoteCallStatus.muted = false;
+  remoteCallStatus.deafened = false;
+  titlebarAvatar?.classList.remove("voice-active");
 
   mediaConn?.close();
   if (incomingMediaConn && incomingMediaConn !== mediaConn) {
@@ -2004,12 +2203,16 @@ function applyLocalMuteState() {
   callState.localStream?.getAudioTracks().forEach((track) => {
     track.enabled = !callState.muted;
   });
+  if (callState.muted) {
+    titlebarAvatar?.classList.remove("voice-active");
+  }
 }
 
 function setCallMuted(muted) {
   callState.muted = Boolean(muted);
   applyLocalMuteState();
   refreshCallUi();
+  sendLocalCallStatus();
 }
 
 function setCallDeafened(deafened) {
@@ -2027,6 +2230,29 @@ function setCallDeafened(deafened) {
   applyLocalMuteState();
   remoteAudio.muted = callState.deafened;
   refreshCallUi();
+  sendLocalCallStatus();
+}
+
+function sendLocalCallStatus() {
+  if (!callState.peerId || callState.status === "idle") {
+    return;
+  }
+
+  sendProtocolMessage(connections.get(callState.peerId), "call-status", {
+    callId: callState.callId,
+    muted: callState.muted,
+    deafened: callState.deafened
+  });
+}
+
+function handleRemoteCallStatus(peerId, data) {
+  if (callState.peerId !== peerId || callState.callId !== data.callId) {
+    return;
+  }
+
+  remoteCallStatus.muted = Boolean(data.muted);
+  remoteCallStatus.deafened = Boolean(data.deafened);
+  refreshCallUi();
 }
 
 function stopVoiceMeterLoop() {
@@ -2038,6 +2264,7 @@ function stopVoiceMeterLoop() {
 
 function resetVoiceProcessingState() {
   stopVoiceMeterLoop();
+  titlebarAvatar?.classList.remove("voice-active");
   if (pendingVoiceSettingsReapply) {
     clearTimeout(pendingVoiceSettingsReapply);
     pendingVoiceSettingsReapply = null;
@@ -2156,6 +2383,7 @@ function updateVoiceMeter() {
     ? 0.18 - noiseReductionFactor * 0.1
     : 0.12;
   const gateOpen = localVoiceGateIsOpen ? 1 : Math.max(0.06, closedGain);
+  titlebarAvatar?.classList.toggle("voice-active", localVoiceGateIsOpen && !callState.muted);
 
   localVoiceGateNode.gain.setTargetAtTime(gateOpen, now, gateOpen > 0.5 ? 0.012 : 0.18);
   localVoiceBoostNode.gain.setTargetAtTime(getMicBoostGain(), now, 0.03);
@@ -2415,6 +2643,24 @@ async function applyVoiceSettingsToActiveCall() {
   remoteAudio.muted = callState.deafened;
 }
 
+async function checkMicrophoneBeforeCall() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: createVoiceAudioConstraints(),
+      video: false
+    });
+    stream.getTracks().forEach((track) => track.stop());
+    return true;
+  } catch (error) {
+    const message = error?.name === "NotAllowedError"
+      ? "Microphone access is blocked. Allow it before starting a call."
+      : "Could not access your microphone. Check your input device.";
+    setStatus("offline", message);
+    addSystemMessage(message);
+    return false;
+  }
+}
+
 function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
   callState.mediaConn = mediaConn;
   tuneOutgoingAudio(mediaConn);
@@ -2435,6 +2681,7 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
       playCallJoinSound();
     }
     setCallState("active");
+    sendLocalCallStatus();
     setStatus("online", `Voice call with ${getPeerLabel(peerId, connections.get(peerId))}`);
   });
 
@@ -2465,6 +2712,10 @@ async function startVoiceCall() {
   const conn = connections.get(activePeerId);
   if (!conn?.open) {
     setStatus("offline", "The active peer is not ready yet.");
+    return;
+  }
+
+  if (!(await checkMicrophoneBeforeCall())) {
     return;
   }
 
@@ -2848,6 +3099,18 @@ function removePeer(peerId, { silent = false } = {}) {
   clearConnectTimeout(peerId);
   clearOutgoingMessageQueue(peerId);
   incomingMessageWindows.delete(peerId);
+  typingStates.delete(peerId);
+  const typingTimer = typingTimers.get(peerId);
+  if (typingTimer) {
+    clearTimeout(typingTimer);
+    typingTimers.delete(peerId);
+  }
+  const localTypingTimer = localTypingTimers.get(peerId);
+  if (localTypingTimer) {
+    clearTimeout(localTypingTimer);
+    localTypingTimers.delete(peerId);
+  }
+  lastTypingSentAt.delete(peerId);
   if (callState.peerId === peerId) {
     endVoiceCall({ notifyPeer: false, message: silent ? "" : "Voice call ended.", silent });
   }
@@ -2858,13 +3121,15 @@ function removePeer(peerId, { silent = false } = {}) {
     activePeerId = connections.keys().next().value ?? null;
     renderChatHistory();
   }
+  updateTypingIndicator();
 }
 
 function refreshPeers() {
   peerList.replaceChildren();
+  const query = getContactSearchQuery();
 
   if (connections.size === 0 && pendingConnections.size === 0) {
-    if (contacts.length === 0) {
+    if (contacts.length === 0 && !query) {
       const empty = document.createElement("span");
       empty.className = "empty-peer";
       empty.textContent = "No contacts yet";
@@ -2883,11 +3148,14 @@ function refreshPeers() {
     ...pendingConnections.keys()
   ]);
 
-  for (const contact of getVisibleContacts()) {
-    if (visibleContactIds.has(contact.id)) {
-      continue;
-    }
+  const favoriteContacts = getVisibleContacts()
+    .filter((contact) => !visibleContactIds.has(contact.id))
+    .filter((contact) => contactMatchesSearch(contact.id));
+  if (favoriteContacts.length > 0) {
+    appendPeerSectionLabel("Favorites");
+  }
 
+  for (const contact of favoriteContacts) {
     const row = document.createElement("div");
     row.className = "contact-item";
 
@@ -2934,7 +3202,12 @@ function refreshPeers() {
     peerList.append(row);
   }
 
-  for (const [peerId, entry] of pendingConnections) {
+  const pendingEntries = [...pendingConnections].filter(([peerId, entry]) => contactMatchesSearch(peerId, entry.conn));
+  if (pendingEntries.length > 0) {
+    appendPeerSectionLabel("Requests");
+  }
+
+  for (const [peerId, entry] of pendingEntries) {
     const peerLabel = getPeerLabel(peerId, entry.conn);
     if (entry.direction === "incoming") {
       const row = document.createElement("div");
@@ -3000,7 +3273,12 @@ function refreshPeers() {
     peerList.append(waiting);
   }
 
-  for (const [peerId, conn] of connections) {
+  const connectionEntries = [...connections].filter(([peerId, conn]) => contactMatchesSearch(peerId, conn));
+  if (connectionEntries.length > 0) {
+    appendPeerSectionLabel("Connected");
+  }
+
+  for (const [peerId, conn] of connectionEntries) {
     const peerLabel = getPeerLabel(peerId, conn);
     const button = document.createElement("button");
     button.type = "button";
@@ -3034,6 +3312,13 @@ function refreshPeers() {
       openContactMenu(event, getPeerIdentityId(peerId, conn));
     });
     peerList.append(button);
+  }
+
+  if (peerList.childElementCount === 0) {
+    const empty = document.createElement("span");
+    empty.className = "empty-peer";
+    empty.textContent = query ? "No matching contacts" : "No contacts yet";
+    peerList.append(empty);
   }
 
   const activeConn = activePeerId ? connections.get(activePeerId) : null;
@@ -3210,6 +3495,28 @@ function attachConnectionHandlers(conn, peerId, direction) {
       return;
     }
 
+    if (data?.type === "call-status") {
+      handleRemoteCallStatus(peerId, data);
+      return;
+    }
+
+    if (data?.type === "typing") {
+      setRemoteTyping(peerId, Boolean(data.typing));
+      return;
+    }
+
+    if (data?.type === "message-delivered" && typeof data.messageId === "string") {
+      setMessageDeliveryState(peerId, data.messageId, "delivered");
+      return;
+    }
+
+    if (data?.type === "message-read" && typeof data.messageId === "string") {
+      if (appConfig.appSettings?.readReceipts) {
+        setMessageDeliveryState(peerId, data.messageId, "read");
+      }
+      return;
+    }
+
     if (data?.type === "delete-message" && typeof data.messageId === "string") {
       deleteMessageLocally(peerId, data.messageId);
       return;
@@ -3230,6 +3537,16 @@ function attachConnectionHandlers(conn, peerId, direction) {
       peerId,
       time: message.time
     });
+    if (message.id) {
+      sendProtocolMessage(conn, "message-delivered", { messageId: message.id });
+    }
+    if (message.id && activePeerId === peerId && appConfig.appSettings?.readReceipts) {
+      const item = ensureChatHistory(peerId).find((entry) => entry.id === message.id);
+      if (item) {
+        item.readReceiptSent = true;
+      }
+      sendProtocolMessage(conn, "message-read", { messageId: message.id });
+    }
     notifyIncomingMessage(peerId, message.text);
   });
 
@@ -3619,15 +3936,38 @@ messageForm.addEventListener("submit", (event) => {
 
   if (sendChatText(activePeerId, text)) {
     messageInput.value = "";
+    sendTypingState(activePeerId, false, { force: true });
     messageInput.focus();
   }
 });
 
 clearChat.addEventListener("click", () => {
   if (activePeerId) {
+    const activeConn = connections.get(activePeerId);
+    if (!window.confirm(`Clear chat with ${getPeerLabel(activePeerId, activeConn)}?`)) {
+      return;
+    }
     chatHistory.set(activePeerId, []);
   }
   renderChatHistory();
+});
+
+messageInput.addEventListener("input", () => {
+  if (!activePeerId || messageInput.disabled) {
+    return;
+  }
+
+  const hasText = messageInput.value.trim().length > 0;
+  sendTypingState(activePeerId, hasText);
+  if (hasText) {
+    scheduleLocalTypingStop(activePeerId);
+  } else {
+    sendTypingState(activePeerId, false, { force: true });
+  }
+});
+
+contactSearchInput?.addEventListener("input", () => {
+  refreshPeers();
 });
 
 callChat.addEventListener("click", () => {
@@ -3791,6 +4131,15 @@ callNotificationsToggle.addEventListener("change", () => {
 
 focusedNotificationsToggle.addEventListener("change", () => {
   saveNotificationSettings({ showWhenFocused: focusedNotificationsToggle.checked });
+});
+
+readReceiptsToggle.addEventListener("change", () => {
+  saveAppSettings({ readReceipts: readReceiptsToggle.checked });
+  if (readReceiptsToggle.checked) {
+    sendReadReceiptsForActiveChat();
+  } else {
+    renderChatHistory();
+  }
 });
 
 soundsToggle.addEventListener("change", () => {
