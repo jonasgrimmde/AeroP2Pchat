@@ -47,6 +47,8 @@ const localParticipantName = document.querySelector("#local-participant-name");
 const remoteParticipantName = document.querySelector("#remote-participant-name");
 const localParticipantStatus = document.querySelector("#local-participant-status");
 const remoteParticipantStatus = document.querySelector("#remote-participant-status");
+const localParticipantBadges = document.querySelector("#local-participant-badges");
+const remoteParticipantBadges = document.querySelector("#remote-participant-badges");
 const messages = document.querySelector("#messages");
 const typingIndicator = document.querySelector("#typing-indicator");
 const messageForm = document.querySelector("#message-form");
@@ -2371,6 +2373,32 @@ function updateParticipantCard(card, video, shouldShowVideo, speaking, hasError 
   video?.classList.toggle("hidden", !shouldShowVideo);
 }
 
+function createParticipantBadge(iconClass, title, state = "") {
+  const badge = document.createElement("span");
+  badge.className = `participant-badge ${state}`.trim();
+  badge.title = title;
+  badge.setAttribute("aria-label", title);
+  const icon = document.createElement("i");
+  icon.className = iconClass;
+  icon.setAttribute("aria-hidden", "true");
+  badge.append(icon);
+  return badge;
+}
+
+function renderParticipantBadges(container, { muted = false, deafened = false } = {}) {
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+  if (muted) {
+    container.append(createParticipantBadge("fa-solid fa-microphone-slash", "Muted", "muted"));
+  }
+  if (deafened) {
+    container.append(createParticipantBadge("fa-solid fa-headphones", "Deafened", "deafened"));
+  }
+}
+
 function refreshCallStage() {
   const stagePeerId = getStagePeerId();
   const inCall = callState.status !== "idle" && Boolean(callState.peerId);
@@ -2407,6 +2435,14 @@ function refreshCallStage() {
 
   setVideoElementStream(localVideo, showLocalVideo ? callState.localCameraStream : null);
   setVideoElementStream(remoteVideo, showRemoteVideo ? callState.remoteStream : null);
+  renderParticipantBadges(localParticipantBadges, {
+    muted: callState.muted,
+    deafened: callState.deafened
+  });
+  renderParticipantBadges(remoteParticipantBadges, {
+    muted: remoteCallStatus.muted,
+    deafened: remoteCallStatus.deafened
+  });
   updateParticipantCard(
     localParticipantCard,
     localVideo,
@@ -2535,13 +2571,8 @@ function refreshCallUi() {
     remoteCallStatus.muted ? "muted" : "",
     remoteCallStatus.deafened ? "deafened" : ""
   ].filter(Boolean);
-  if (remoteStates.length > 0 && callState.status !== "idle") {
-    callPeerStatus.textContent = remoteStates.join(" / ");
-    callPeerStatus.classList.remove("hidden");
-  } else {
-    callPeerStatus.textContent = "";
-    callPeerStatus.classList.add("hidden");
-  }
+  callPeerStatus.textContent = "";
+  callPeerStatus.classList.add("hidden");
 
   if (callState.status === "idle") {
     callBanner.classList.add("hidden");
@@ -2552,7 +2583,7 @@ function refreshCallUi() {
 
   callBanner.classList.remove("hidden");
   const label = getActiveCallLabel() || "Peer";
-  callPeerName.textContent = label;
+  callPeerName.textContent = callState.status === "active" ? "" : label;
 
   if (callState.status === "incoming") {
     callText.textContent = "Incoming";
