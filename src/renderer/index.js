@@ -167,6 +167,8 @@ let localVoiceCompressorNode = null;
 let localVoiceAnalyserNode = null;
 let localVoiceProcessingContext = null;
 let pendingVoiceSettingsReapply = null;
+let localVoiceGateIsOpen = false;
+let localVoiceGateHoldUntil = 0;
 const callState = {
   peerId: null,
   callId: "",
@@ -1580,6 +1582,8 @@ function stopVoiceMeterLoop() {
 function resetVoiceProcessingState() {
   stopVoiceMeterLoop();
   localVoiceNoiseFloor = 0.01;
+  localVoiceGateIsOpen = false;
+  localVoiceGateHoldUntil = 0;
   localVoiceGateNode = null;
   localVoiceBoostNode = null;
   localVoiceEqLowNode = null;
@@ -1591,12 +1595,12 @@ function resetVoiceProcessingState() {
 }
 
 function getMicGateThreshold({ profile, mode, sensitivity, noiseFloor }) {
-  const thresholdMin = profile === "custom" ? 0.008 : 0.01;
-  const thresholdMax = profile === "custom" ? 0.08 : 0.06;
+  const thresholdMin = profile === "custom" ? 0.0045 : 0.0065;
+  const thresholdMax = profile === "custom" ? 0.05 : 0.042;
 
   if (mode === "auto") {
     const floor = Number.isFinite(noiseFloor) ? noiseFloor : 0.01;
-    return Math.max(thresholdMin, Math.min(thresholdMax, floor * 2.6 + 0.004));
+    return Math.max(thresholdMin, Math.min(thresholdMax, floor * 2.1 + 0.003));
   }
 
   const normalized = Math.max(0, Math.min(100, Number(sensitivity) || 0)) / 100;
@@ -1657,10 +1661,26 @@ function updateVoiceMeter() {
     sensitivity: audio.micSensitivity,
     noiseFloor
   });
+  const openThreshold = threshold;
+  const closeThreshold = Math.max(
+    audio.micProfile === "custom" ? 0.0035 : 0.005,
+    threshold * (audio.micProfile === "studio" ? 0.82 : 0.72)
+  );
   const now = localVoiceProcessingContext.currentTime;
-  const gateOpen = rms >= threshold ? 1 : 0.0001;
+  if (rms >= openThreshold) {
+    localVoiceGateIsOpen = true;
+    localVoiceGateHoldUntil = now + (audio.micProfile === "custom" ? 0.18 : 0.14);
+  } else if (localVoiceGateIsOpen && rms >= closeThreshold) {
+    localVoiceGateHoldUntil = now + (audio.micProfile === "custom" ? 0.12 : 0.09);
+  } else if (localVoiceGateIsOpen && now < localVoiceGateHoldUntil) {
+    // Keep the gate open briefly so syllables do not get clipped.
+  } else {
+    localVoiceGateIsOpen = false;
+  }
 
-  localVoiceGateNode.gain.setTargetAtTime(gateOpen, now, gateOpen > 0.5 ? 0.01 : 0.08);
+  const gateOpen = localVoiceGateIsOpen ? 1 : 0.0001;
+
+  localVoiceGateNode.gain.setTargetAtTime(gateOpen, now, gateOpen > 0.5 ? 0.005 : 0.14);
   localVoiceBoostNode.gain.setTargetAtTime((audio.micBoost || DEFAULT_MIC_BOOST) / 100, now, 0.03);
 
   localVoiceMeterFrame = requestAnimationFrame(updateVoiceMeter);
@@ -1849,6 +1869,8 @@ async function getVoiceStream() {
       localVoiceEqMidNode = eqMid;
       localVoiceEqHighNode = eqHigh;
       localVoiceNoiseFloor = 0.01;
+      localVoiceGateIsOpen = false;
+      localVoiceGateHoldUntil = 0;
       startVoiceMeterLoop();
     }
     destination.stream._rawVoiceStream = rawStream;
