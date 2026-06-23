@@ -1677,13 +1677,10 @@ function formatDeliveryStatus(status) {
 
 function createDeliveryStatusIcons(status) {
   const visibleStatus = status === "read" && !appConfig.appSettings?.readReceipts ? "delivered" : status;
-  const count = visibleStatus === "sent" ? 1 : 2;
-  return Array.from({ length: count }, () => {
-    const icon = document.createElement("i");
-    icon.className = "fa-solid fa-check";
-    icon.setAttribute("aria-hidden", "true");
-    return icon;
-  });
+  const indicator = document.createElement("span");
+  indicator.className = `message-state-dot ${visibleStatus === "read" ? "read" : "sent"}`;
+  indicator.setAttribute("aria-hidden", "true");
+  return [indicator];
 }
 
 function refreshMessageDeliveryState(peerId, messageId) {
