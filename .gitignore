@@ -4,5 +4,6 @@
 *.iss.bak
 *.setup.log
 .dev-data
+/.tools/inno
 AGENTS.md
 TODO.todo

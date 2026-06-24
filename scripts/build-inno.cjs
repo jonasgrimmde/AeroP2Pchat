@@ -5,20 +5,32 @@ const path = require("node:path");
 const root = path.join(__dirname, "..");
 const scriptPath = path.join(root, "create-setup.iss");
 const markerPath = path.join(root, "dist", "build", "latest-win-dir.txt");
+const buildRoot = path.join(root, "dist", "build");
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const markerValue = fs.existsSync(markerPath) ? fs.readFileSync(markerPath, "utf8").trim() : "";
 const markerUnpackedDir = markerValue
   ? path.resolve(root, markerValue)
   : "";
 const markerRelativeToRoot = markerUnpackedDir ? path.relative(root, markerUnpackedDir) : "";
 const markerIsInsideRoot = markerRelativeToRoot && !markerRelativeToRoot.startsWith("..") && !path.isAbsolute(markerRelativeToRoot);
+const latestUnpackedDir = fs.existsSync(buildRoot)
+  ? fs.readdirSync(buildRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => path.join(buildRoot, entry.name, "win-unpacked"))
+    .filter((candidate) => fs.existsSync(candidate))
+    .sort((left, right) => fs.statSync(right).mtimeMs - fs.statSync(left).mtimeMs)[0]
+  : "";
 const unpackedDir = markerIsInsideRoot && fs.existsSync(markerUnpackedDir)
   ? markerUnpackedDir
-  : path.join(root, "dist", "build", "win-unpacked");
+  : latestUnpackedDir || path.join(buildRoot, "win-unpacked");
+const programFilesX86 = process.env["ProgramFiles(x86)"];
+const programFiles = process.env.ProgramFiles;
 const candidates = [
+  path.join(root, ".tools", "inno", "ISCC.exe"),
   "ISCC.exe",
   "ISCC",
-  path.join(process.env["ProgramFiles(x86)"] || "", "Inno Setup 6", "ISCC.exe"),
-  path.join(process.env.ProgramFiles || "", "Inno Setup 6", "ISCC.exe")
+  programFilesX86 ? path.join(programFilesX86, "Inno Setup 6", "ISCC.exe") : "",
+  programFiles ? path.join(programFiles, "Inno Setup 6", "ISCC.exe") : ""
 ].filter(Boolean);
 
 const compiler = candidates.find((candidate) => {
@@ -38,6 +50,10 @@ if (!compiler) {
 
 const result = spawnSync(compiler, [`/DWinUnpackedDir=${unpackedDir}`, scriptPath], {
   cwd: root,
+  env: {
+    ...process.env,
+    npm_package_version: process.env.npm_package_version || packageJson.version
+  },
   stdio: "inherit",
   shell: compiler === "ISCC" || compiler === "ISCC.exe"
 });
