@@ -4390,6 +4390,61 @@ body[data-theme="dark"] .app-dialog-actions button:not(.ghost-button) {
   color: #ffffff;
 }
 
+body[data-theme="dark"] .call-action {
+  border-color: #456273;
+  background: #1a2d3a !important;
+  color: #d9edf5;
+}
+
+body[data-theme="dark"] .call-action:hover,
+body[data-theme="dark"] .call-action:focus-visible {
+  border-color: #5f8398;
+  background: #213a4a !important;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .ghost-button.call,
+body[data-theme="dark"] .call-action.accept,
+body[data-theme="dark"] .call-action.toggle.enabled,
+body[data-theme="dark"] .call-action.camera.active,
+body[data-theme="dark"] .call-action.stream.active {
+  border-color: rgba(88, 220, 145, 0.58);
+  background: #123d2b !important;
+  color: #7ff0ad;
+}
+
+body[data-theme="dark"] .ghost-button.call:hover,
+body[data-theme="dark"] .call-action.accept:hover,
+body[data-theme="dark"] .call-action.toggle.enabled:hover,
+body[data-theme="dark"] .call-action.camera.active:hover,
+body[data-theme="dark"] .call-action.stream.active:hover {
+  border-color: rgba(116, 245, 174, 0.78);
+  background: #185439 !important;
+  color: #c8ffdd;
+}
+
+body[data-theme="dark"] .call-action.toggle.active:not(.disabled) {
+  border-color: rgba(219, 174, 87, 0.62);
+  background: #3a2b13 !important;
+  color: #ffd47a;
+}
+
+body[data-theme="dark"] .call-action.toggle.disabled,
+body[data-theme="dark"] .call-action.decline,
+body[data-theme="dark"] .call-action.hangup {
+  border-color: rgba(225, 99, 122, 0.64);
+  background: #3b141e !important;
+  color: #ffb8c6;
+}
+
+body[data-theme="dark"] .call-action.toggle.disabled:hover,
+body[data-theme="dark"] .call-action.decline:hover,
+body[data-theme="dark"] .call-action.hangup:hover {
+  border-color: rgba(247, 126, 149, 0.82);
+  background: #551d2a !important;
+  color: #ffe3ea;
+}
+
 body[data-theme="dark"] .peer-chip.active,
 body[data-theme="dark"] .peer-chip:hover,
 body[data-theme="dark"] .contact-name:hover,
