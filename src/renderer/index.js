@@ -423,9 +423,9 @@ await waitForImageReady(bootLogo);
 setBootProgress(18, "Preparing interface");
 
 const currentVersion = packageInfo.version;
-const latestReleaseUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest";
-const latestManifestUrl = "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/latest.yml";
-const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- update";
+const latestReleaseUrl = "https://github.com/Zorblock/AeroP2Pchat/releases/latest";
+const latestManifestUrl = "https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/latest.yml";
+const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- update";
 const platform = window.aeroChat?.platform ?? "browser";
 const peerConnectionConfig = {
   iceServers: [

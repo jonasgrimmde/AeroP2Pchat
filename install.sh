@@ -3,7 +3,7 @@ set -eu
 
 APP_NAME="Aero P2P Chat"
 APP_ID="de.jonasgrimm.aerop2pchat"
-REPO="jonasgrimmde/AeroP2Pchat"
+REPO="Zorblock/AeroP2Pchat"
 RELEASE_BASE="https://github.com/${REPO}/releases/latest/download"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/refs/heads/main"
 

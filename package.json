@@ -16,9 +16,9 @@
     "release:linux": "node scripts/release.cjs --linux-only --no-bump"
   },
   "release": {
-    "owner": "jonasgrimmde",
+    "owner": "Zorblock",
     "repo": "AeroP2Pchat",
-    "latestUrl": "https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest/download/latest.yml"
+    "latestUrl": "https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/latest.yml"
   },
   "build": {
     "appId": "de.jonasgrimm.aerop2pchat",

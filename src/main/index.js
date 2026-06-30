@@ -11,7 +11,7 @@ const windowIcon = process.platform === "win32"
   ? join(__dirname, "../../assets/app.ico")
   : join(__dirname, "../../assets/linux-icons/512x512.png");
 const releaseHost = "github.com";
-const releasePathPrefix = "/jonasgrimmde/AeroP2Pchat/releases/";
+const releasePathPrefix = "/Zorblock/AeroP2Pchat/releases/";
 const configFileName = "config.json";
 const defaultSidebarWidth = 230;
 const minSidebarWidth = 170;

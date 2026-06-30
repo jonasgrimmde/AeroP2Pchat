@@ -26,14 +26,14 @@ PeerJS is used for signaling. That means you do not need to run your own server,
 Use the installer script from the GitHub repository:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh | sh
 ```
 
 Other Linux installer commands:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- status
-curl -fsSL https://raw.githubusercontent.com/jonasgrimmde/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- uninstall
+curl -fsSL https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- status
+curl -fsSL https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- uninstall
 ```
 
 The script installs the AppImage to:
@@ -53,7 +53,7 @@ It also creates:
 Download the latest Windows installer from GitHub Releases:
 
 ```text
-https://github.com/jonasgrimmde/AeroP2Pchat/releases/latest
+https://github.com/Zorblock/AeroP2Pchat/releases/latest
 ```
 
 The release asset is named:
@@ -155,5 +155,5 @@ The Linux AppImage workflow is located at:
 ## Repository
 
 ```text
-https://github.com/jonasgrimmde/AeroP2Pchat
+https://github.com/Zorblock/AeroP2Pchat
 ```
