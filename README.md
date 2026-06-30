@@ -1,6 +1,7 @@
 # Aero P2P Chat
 
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Zorblock/AeroP2Pchat/total)](https://github.com/Zorblock/AeroP2Pchat/releases)
+[![GitHub package.json version (branch)](https://img.shields.io/github/package-json/v/Zorblock/AeroP2Pchat/main)](https://github.com/Zorblock/AeroP2Pchat/blob/main/package.json)
 
 Aero P2P Chat is a compact Electron desktop chat client for direct peer-to-peer conversations. It uses PeerJS/WebRTC data connections so chat messages travel peer-to-peer after both users are connected.
 
