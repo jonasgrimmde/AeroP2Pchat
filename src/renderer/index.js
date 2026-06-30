@@ -212,6 +212,10 @@ const CONTACTS_STORAGE_KEY = "aero-p2p-chat.contacts.v1";
 const MAX_MESSAGE_LENGTH = 4000;
 const HIGH_BUFFER_SIZE = 25;
 const VOICE_AUDIO_BITRATE = 96000;
+const CALL_HEALTH_POLL_MS = 3000;
+const CALL_MEDIA_DISCONNECTED_TIMEOUT_MS = 12000;
+const CALL_MEDIA_STALE_TIMEOUT_MS = 45000;
+const CALL_STATS_FAILURE_LIMIT = 4;
 const CALL_PLACEHOLDER_VIDEO_FPS = 8;
 const CALL_CAMERA_WIDTH = 640;
 const CALL_CAMERA_HEIGHT = 640;
@@ -351,6 +355,8 @@ const callState = {
   videoQualityProfile: "medium",
   videoQualityMonitor: null,
   videoQualityLastStats: null,
+  healthMonitor: null,
+  healthLastStats: null,
   localAudioAvailable: true,
   localErrorMessage: "",
   acceptedIncomingCallId: "",
@@ -3612,6 +3618,7 @@ function scheduleOutgoingCallTimeout() {
 
 function resetCallState() {
   clearOutgoingCallTimeout();
+  stopCallHealthMonitor();
   stopLocalScreenShare({ notifyPeer: false });
   stopRemoteScreenShare();
   const mediaConn = callState.mediaConn;
@@ -3635,6 +3642,8 @@ function resetCallState() {
     videoQualityProfile: "medium",
     videoQualityMonitor: null,
     videoQualityLastStats: null,
+    healthMonitor: null,
+    healthLastStats: null,
     localAudioAvailable: true,
     localErrorMessage: "",
     acceptedIncomingCallId: "",
@@ -4229,6 +4238,161 @@ function startVideoQualityMonitor() {
   }, CALL_VIDEO_QUALITY_POLL_MS);
 }
 
+function getActiveCallPeerConnections() {
+  return [callState.mediaConn, callState.incomingMediaConn]
+    .map((mediaConn) => mediaConn?.peerConnection)
+    .filter(Boolean)
+    .filter(
+      (peerConnection, index, list) => list.indexOf(peerConnection) === index,
+    );
+}
+
+function isPeerConnectionDisconnected(peerConnection) {
+  return (
+    ["disconnected", "failed", "closed"].includes(
+      peerConnection.connectionState,
+    ) ||
+    ["disconnected", "failed", "closed"].includes(
+      peerConnection.iceConnectionState,
+    )
+  );
+}
+
+function stopCallHealthMonitor() {
+  if (callState.healthMonitor) {
+    clearInterval(callState.healthMonitor);
+    callState.healthMonitor = null;
+  }
+  callState.healthLastStats = null;
+}
+
+function endCallFromHealthMonitor(message = "Voice connection lost.") {
+  if (callState.status === "idle") {
+    return;
+  }
+
+  endVoiceCall({ notifyPeer: true, message });
+}
+
+async function sampleCallHealth() {
+  if (callState.status === "idle" || !callState.peerId || !callState.callId) {
+    stopCallHealthMonitor();
+    return;
+  }
+
+  const peerConnections = getActiveCallPeerConnections();
+  if (peerConnections.length === 0) {
+    return;
+  }
+
+  const now = Date.now();
+  const previous = callState.healthLastStats || {};
+  const next = {
+    lastMediaProgressAt: previous.lastMediaProgressAt || now,
+    mediaDisconnectedSince: null,
+    bytesReceived: previous.bytesReceived || 0,
+    packetsReceived: previous.packetsReceived || 0,
+    statsFailures: 0,
+  };
+
+  let disconnected = false;
+  let inboundBytes = 0;
+  let inboundPackets = 0;
+  let sawInboundRtp = false;
+
+  try {
+    for (const peerConnection of peerConnections) {
+      disconnected = disconnected || isPeerConnectionDisconnected(peerConnection);
+      const stats = await peerConnection.getStats();
+      for (const report of stats.values()) {
+        if (
+          report.type === "inbound-rtp" &&
+          !report.isRemote &&
+          ["audio", "video"].includes(report.kind)
+        ) {
+          sawInboundRtp = true;
+          inboundBytes += Number(report.bytesReceived || 0);
+          inboundPackets += Number(report.packetsReceived || 0);
+        }
+      }
+    }
+  } catch {
+    next.statsFailures = (previous.statsFailures || 0) + 1;
+    callState.healthLastStats = next;
+    if (next.statsFailures >= CALL_STATS_FAILURE_LIMIT) {
+      endCallFromHealthMonitor();
+    }
+    return;
+  }
+
+  if (
+    sawInboundRtp &&
+    (inboundBytes > next.bytesReceived || inboundPackets > next.packetsReceived)
+  ) {
+    next.lastMediaProgressAt = now;
+  }
+
+  next.bytesReceived = Math.max(next.bytesReceived, inboundBytes);
+  next.packetsReceived = Math.max(next.packetsReceived, inboundPackets);
+
+  if (disconnected) {
+    next.mediaDisconnectedSince = previous.mediaDisconnectedSince || now;
+  }
+
+  callState.healthLastStats = next;
+
+  const disconnectedFor =
+    next.mediaDisconnectedSince == null ? 0 : now - next.mediaDisconnectedSince;
+  const staleFor = now - next.lastMediaProgressAt;
+
+  if (disconnectedFor >= CALL_MEDIA_DISCONNECTED_TIMEOUT_MS) {
+    endCallFromHealthMonitor();
+    return;
+  }
+
+  if (sawInboundRtp && disconnected && staleFor >= CALL_MEDIA_STALE_TIMEOUT_MS) {
+    endCallFromHealthMonitor();
+  }
+}
+
+function startCallHealthMonitor() {
+  stopCallHealthMonitor();
+  callState.healthLastStats = {
+    lastMediaProgressAt: Date.now(),
+    mediaDisconnectedSince: null,
+    bytesReceived: 0,
+    packetsReceived: 0,
+    statsFailures: 0,
+  };
+  callState.healthMonitor = setInterval(() => {
+    sampleCallHealth().catch(() => {});
+  }, CALL_HEALTH_POLL_MS);
+}
+
+function attachRemoteStreamHealthHandlers(stream, peerId, callId) {
+  for (const track of stream.getTracks()) {
+    track.addEventListener("ended", () => {
+      if (
+        callState.peerId !== peerId ||
+        callState.callId !== callId ||
+        callState.remoteStream !== stream
+      ) {
+        return;
+      }
+
+      const hasLiveTrack = stream
+        .getTracks()
+        .some((item) => item.readyState === "live");
+      if (!hasLiveTrack) {
+        endVoiceCall({
+          notifyPeer: true,
+          message: "Voice connection lost.",
+        });
+      }
+    });
+  }
+}
+
 async function getVoiceStream() {
   const rawStream = await navigator.mediaDevices.getUserMedia({
     audio: createVoiceAudioConstraints(),
@@ -4542,6 +4706,7 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
     mediaConn,
     getCallVideoQualityProfile(),
   ).catch(() => {});
+  startCallHealthMonitor();
 
   mediaConn.on("stream", async (stream) => {
     if (callState.peerId !== peerId || callState.callId !== callId) {
@@ -4553,6 +4718,7 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
       callState.remoteStream.getTracks().forEach((track) => track.stop());
     }
     callState.remoteStream = stream;
+    attachRemoteStreamHealthHandlers(stream, peerId, callId);
     remoteAudio.srcObject = stream;
     setRemoteVolume(getPeerPlaybackVolume(peerId), { persist: false });
     remoteAudio.muted = callState.deafened;
