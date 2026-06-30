@@ -34,6 +34,7 @@ const callBanner = document.querySelector("#call-banner");
 const callText = document.querySelector("#call-text");
 const callPeerName = document.querySelector("#call-peer-name");
 const callPeerStatus = document.querySelector("#call-peer-status");
+const callHealth = document.querySelector("#call-health");
 const callAccept = document.querySelector("#call-accept");
 const callDecline = document.querySelector("#call-decline");
 const callMute = document.querySelector("#call-mute");
@@ -3490,6 +3491,35 @@ function isCallBusy() {
   return callState.status !== "idle";
 }
 
+function formatCallHealthLabel(quality = "unknown", latencyMs = null) {
+  const label =
+    quality === "good"
+      ? "Good"
+      : quality === "unstable"
+        ? "Unstable"
+        : quality === "bad"
+          ? "Bad"
+          : "Checking";
+  return latencyMs == null ? label : `${label} · ${latencyMs} ms`;
+}
+
+function setCallHealthUi({
+  quality = "unknown",
+  latencyMs = null,
+  visible = callState.status === "active",
+} = {}) {
+  if (!callHealth) {
+    return;
+  }
+
+  callHealth.classList.toggle("hidden", !visible);
+  callHealth.classList.remove("good", "unstable", "bad", "unknown");
+  callHealth.classList.add(quality);
+  const label = `Call health: ${formatCallHealthLabel(quality, latencyMs)}`;
+  callHealth.title = label;
+  callHealth.setAttribute("aria-label", label);
+}
+
 function refreshCallUi() {
   const activeConn = activePeerId ? connections.get(activePeerId) : null;
   const canStartCall = Boolean(activeConn?.open && !isCallBusy());
@@ -3541,6 +3571,7 @@ function refreshCallUi() {
   ].filter(Boolean);
   callPeerStatus.textContent = "";
   callPeerStatus.classList.add("hidden");
+  setCallHealthUi({ visible: false });
 
   if (callState.status === "idle") {
     callBanner.classList.add("hidden");
@@ -3585,6 +3616,11 @@ function refreshCallUi() {
   callCamera.classList.remove("hidden");
   callStream.classList.remove("hidden");
   callHangup.classList.remove("hidden");
+  setCallHealthUi({
+    quality: callState.healthLastStats?.quality || "unknown",
+    latencyMs: callState.healthLastStats?.latencyMs ?? null,
+    visible: true,
+  });
   refreshCallStage();
 }
 
@@ -4274,6 +4310,27 @@ function endCallFromHealthMonitor(message = "Voice connection lost.") {
   endVoiceCall({ notifyPeer: true, message });
 }
 
+function chooseCallHealthQuality({
+  disconnected = false,
+  latencyMs = null,
+  lossRatio = 0,
+  staleFor = 0,
+} = {}) {
+  if (disconnected || staleFor >= CALL_MEDIA_DISCONNECTED_TIMEOUT_MS) {
+    return "bad";
+  }
+
+  if (
+    lossRatio >= 0.08 ||
+    staleFor >= CALL_MEDIA_DISCONNECTED_TIMEOUT_MS / 2 ||
+    (latencyMs != null && latencyMs >= 320)
+  ) {
+    return "unstable";
+  }
+
+  return "good";
+}
+
 async function sampleCallHealth() {
   if (callState.status === "idle" || !callState.peerId || !callState.callId) {
     stopCallHealthMonitor();
@@ -4293,11 +4350,15 @@ async function sampleCallHealth() {
     bytesReceived: previous.bytesReceived || 0,
     packetsReceived: previous.packetsReceived || 0,
     statsFailures: 0,
+    quality: previous.quality || "unknown",
+    latencyMs: previous.latencyMs ?? null,
   };
 
   let disconnected = false;
   let inboundBytes = 0;
   let inboundPackets = 0;
+  let inboundPacketsLost = 0;
+  let latencyMs = null;
   let sawInboundRtp = false;
 
   try {
@@ -4306,6 +4367,14 @@ async function sampleCallHealth() {
       const stats = await peerConnection.getStats();
       for (const report of stats.values()) {
         if (
+          report.type === "candidate-pair" &&
+          report.state === "succeeded" &&
+          report.nominated &&
+          typeof report.currentRoundTripTime === "number"
+        ) {
+          latencyMs = Math.round(report.currentRoundTripTime * 1000);
+        }
+        if (
           report.type === "inbound-rtp" &&
           !report.isRemote &&
           ["audio", "video"].includes(report.kind)
@@ -4313,12 +4382,18 @@ async function sampleCallHealth() {
           sawInboundRtp = true;
           inboundBytes += Number(report.bytesReceived || 0);
           inboundPackets += Number(report.packetsReceived || 0);
+          inboundPacketsLost += Number(report.packetsLost || 0);
         }
       }
     }
   } catch {
     next.statsFailures = (previous.statsFailures || 0) + 1;
     callState.healthLastStats = next;
+    setCallHealthUi({
+      quality: next.statsFailures >= 2 ? "unstable" : next.quality,
+      latencyMs: next.latencyMs,
+      visible: callState.status === "active",
+    });
     if (next.statsFailures >= CALL_STATS_FAILURE_LIMIT) {
       endCallFromHealthMonitor();
     }
@@ -4344,6 +4419,22 @@ async function sampleCallHealth() {
   const disconnectedFor =
     next.mediaDisconnectedSince == null ? 0 : now - next.mediaDisconnectedSince;
   const staleFor = now - next.lastMediaProgressAt;
+  const totalInboundPackets = inboundPackets + inboundPacketsLost;
+  const lossRatio =
+    totalInboundPackets > 0 ? inboundPacketsLost / totalInboundPackets : 0;
+  next.latencyMs = latencyMs;
+  next.quality = chooseCallHealthQuality({
+    disconnected,
+    latencyMs,
+    lossRatio,
+    staleFor,
+  });
+
+  setCallHealthUi({
+    quality: next.quality,
+    latencyMs: next.latencyMs,
+    visible: callState.status === "active",
+  });
 
   if (disconnectedFor >= CALL_MEDIA_DISCONNECTED_TIMEOUT_MS) {
     endCallFromHealthMonitor();
@@ -4363,7 +4454,10 @@ function startCallHealthMonitor() {
     bytesReceived: 0,
     packetsReceived: 0,
     statsFailures: 0,
+    quality: "unknown",
+    latencyMs: null,
   };
+  setCallHealthUi({ quality: "unknown", visible: callState.status === "active" });
   callState.healthMonitor = setInterval(() => {
     sampleCallHealth().catch(() => {});
   }, CALL_HEALTH_POLL_MS);
