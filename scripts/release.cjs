@@ -26,7 +26,7 @@ const colorCodes = {
   yellow: "\x1b[33m",
   blue: "\x1b[34m",
   cyan: "\x1b[36m",
-  bold: "\x1b[1m"
+  bold: "\x1b[1m",
 };
 
 function color(name, value) {
@@ -72,7 +72,9 @@ function logProgress(label, current, total, lastText) {
 
 function formatDuration(startedAt) {
   const seconds = (Date.now() - startedAt) / 1000;
-  return seconds < 60 ? `${seconds.toFixed(1)}s` : `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  return seconds < 60
+    ? `${seconds.toFixed(1)}s`
+    : `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
 }
 
 function formatBytes(bytes) {
@@ -99,7 +101,9 @@ function getRepoParts(config) {
   const [owner, repo] = repoSlug.split("/");
 
   if (!owner || !repo) {
-    throw new Error("Missing repo in config.json. Expected format: owner/repo.");
+    throw new Error(
+      "Missing repo in config.json. Expected format: owner/repo.",
+    );
   }
 
   return { owner, repo };
@@ -131,8 +135,9 @@ function run(command, args, options = {}) {
   const result = spawnSync(commandForSpawn(command), args, {
     cwd: rootDir,
     stdio: "inherit",
-    shell: process.platform === "win32" && (command === "npm" || command === "npx"),
-    env
+    shell:
+      process.platform === "win32" && (command === "npm" || command === "npx"),
+    env,
   });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} failed.`);
@@ -153,7 +158,9 @@ function runWithRetry(command, args, options = {}) {
       if (attempt >= attempts) {
         break;
       }
-      console.error(`${color("yellow", "WARN")} ${command} failed, retrying (${attempt + 1}/${attempts})...`);
+      console.error(
+        `${color("yellow", "WARN")} ${command} failed, retrying (${attempt + 1}/${attempts})...`,
+      );
       sleep(2000 * attempt);
     }
   }
@@ -165,7 +172,7 @@ function runCapture(command, args) {
   const result = spawnSync(commandForSpawn(command), args, {
     cwd: rootDir,
     encoding: "utf8",
-    shell: false
+    shell: false,
   });
   return result.status === 0 ? result.stdout.trim() : "";
 }
@@ -175,7 +182,7 @@ function runStatus(command, args, options = {}) {
     cwd: rootDir,
     encoding: "utf8",
     shell: false,
-    env: { ...process.env, ...(options.env || {}) }
+    env: { ...process.env, ...(options.env || {}) },
   });
 }
 
@@ -203,12 +210,16 @@ function rmSyncWithRetry(targetPath, { required = false } = {}) {
         recursive: true,
         force: true,
         maxRetries: 3,
-        retryDelay: 250
+        retryDelay: 250,
       });
       return true;
     } catch (error) {
       lastError = error;
-      if (!["EBUSY", "EMFILE", "ENFILE", "ENOTEMPTY", "EPERM"].includes(error.code)) {
+      if (
+        !["EBUSY", "EMFILE", "ENFILE", "ENOTEMPTY", "EPERM"].includes(
+          error.code,
+        )
+      ) {
         break;
       }
       sleep(250 * attempt);
@@ -220,8 +231,12 @@ function rmSyncWithRetry(targetPath, { required = false } = {}) {
     throw lastError;
   }
 
-  console.error(`${color("yellow", "WARN")} Could not fully clean ${relativePath}: ${lastError.message}`);
-  console.error(`${color("yellow", "WARN")} Continuing; close running app/windows if the build later cannot overwrite files.`);
+  console.error(
+    `${color("yellow", "WARN")} Could not fully clean ${relativePath}: ${lastError.message}`,
+  );
+  console.error(
+    `${color("yellow", "WARN")} Continuing; close running app/windows if the build later cannot overwrite files.`,
+  );
   return false;
 }
 
@@ -239,7 +254,7 @@ function parseArgs() {
     bump: "minor",
     draft: false,
     prerelease: false,
-    linuxOnly: false
+    linuxOnly: false,
   };
   for (const arg of args) {
     if (arg === "--no-bump") options.bump = "none";
@@ -249,7 +264,8 @@ function parseArgs() {
     if (arg === "--draft") options.draft = true;
     if (arg === "--prerelease") options.prerelease = true;
     if (arg === "--linux-only") options.linuxOnly = true;
-    if (arg.startsWith("--version=")) options.version = arg.slice("--version=".length);
+    if (arg.startsWith("--version="))
+      options.version = arg.slice("--version=".length);
   }
   return options;
 }
@@ -295,11 +311,17 @@ function updatePackageVersion(version) {
 }
 
 function fileHash(filePath, algorithm) {
-  return crypto.createHash(algorithm).update(fs.readFileSync(filePath)).digest("hex");
+  return crypto
+    .createHash(algorithm)
+    .update(fs.readFileSync(filePath))
+    .digest("hex");
 }
 
 function fileHashBase64(filePath, algorithm) {
-  return crypto.createHash(algorithm).update(fs.readFileSync(filePath)).digest("base64");
+  return crypto
+    .createHash(algorithm)
+    .update(fs.readFileSync(filePath))
+    .digest("base64");
 }
 
 function yamlQuote(value) {
@@ -312,7 +334,7 @@ function parseManifestText(text) {
     const match = /^([a-zA-Z0-9_-]+):\s*(.*)$/.exec(line.trim());
     if (!match) continue;
     let value = match[2].trim();
-    if (value.startsWith("\"") && value.endsWith("\"")) {
+    if (value.startsWith('"') && value.endsWith('"')) {
       value = JSON.parse(value);
     } else if (/^\d+$/.test(value)) {
       value = Number(value);
@@ -325,7 +347,11 @@ function parseManifestText(text) {
 function serializeManifest(manifest) {
   const lines = [];
   for (const [key, value] of Object.entries(manifest)) {
-    lines.push(typeof value === "number" ? `${key}: ${value}` : `${key}: ${yamlQuote(value)}`);
+    lines.push(
+      typeof value === "number"
+        ? `${key}: ${value}`
+        : `${key}: ${yamlQuote(value)}`,
+    );
   }
   lines.push("");
   return lines.join("\n");
@@ -339,15 +365,24 @@ function createReleaseAssetInfo(filePath, tag, owner, repo) {
     url: downloadUrl,
     size: fs.statSync(filePath).size,
     sha256: fileHash(filePath, "sha256"),
-    sha512: fileHashBase64(filePath, "sha512")
+    sha512: fileHashBase64(filePath, "sha512"),
   };
 }
 
-function createLatestManifest({ pkg, setupPath, appImagePath, version, owner, repo }) {
+function createLatestManifest({
+  pkg,
+  setupPath,
+  appImagePath,
+  version,
+  owner,
+  repo,
+}) {
   const tag = `v${version}`;
   const releaseDate = new Date().toISOString();
   const windows = createReleaseAssetInfo(setupPath, tag, owner, repo);
-  const linux = appImagePath ? createReleaseAssetInfo(appImagePath, tag, owner, repo) : null;
+  const linux = appImagePath
+    ? createReleaseAssetInfo(appImagePath, tag, owner, repo)
+    : null;
   const manifest = [
     `version: ${yamlQuote(version)}`,
     `releaseDate: ${yamlQuote(releaseDate)}`,
@@ -368,11 +403,11 @@ function createLatestManifest({ pkg, setupPath, appImagePath, version, owner, re
           `linuxUrl: ${yamlQuote(linux.url)}`,
           `linuxSha256: ${yamlQuote(linux.sha256)}`,
           `linuxSha512: ${yamlQuote(linux.sha512)}`,
-          `linuxSize: ${linux.size}`
+          `linuxSize: ${linux.size}`,
         ]
       : []),
     `productName: ${yamlQuote(appName)}`,
-    ""
+    "",
   ].join("\n");
   const manifestPath = path.join(rootDir, "dist", "installer", "latest.yml");
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
@@ -383,7 +418,7 @@ function createLatestManifest({ pkg, setupPath, appImagePath, version, owner, re
     appImageName: linux && linux.name,
     tag,
     sha256: windows.sha256,
-    linuxSha256: linux && linux.sha256
+    linuxSha256: linux && linux.sha256,
   };
 }
 
@@ -393,7 +428,10 @@ function createUploadCopy(sourcePath, uploadName) {
   fs.rmSync(uploadPath, { force: true });
   fs.copyFileSync(sourcePath, uploadPath);
   logSuccess(`Created upload asset ${path.relative(rootDir, uploadPath)}`);
-  logInfo("Asset", `${path.relative(rootDir, uploadPath)} (${formatBytes(fs.statSync(uploadPath).size)})`);
+  logInfo(
+    "Asset",
+    `${path.relative(rootDir, uploadPath)} (${formatBytes(fs.statSync(uploadPath).size)})`,
+  );
   return uploadPath;
 }
 
@@ -403,7 +441,9 @@ function findAppImage() {
     .readdirSync(distDir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".AppImage"))
     .map((entry) => path.join(distDir, entry.name))
-    .sort((left, right) => fs.statSync(right).mtimeMs - fs.statSync(left).mtimeMs)[0];
+    .sort(
+      (left, right) => fs.statSync(right).mtimeMs - fs.statSync(left).mtimeMs,
+    )[0];
   if (!appImage) {
     throw new Error("Linux AppImage was not found in dist.");
   }
@@ -421,7 +461,7 @@ async function githubRequest(token, url, options = {}) {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": apiVersion,
     "User-Agent": userAgent,
-    ...(options.headers || {})
+    ...(options.headers || {}),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(url, { ...options, headers });
@@ -437,10 +477,21 @@ async function githubRequest(token, url, options = {}) {
   return data;
 }
 
-async function getOrCreateRelease({ token, owner, repo, tag, version, draft, prerelease }) {
+async function getOrCreateRelease({
+  token,
+  owner,
+  repo,
+  tag,
+  version,
+  draft,
+  prerelease,
+}) {
   const apiBase = `https://api.github.com/repos/${owner}/${repo}`;
   try {
-    const release = await githubRequest(token, `${apiBase}/releases/tags/${encodeURIComponent(tag)}`);
+    const release = await githubRequest(
+      token,
+      `${apiBase}/releases/tags/${encodeURIComponent(tag)}`,
+    );
     return { release, created: false };
   } catch (error) {
     if (error.status !== 404) throw error;
@@ -453,8 +504,8 @@ async function getOrCreateRelease({ token, owner, repo, tag, version, draft, pre
       name: `${appName} ${version}`,
       body: `Automated release for ${appName} ${version}.`,
       draft,
-      prerelease
-    })
+      prerelease,
+    }),
   });
   return { release, created: true };
 }
@@ -468,7 +519,11 @@ async function deleteReleaseAndTag(token, owner, repo, release, tag) {
   }
   try {
     logStep(`Rollback Git tag ${tag}`);
-    await githubRequest(token, `${apiBase}/git/refs/tags/${encodeURIComponent(tag)}`, { method: "DELETE" });
+    await githubRequest(
+      token,
+      `${apiBase}/git/refs/tags/${encodeURIComponent(tag)}`,
+      { method: "DELETE" },
+    );
     logSuccess(`Deleted tag ${tag}`);
   } catch (error) {
     if (error.status !== 404) throw error;
@@ -476,7 +531,9 @@ async function deleteReleaseAndTag(token, owner, repo, release, tag) {
 }
 
 async function deleteExistingAsset(token, release, assetName) {
-  const asset = (release.assets || []).find((entry) => entry.name === assetName);
+  const asset = (release.assets || []).find(
+    (entry) => entry.name === assetName,
+  );
   if (!asset) return;
   logStep(`Delete existing asset ${assetName}`);
   await githubRequest(token, asset.url, { method: "DELETE" });
@@ -485,7 +542,9 @@ async function deleteExistingAsset(token, release, assetName) {
 
 async function deleteUnexpectedReleaseAssets(token, release, uploadAssetNames) {
   const keep = new Set(uploadAssetNames);
-  const extraAssets = (release.assets || []).filter((entry) => !keep.has(entry.name || ""));
+  const extraAssets = (release.assets || []).filter(
+    (entry) => !keep.has(entry.name || ""),
+  );
   for (const asset of extraAssets) {
     logStep(`Delete extra release asset ${asset.name}`);
     await githubRequest(token, asset.url, { method: "DELETE" });
@@ -494,37 +553,62 @@ async function deleteUnexpectedReleaseAssets(token, release, uploadAssetNames) {
 }
 
 async function getReleaseByTag(token, owner, repo, tag) {
-  return githubRequest(token, `https://api.github.com/repos/${owner}/${repo}/releases/tags/${encodeURIComponent(tag)}`);
+  return githubRequest(
+    token,
+    `https://api.github.com/repos/${owner}/${repo}/releases/tags/${encodeURIComponent(tag)}`,
+  );
 }
 
 async function getRepositoryDefaultBranch(token, owner, repo) {
-  const data = await githubRequest(token, `https://api.github.com/repos/${owner}/${repo}`);
+  const data = await githubRequest(
+    token,
+    `https://api.github.com/repos/${owner}/${repo}`,
+  );
   return data && data.default_branch ? data.default_branch : "main";
 }
 
 async function triggerLinuxReleaseWorkflow(token, owner, repo, version) {
-  const ref = process.env.GITHUB_REF_NAME || (await getRepositoryDefaultBranch(token, owner, repo));
+  const ref =
+    process.env.GITHUB_REF_NAME ||
+    (await getRepositoryDefaultBranch(token, owner, repo));
   logStep(`Trigger Linux AppImage workflow on ${ref}`);
-  await githubRequest(token, `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(linuxWorkflowId)}/dispatches`, {
-    method: "POST",
-    body: JSON.stringify({ ref, inputs: { version } })
-  });
+  await githubRequest(
+    token,
+    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(linuxWorkflowId)}/dispatches`,
+    {
+      method: "POST",
+      body: JSON.stringify({ ref, inputs: { version } }),
+    },
+  );
   logSuccess("Linux AppImage workflow triggered");
 }
 
 async function fetchReleaseAssetText(token, release, assetName) {
-  const asset = (release.assets || []).find((entry) => entry.name === assetName);
+  const asset = (release.assets || []).find(
+    (entry) => entry.name === assetName,
+  );
   if (!asset || !asset.browser_download_url) return "";
-  const headers = { Accept: "application/octet-stream", "User-Agent": userAgent };
+  const headers = {
+    Accept: "application/octet-stream",
+    "User-Agent": userAgent,
+  };
   if (token) headers.Authorization = `Bearer ${token}`;
   const response = await fetch(asset.browser_download_url, { headers });
   if (!response.ok) {
-    throw new Error(`Download ${assetName} failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Download ${assetName} failed: ${response.status} ${response.statusText}`,
+    );
   }
   return response.text();
 }
 
-function writeLinuxManifestUpdate({ existingText, appImagePath, version, owner, repo }) {
+function writeLinuxManifestUpdate({
+  existingText,
+  appImagePath,
+  version,
+  owner,
+  repo,
+}) {
   const tag = `v${version}`;
   const linux = createReleaseAssetInfo(appImagePath, tag, owner, repo);
   const manifest = {
@@ -539,7 +623,7 @@ function writeLinuxManifestUpdate({ existingText, appImagePath, version, owner, 
     linuxUrl: linux.url,
     linuxSha256: linux.sha256,
     linuxSha512: linux.sha512,
-    linuxSize: linux.size
+    linuxSize: linux.size,
   };
   const manifestPath = path.join(rootDir, "dist", "installer", "latest.yml");
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
@@ -547,7 +631,14 @@ function writeLinuxManifestUpdate({ existingText, appImagePath, version, owner, 
   return { manifestPath, appImageName: linux.name, linuxSha256: linux.sha256 };
 }
 
-function uploadAssetWithProgress({ token, url, filePath, contentType, label, size }) {
+function uploadAssetWithProgress({
+  token,
+  url,
+  filePath,
+  contentType,
+  label,
+  size,
+}) {
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(url);
     const request = https.request(
@@ -562,8 +653,8 @@ function uploadAssetWithProgress({ token, url, filePath, contentType, label, siz
           "Content-Type": contentType,
           "Content-Length": String(size),
           "X-GitHub-Api-Version": apiVersion,
-          "User-Agent": userAgent
-        }
+          "User-Agent": userAgent,
+        },
       },
       (response) => {
         let responseText = "";
@@ -577,18 +668,27 @@ function uploadAssetWithProgress({ token, url, filePath, contentType, label, siz
             try {
               data = JSON.parse(responseText);
             } catch {
-              reject(new Error(`GitHub returned invalid JSON while uploading ${path.basename(filePath)}.`));
+              reject(
+                new Error(
+                  `GitHub returned invalid JSON while uploading ${path.basename(filePath)}.`,
+                ),
+              );
               return;
             }
           }
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            const message = data && data.message ? data.message : response.statusMessage;
-            reject(new Error(`Upload ${path.basename(filePath)} failed: ${response.statusCode} ${message}`));
+            const message =
+              data && data.message ? data.message : response.statusMessage;
+            reject(
+              new Error(
+                `Upload ${path.basename(filePath)} failed: ${response.statusCode} ${message}`,
+              ),
+            );
             return;
           }
           resolve(data);
         });
-      }
+      },
     );
     request.on("error", reject);
 
@@ -623,7 +723,7 @@ async function uploadAsset(token, release, filePath, contentType) {
     filePath,
     contentType,
     label: `Upload ${assetName}`,
-    size
+    size,
   });
   if (process.stdout.isTTY) {
     process.stdout.write("\n");
@@ -634,13 +734,17 @@ async function uploadAsset(token, release, filePath, contentType) {
 function precheckVersionCommit() {
   logHeader("Git precheck");
   if (!isInsideGitRepo()) {
-    logStep("Skip Git commit precheck because this folder is not a Git repository.");
+    logStep(
+      "Skip Git commit precheck because this folder is not a Git repository.",
+    );
     return;
   }
   const name = runCapture("git", ["config", "--get", "user.name"]);
   const email = runCapture("git", ["config", "--get", "user.email"]);
   if (!name || !email) {
-    throw new Error("Git user.name/user.email is missing; configure Git before releasing.");
+    throw new Error(
+      "Git user.name/user.email is missing; configure Git before releasing.",
+    );
   }
   logSuccess("Git can commit version files");
 }
@@ -651,19 +755,57 @@ function commitVersionFiles(version) {
     logStep("Skip commit because this folder is not a Git repository.");
     return;
   }
-  const unstagedChanges = runStatus("git", ["diff", "--quiet", "--", "package.json", "package-lock.json"]);
-  const stagedChanges = runStatus("git", ["diff", "--cached", "--quiet", "--", "package.json", "package-lock.json"]);
-  const untrackedFiles = runCapture("git", ["ls-files", "--others", "--exclude-standard", "--", "package.json", "package-lock.json"]);
-  if (unstagedChanges.status === 0 && stagedChanges.status === 0 && !untrackedFiles) {
-    logStep("Skip commit because package.json and package-lock.json did not change.");
+  const unstagedChanges = runStatus("git", [
+    "diff",
+    "--quiet",
+    "--",
+    "package.json",
+    "package-lock.json",
+  ]);
+  const stagedChanges = runStatus("git", [
+    "diff",
+    "--cached",
+    "--quiet",
+    "--",
+    "package.json",
+    "package-lock.json",
+  ]);
+  const untrackedFiles = runCapture("git", [
+    "ls-files",
+    "--others",
+    "--exclude-standard",
+    "--",
+    "package.json",
+    "package-lock.json",
+  ]);
+  if (
+    unstagedChanges.status === 0 &&
+    stagedChanges.status === 0 &&
+    !untrackedFiles
+  ) {
+    logStep(
+      "Skip commit because package.json and package-lock.json did not change.",
+    );
     return;
   }
-  const addResult = runStatus("git", ["add", "--", "package.json", "package-lock.json"]);
+  const addResult = runStatus("git", [
+    "add",
+    "--",
+    "package.json",
+    "package-lock.json",
+  ]);
   if (addResult.status !== 0) {
     throw new Error("Git add failed.");
   }
   logStep("Commit package.json and package-lock.json");
-  const result = runStatus("git", ["commit", "--only", "package.json", "package-lock.json", "-m", `chore: release ${version}`]);
+  const result = runStatus("git", [
+    "commit",
+    "--only",
+    "package.json",
+    "package-lock.json",
+    "-m",
+    `chore: release ${version}`,
+  ]);
   if (result.status !== 0) {
     const details = (result.stderr || result.stdout || "").trim();
     throw new Error(`Git commit failed.${details ? ` ${details}` : ""}`);
@@ -673,7 +815,9 @@ function commitVersionFiles(version) {
 
 async function releaseLinuxAppImage({ token, owner, repo, version }) {
   if (process.platform !== "linux") {
-    throw new Error("AppImage packaging must run on Linux. Use the GitHub workflow or a Linux machine.");
+    throw new Error(
+      "AppImage packaging must run on Linux. Use the GitHub workflow or a Linux machine.",
+    );
   }
   const tag = `v${version}`;
   logHeader("Linux AppImage release");
@@ -686,27 +830,55 @@ async function releaseLinuxAppImage({ token, owner, repo, version }) {
 
   logHeader("Build");
   run("node", ["scripts/run-electron-vite.cjs", "build"]);
-  runWithRetry("npx", ["electron-builder", "--config", "electron-builder.config.cjs", "--linux", "AppImage", "--publish", "never"], {
-    attempts: 3
-  });
+  runWithRetry(
+    "npx",
+    [
+      "electron-builder",
+      "--config",
+      "electron-builder.config.cjs",
+      "--linux",
+      "AppImage",
+      "--publish",
+      "never",
+    ],
+    {
+      attempts: 3,
+    },
+  );
   const appImageUploadPath = createUploadCopy(findAppImage(), linuxUploadName);
 
   logHeader("GitHub");
   const release = await getReleaseByTag(token, owner, repo, tag);
   logSuccess(`Release ready: ${release.html_url || tag}`);
 
-  const existingManifest = await fetchReleaseAssetText(token, release, "latest.yml");
+  const existingManifest = await fetchReleaseAssetText(
+    token,
+    release,
+    "latest.yml",
+  );
   const manifest = writeLinuxManifestUpdate({
     existingText: existingManifest,
     appImagePath: appImageUploadPath,
     version,
     owner,
-    repo
+    repo,
   });
-  logSuccess(`Updated ${path.relative(rootDir, manifest.manifestPath)} with Linux asset info`);
+  logSuccess(
+    `Updated ${path.relative(rootDir, manifest.manifestPath)} with Linux asset info`,
+  );
 
-  await uploadAsset(token, release, appImageUploadPath, "application/octet-stream");
-  await uploadAsset(token, release, manifest.manifestPath, "application/x-yaml");
+  await uploadAsset(
+    token,
+    release,
+    appImageUploadPath,
+    "application/octet-stream",
+  );
+  await uploadAsset(
+    token,
+    release,
+    manifest.manifestPath,
+    "application/x-yaml",
+  );
 
   logHeader("Done");
   logSuccess(`Uploaded Linux AppImage for ${appName} ${version}`);
@@ -736,22 +908,34 @@ async function main() {
       throw new Error("Missing repo in config.json.");
     }
     if (options.linuxOnly && process.platform !== "linux") {
-      throw new Error("AppImage packaging must run on Linux. Use the GitHub workflow for npm run release:linux.");
+      throw new Error(
+        "AppImage packaging must run on Linux. Use the GitHub workflow for npm run release:linux.",
+      );
     }
 
     const nextVersion = options.linuxOnly
       ? options.version || pkgBefore.version
       : options.version || bumpVersion(pkgBefore.version, options.bump);
     logInfo("Repository", `${owner}/${repo}`);
-    logInfo("Version", options.linuxOnly ? nextVersion : `${pkgBefore.version} -> ${nextVersion}`);
-    logInfo("Mode", `${options.linuxOnly ? "linux appimage" : options.draft ? "draft" : "published"}${options.prerelease ? ", prerelease" : ""}`);
+    logInfo(
+      "Version",
+      options.linuxOnly
+        ? nextVersion
+        : `${pkgBefore.version} -> ${nextVersion}`,
+    );
+    logInfo(
+      "Mode",
+      `${options.linuxOnly ? "linux appimage" : options.draft ? "draft" : "published"}${options.prerelease ? ", prerelease" : ""}`,
+    );
 
     logHeader("Preflight");
     run("npm", ["run", "test"]);
     logStep("Resolve GitHub token");
     token = getGitHubToken();
     if (!token) {
-      throw new Error("GitHub auth missing. Run `gh auth login` once, or set GH_TOKEN/GITHUB_TOKEN.");
+      throw new Error(
+        "GitHub auth missing. Run `gh auth login` once, or set GH_TOKEN/GITHUB_TOKEN.",
+      );
     }
     logSuccess("GitHub auth available");
     if (!options.linuxOnly) {
@@ -773,15 +957,29 @@ async function main() {
     logSuccess("Cleaned dist and out");
     run("npm", ["run", "setup"]);
 
-    const setupPath = path.join(rootDir, "dist", "installer", `${windowsSetupBaseName}-${nextVersion}.exe`);
+    const setupPath = path.join(
+      rootDir,
+      "dist",
+      "installer",
+      `${windowsSetupBaseName}-${nextVersion}.exe`,
+    );
     if (!fs.existsSync(setupPath)) {
       throw new Error(`Setup file not found: ${setupPath}`);
     }
-    logInfo("Setup", `${path.relative(rootDir, setupPath)} (${formatBytes(fs.statSync(setupPath).size)})`);
+    logInfo(
+      "Setup",
+      `${path.relative(rootDir, setupPath)} (${formatBytes(fs.statSync(setupPath).size)})`,
+    );
     const setupUploadPath = createUploadCopy(setupPath, windowsUploadName);
 
     logHeader("Manifest");
-    const manifest = createLatestManifest({ pkg, setupPath: setupUploadPath, version: nextVersion, owner, repo });
+    const manifest = createLatestManifest({
+      pkg,
+      setupPath: setupUploadPath,
+      version: nextVersion,
+      owner,
+      repo,
+    });
     logSuccess(`Created ${path.relative(rootDir, manifest.manifestPath)}`);
     logInfo("SHA256", manifest.sha256);
 
@@ -793,7 +991,7 @@ async function main() {
       tag: manifest.tag,
       version: nextVersion,
       draft: options.draft,
-      prerelease: options.prerelease
+      prerelease: options.prerelease,
     });
     const release = releaseResult.release;
     if (releaseResult.created) {
@@ -802,22 +1000,42 @@ async function main() {
     }
     logSuccess(`Release ready: ${release.html_url || manifest.tag}`);
 
-    await deleteUnexpectedReleaseAssets(token, release, [windowsUploadName, "latest.yml", linuxUploadName]);
-    await uploadAsset(token, release, setupUploadPath, "application/vnd.microsoft.portable-executable");
-    await uploadAsset(token, release, manifest.manifestPath, "application/x-yaml");
+    await deleteUnexpectedReleaseAssets(token, release, [
+      windowsUploadName,
+      "latest.yml",
+      linuxUploadName,
+    ]);
+    await uploadAsset(
+      token,
+      release,
+      setupUploadPath,
+      "application/vnd.microsoft.portable-executable",
+    );
+    await uploadAsset(
+      token,
+      release,
+      manifest.manifestPath,
+      "application/x-yaml",
+    );
 
     try {
       await triggerLinuxReleaseWorkflow(token, owner, repo, nextVersion);
     } catch (workflowError) {
-      console.error(`${color("yellow", "WARN")} Linux workflow trigger failed: ${workflowError.message || workflowError}`);
-      console.error(`${color("yellow", "WARN")} Run the "Linux AppImage Release" workflow manually for ${nextVersion}.`);
+      console.error(
+        `${color("yellow", "WARN")} Linux workflow trigger failed: ${workflowError.message || workflowError}`,
+      );
+      console.error(
+        `${color("yellow", "WARN")} Run the "Linux AppImage Release" workflow manually for ${nextVersion}.`,
+      );
     }
 
     commitVersionFiles(nextVersion);
     versionFilesCommitted = true;
 
     logHeader("Done");
-    logSuccess(`Released ${appName} ${nextVersion} in ${formatDuration(releaseStartedAt)}`);
+    logSuccess(
+      `Released ${appName} ${nextVersion} in ${formatDuration(releaseStartedAt)}`,
+    );
     logInfo("Tag", manifest.tag);
     logInfo("Setup", manifest.setupName);
     logInfo("SHA256", manifest.sha256);
@@ -829,13 +1047,23 @@ async function main() {
       resetVersionFilesFromGitIndex();
       logSuccess("Restored package.json/package-lock.json");
     } else {
-      logStep("Version files were already committed; local version rollback skipped.");
+      logStep(
+        "Version files were already committed; local version rollback skipped.",
+      );
     }
     if (createdRelease && token && owner && repo) {
       try {
-        await deleteReleaseAndTag(token, owner, repo, createdRelease, createdReleaseTag);
+        await deleteReleaseAndTag(
+          token,
+          owner,
+          repo,
+          createdRelease,
+          createdReleaseTag,
+        );
       } catch (rollbackError) {
-        console.error(`${color("yellow", "WARN")} GitHub rollback failed: ${rollbackError.message || rollbackError}`);
+        console.error(
+          `${color("yellow", "WARN")} GitHub rollback failed: ${rollbackError.message || rollbackError}`,
+        );
       }
     }
     throw error;

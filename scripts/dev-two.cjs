@@ -15,7 +15,7 @@ function electronPath() {
 function spawnChild(command, args, env) {
   const childEnv = {
     ...process.env,
-    ...env
+    ...env,
   };
   delete childEnv.ELECTRON_RUN_AS_NODE;
 
@@ -23,7 +23,7 @@ function spawnChild(command, args, env) {
     cwd: root,
     env: childEnv,
     stdio: "inherit",
-    shell: false
+    shell: false,
   });
 
   children.add(child);
@@ -91,17 +91,21 @@ process.on("SIGTERM", () => {
 async function main() {
   fs.mkdirSync(devDataRoot, { recursive: true });
 
-  spawnChild(process.execPath, [path.join("scripts", "run-electron-vite.cjs"), "dev"], {
-    AERO_CHAT_ALLOW_MULTI_INSTANCE: "1",
-    AERO_CHAT_USER_DATA_DIR: path.join(devDataRoot, "instance-1")
-  });
+  spawnChild(
+    process.execPath,
+    [path.join("scripts", "run-electron-vite.cjs"), "dev"],
+    {
+      AERO_CHAT_ALLOW_MULTI_INSTANCE: "1",
+      AERO_CHAT_USER_DATA_DIR: path.join(devDataRoot, "instance-1"),
+    },
+  );
 
   await Promise.all([waitForRenderer(), waitForMainBundle()]);
 
   spawnChild(electronPath(), [path.join(root, "out", "main", "index.js")], {
     ELECTRON_RENDERER_URL: rendererUrl,
     AERO_CHAT_ALLOW_MULTI_INSTANCE: "1",
-    AERO_CHAT_USER_DATA_DIR: path.join(devDataRoot, "instance-2")
+    AERO_CHAT_USER_DATA_DIR: path.join(devDataRoot, "instance-2"),
   });
 }
 

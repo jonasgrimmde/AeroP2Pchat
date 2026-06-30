@@ -3,7 +3,7 @@ const { resolve } = require("node:path");
 const projectConfig = require("./config.json");
 
 const defineProjectConfig = {
-  __PROJECT_CONFIG__: JSON.stringify(projectConfig)
+  __PROJECT_CONFIG__: JSON.stringify(projectConfig),
 };
 
 module.exports = defineConfig({
@@ -12,19 +12,19 @@ module.exports = defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, "src/main/index.js")
-        }
-      }
-    }
+          index: resolve(__dirname, "src/main/index.js"),
+        },
+      },
+    },
   },
   preload: {
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, "src/preload/index.js")
-        }
-      }
-    }
+          index: resolve(__dirname, "src/preload/index.js"),
+        },
+      },
+    },
   },
   renderer: {
     define: defineProjectConfig,
@@ -33,9 +33,9 @@ module.exports = defineConfig({
     build: {
       rollupOptions: {
         input: {
-          index: resolve(__dirname, "src/renderer/index.html")
-        }
-      }
-    }
-  }
+          index: resolve(__dirname, "src/renderer/index.html"),
+        },
+      },
+    },
+  },
 });

@@ -57,7 +57,7 @@ The terminal command is removed again when Aero P2P Chat is uninstalled.
 Use the installer script from the GitHub repository:
 
 ```sh
-curl -fsSL "https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh" | sh
+curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh
 ```
 
 After installing, use:
@@ -79,9 +79,9 @@ Available Linux CLI commands:
 You can still call the installer directly:
 
 ```sh
-curl -fsSL "https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh" | sh -s -- status
-curl -fsSL "https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh" | sh -s -- update
-curl -fsSL "https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh" | sh -s -- uninstall
+curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh -s -- status
+curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh -s -- update
+curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh -s -- uninstall
 ```
 
 The Linux installer creates:

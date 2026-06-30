@@ -50,10 +50,12 @@ function Show-Status {
     Write-Host "Latest:    $latest"
     if ($latest -and $latest -ne $CurrentVersion) {
       Write-Host "Update available. Run: __CLI_COMMAND_NAME__ update"
-    } else {
+    }
+    else {
       Write-Host "Up to date."
     }
-  } catch {
+  }
+  catch {
     Write-Host "Latest:    unknown"
     Write-Host $_.Exception.Message
   }
@@ -93,7 +95,7 @@ function Install-Update {
   }
 
   Write-Host "Starting setup..."
-  Start-Process -FilePath $target -ArgumentList "/SILENT","/SUPPRESSMSGBOXES","/NORESTART","/FORCECLOSEAPPLICATIONS","/RESTARTAPPLICATIONS"
+  Start-Process -FilePath $target -ArgumentList "/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/FORCECLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS"
 }
 
 switch ($Command.ToLowerInvariant()) {
@@ -106,7 +108,8 @@ switch ($Command.ToLowerInvariant()) {
   "uninstall" {
     if (Test-Path $Uninstaller) {
       Start-Process -FilePath $Uninstaller
-    } else {
+    }
+    else {
       throw "Uninstaller not found."
     }
     break
@@ -114,7 +117,8 @@ switch ($Command.ToLowerInvariant()) {
   "remove" {
     if (Test-Path $Uninstaller) {
       Start-Process -FilePath $Uninstaller
-    } else {
+    }
+    else {
       throw "Uninstaller not found."
     }
     break

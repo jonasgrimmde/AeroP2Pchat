@@ -16,7 +16,8 @@ contextBridge.exposeInMainWorld("aeroChat", {
   getScreenSources: () => ipcRenderer.invoke("get-screen-sources"),
   writeClipboard: (text) => ipcRenderer.invoke("write-clipboard", text),
   getNotificationState: () => ipcRenderer.invoke("get-notification-state"),
-  showNotification: (details) => ipcRenderer.invoke("show-app-notification", details),
+  showNotification: (details) =>
+    ipcRenderer.invoke("show-app-notification", details),
   closeNotification: (id) => ipcRenderer.invoke("close-app-notification", id),
   onNotificationAction: (callback) => {
     const listener = (_event, action) => callback(action);
@@ -32,10 +33,10 @@ contextBridge.exposeInMainWorld("aeroChat", {
       ipcRenderer.removeListener("system-shutdown", listener);
     };
   },
-  windowControl: (action) => ipcRenderer.invoke("window-control", action)
+  windowControl: (action) => ipcRenderer.invoke("window-control", action),
 });
 
 contextBridge.exposeInMainWorld("aeroChatNotification", {
   action: (action) => ipcRenderer.invoke("notification-action", action),
-  close: (id) => ipcRenderer.invoke("close-app-notification", id)
+  close: (id) => ipcRenderer.invoke("close-app-notification", id),
 });

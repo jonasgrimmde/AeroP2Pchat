@@ -1,4 +1,16 @@
-const { app, BrowserWindow, Menu, Tray, clipboard, desktopCapturer, ipcMain, powerMonitor, screen, shell, session } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  clipboard,
+  desktopCapturer,
+  ipcMain,
+  powerMonitor,
+  screen,
+  shell,
+  session,
+} = require("electron");
 const { createWriteStream, existsSync, readFileSync } = require("node:fs");
 const { mkdir, mkdtemp, readFile, rm, writeFile } = require("node:fs/promises");
 const { createHash } = require("node:crypto");
@@ -8,9 +20,10 @@ const { basename, dirname, join } = require("node:path");
 const { execFileSync, spawn } = require("node:child_process");
 const projectConfig = __PROJECT_CONFIG__;
 
-const windowIcon = process.platform === "win32"
-  ? join(__dirname, "../../assets/app.ico")
-  : join(__dirname, "../../assets/linux-icons/512x512.png");
+const windowIcon =
+  process.platform === "win32"
+    ? join(__dirname, "../../assets/app.ico")
+    : join(__dirname, "../../assets/linux-icons/512x512.png");
 const releaseHost = "github.com";
 const releasePathPrefix = `/${projectConfig.repo}/releases/`;
 const appDisplayName = projectConfig.app.name;
@@ -24,7 +37,8 @@ const defaultMicNoiseReduction = 55;
 const defaultMicEqLow = 0;
 const defaultMicEqMid = 0;
 const defaultMicEqHigh = 0;
-const allowMultipleInstances = process.env.AERO_CHAT_ALLOW_MULTI_INSTANCE === "1";
+const allowMultipleInstances =
+  process.env.AERO_CHAT_ALLOW_MULTI_INSTANCE === "1";
 const autostartDesktopFileName = projectConfig.linux.autostartDesktopFileName;
 let mainWindow = null;
 let tray = null;
@@ -71,7 +85,7 @@ function getDefaultAppSettings() {
     readReceipts: true,
     sidebarWidth: defaultSidebarWidth,
     theme: "light",
-    presenceStatus: "online"
+    presenceStatus: "online",
   };
 }
 
@@ -88,14 +102,16 @@ function getDefaultAudioSettings() {
     micEqLow: defaultMicEqLow,
     micEqMid: defaultMicEqMid,
     micEqHigh: defaultMicEqHigh,
-    micProfile: "voice-isolation"
+    micProfile: "voice-isolation",
   };
 }
 
 function normalizeConfig(config = {}) {
   const settings = {
     ...getDefaultAppSettings(),
-    ...(config.appSettings && typeof config.appSettings === "object" ? config.appSettings : {})
+    ...(config.appSettings && typeof config.appSettings === "object"
+      ? config.appSettings
+      : {}),
   };
 
   config.appSettings = {
@@ -103,11 +119,22 @@ function normalizeConfig(config = {}) {
     startHidden: Boolean(settings.startHidden),
     closeToTray: settings.closeToTray !== false,
     readReceipts: settings.readReceipts !== false,
-    presenceStatus: ["online", "dnd", "offline"].includes(settings.presenceStatus) ? settings.presenceStatus : "online",
-    theme: ["light", "dark"].includes(settings.theme) ? settings.theme : "light",
+    presenceStatus: ["online", "dnd", "offline"].includes(
+      settings.presenceStatus,
+    )
+      ? settings.presenceStatus
+      : "online",
+    theme: ["light", "dark"].includes(settings.theme)
+      ? settings.theme
+      : "light",
     sidebarWidth: Number.isFinite(settings.sidebarWidth)
-      ? Math.round(Math.max(minSidebarWidth, Math.min(maxSidebarWidth, settings.sidebarWidth)))
-      : defaultSidebarWidth
+      ? Math.round(
+          Math.max(
+            minSidebarWidth,
+            Math.min(maxSidebarWidth, settings.sidebarWidth),
+          ),
+        )
+      : defaultSidebarWidth,
   };
 
   if (!config.appSettings.autostart) {
@@ -116,13 +143,20 @@ function normalizeConfig(config = {}) {
 
   const audio = {
     ...getDefaultAudioSettings(),
-    ...(config.audio && typeof config.audio === "object" ? config.audio : {})
+    ...(config.audio && typeof config.audio === "object" ? config.audio : {}),
   };
 
   config.audio = {
-    inputDeviceId: typeof audio.inputDeviceId === "string" ? audio.inputDeviceId : "default",
-    cameraDeviceId: typeof audio.cameraDeviceId === "string" ? audio.cameraDeviceId : "default",
-    outputDeviceId: typeof audio.outputDeviceId === "string" ? audio.outputDeviceId : "default",
+    inputDeviceId:
+      typeof audio.inputDeviceId === "string" ? audio.inputDeviceId : "default",
+    cameraDeviceId:
+      typeof audio.cameraDeviceId === "string"
+        ? audio.cameraDeviceId
+        : "default",
+    outputDeviceId:
+      typeof audio.outputDeviceId === "string"
+        ? audio.outputDeviceId
+        : "default",
     remoteVolume: Number.isFinite(audio.remoteVolume)
       ? Math.round(Math.max(0, Math.min(100, audio.remoteVolume)))
       : 100,
@@ -145,7 +179,11 @@ function normalizeConfig(config = {}) {
     micEqHigh: Number.isFinite(audio.micEqHigh)
       ? Math.round(Math.max(-12, Math.min(12, audio.micEqHigh)))
       : defaultMicEqHigh,
-    micProfile: ["voice-isolation", "studio", "custom"].includes(audio.micProfile) ? audio.micProfile : "voice-isolation"
+    micProfile: ["voice-isolation", "studio", "custom"].includes(
+      audio.micProfile,
+    )
+      ? audio.micProfile
+      : "voice-isolation",
   };
 
   return config;
@@ -166,7 +204,11 @@ async function saveConfig(config) {
   const normalizedConfig = normalizeConfig(config || {});
   const configPath = getConfigPath();
   await mkdir(app.getPath("userData"), { recursive: true });
-  await writeFile(configPath, `${JSON.stringify(normalizedConfig, null, 2)}\n`, "utf8");
+  await writeFile(
+    configPath,
+    `${JSON.stringify(normalizedConfig, null, 2)}\n`,
+    "utf8",
+  );
   appConfig = normalizedConfig;
   await applyAutostartSettings();
   return { ok: true, path: configPath };
@@ -177,7 +219,12 @@ function getAutostartArgs() {
 }
 
 function getLinuxAutostartPath() {
-  return join(app.getPath("home"), ".config", "autostart", autostartDesktopFileName);
+  return join(
+    app.getPath("home"),
+    ".config",
+    "autostart",
+    autostartDesktopFileName,
+  );
 }
 
 function quoteDesktopValue(value) {
@@ -199,7 +246,7 @@ async function applyLinuxAutostartSettings() {
     `Name=${appDisplayName}`,
     `Exec=${quoteDesktopValue(executable)}${args ? ` ${args}` : ""}`,
     "Terminal=false",
-    "X-GNOME-Autostart-enabled=true"
+    "X-GNOME-Autostart-enabled=true",
   ].join("\n");
 
   await mkdir(dirname(autostartPath), { recursive: true });
@@ -215,7 +262,7 @@ async function applyAutostartSettings() {
   app.setLoginItemSettings({
     openAtLogin: Boolean(appConfig.appSettings?.autostart),
     path: process.execPath,
-    args: getAutostartArgs()
+    args: getAutostartArgs(),
   });
 }
 
@@ -241,19 +288,21 @@ function updateTrayMenu() {
     return;
   }
 
-  tray.setContextMenu(Menu.buildFromTemplate([
-    {
-      label: "Open",
-      click: showMainWindow
-    },
-    {
-      label: "Close",
-      click: () => {
-        forceQuit = true;
-        app.quit();
-      }
-    }
-  ]));
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Open",
+        click: showMainWindow,
+      },
+      {
+        label: "Close",
+        click: () => {
+          forceQuit = true;
+          app.quit();
+        },
+      },
+    ]),
+  );
 }
 
 function createTray() {
@@ -275,7 +324,7 @@ function runStatusCommand(command, args) {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
       timeout: 900,
-      windowsHide: true
+      windowsHide: true,
     }).trim();
   } catch {
     return "";
@@ -289,7 +338,7 @@ function isWindowsNotificationDisabled() {
     "-ExecutionPolicy",
     "Bypass",
     "-Command",
-    "Add-Type 'using System; using System.Runtime.InteropServices; public static class AeroNotifyState { [DllImport(\"shell32.dll\")] public static extern int SHQueryUserNotificationState(out int state); }'; $state = 0; [void][AeroNotifyState]::SHQueryUserNotificationState([ref]$state); [Console]::Write($state)"
+    "Add-Type 'using System; using System.Runtime.InteropServices; public static class AeroNotifyState { [DllImport(\"shell32.dll\")] public static extern int SHQueryUserNotificationState(out int state); }'; $state = 0; [void][AeroNotifyState]::SHQueryUserNotificationState([ref]$state); [Console]::Write($state)",
   ]);
   if (/^\d+$/.test(shellState)) {
     return shellState !== "5";
@@ -299,9 +348,11 @@ function isWindowsNotificationDisabled() {
     "query",
     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings",
     "/v",
-    "NOC_GLOBAL_SETTING_TOASTS_ENABLED"
+    "NOC_GLOBAL_SETTING_TOASTS_ENABLED",
   ]);
-  if (/\bNOC_GLOBAL_SETTING_TOASTS_ENABLED\b[\s\S]*\b0x0\b/i.test(settingsOutput)) {
+  if (
+    /\bNOC_GLOBAL_SETTING_TOASTS_ENABLED\b[\s\S]*\b0x0\b/i.test(settingsOutput)
+  ) {
     return true;
   }
 
@@ -309,13 +360,17 @@ function isWindowsNotificationDisabled() {
     "query",
     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications",
     "/v",
-    "ToastEnabled"
+    "ToastEnabled",
   ]);
   return /\bToastEnabled\b[\s\S]*\b0x0\b/i.test(pushOutput);
 }
 
 function isLinuxNotificationDisabled() {
-  const showBanners = runStatusCommand("gsettings", ["get", "org.gnome.desktop.notifications", "show-banners"]);
+  const showBanners = runStatusCommand("gsettings", [
+    "get",
+    "org.gnome.desktop.notifications",
+    "show-banners",
+  ]);
   if (showBanners) {
     return showBanners === "false";
   }
@@ -333,11 +388,12 @@ function isSystemDoNotDisturbEnabled() {
     return lastSystemDndCheck.enabled;
   }
 
-  const enabled = process.platform === "win32"
-    ? isWindowsNotificationDisabled()
-    : process.platform === "linux"
-      ? isLinuxNotificationDisabled()
-      : false;
+  const enabled =
+    process.platform === "win32"
+      ? isWindowsNotificationDisabled()
+      : process.platform === "linux"
+        ? isLinuxNotificationDisabled()
+        : false;
   lastSystemDndCheck = { checkedAt: now, enabled };
   return enabled;
 }
@@ -345,7 +401,7 @@ function isSystemDoNotDisturbEnabled() {
 function getNotificationState() {
   return {
     appFocused: Boolean(mainWindow?.isVisible() && mainWindow?.isFocused()),
-    systemDnd: isSystemDoNotDisturbEnabled()
+    systemDnd: isSystemDoNotDisturbEnabled(),
   };
 }
 
@@ -395,7 +451,7 @@ function findNotificationSound(baseName) {
     `${baseName}.ogg`,
     `${baseName}.wav`,
     join("sound", `${baseName}.ogg`),
-    join("sound", `${baseName}.wav`)
+    join("sound", `${baseName}.wav`),
   ];
 
   return findRendererAssetDataUrl(candidates);
@@ -433,7 +489,7 @@ function positionNotificationWindows() {
       x: workArea.x + workArea.width - width - 12,
       y,
       width,
-      height
+      height,
     });
     y -= 10;
   }
@@ -476,7 +532,9 @@ function sendNotificationAction(action) {
 function createNotificationHtml(details, soundUrl, logoUrl) {
   const isCall = details.kind === "call";
   const theme = details.theme === "dark" ? "dark" : "light";
-  const title = escapeHtml(details.title || (isCall ? "Incoming call" : "New message"));
+  const title = escapeHtml(
+    details.title || (isCall ? "Incoming call" : "New message"),
+  );
   const body = escapeHtml(details.body || "");
   const peerId = escapeAttribute(details.peerId || "");
   const callId = escapeAttribute(details.callId || "");
@@ -507,9 +565,11 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
       border-radius: 8px;
       padding: 7px;
       background:
-        ${theme === "dark"
-          ? "linear-gradient(145deg, rgba(13,22,30,.98), rgba(6,12,18,.98)), radial-gradient(circle at 14% 0%, rgba(72,158,184,.12), transparent 8rem)"
-          : "linear-gradient(145deg, rgba(251,255,255,.97), rgba(179,239,252,.95)), radial-gradient(circle at 14% 0%, rgba(255,255,255,.86), transparent 8rem)"};
+        ${
+          theme === "dark"
+            ? "linear-gradient(145deg, rgba(13,22,30,.98), rgba(6,12,18,.98)), radial-gradient(circle at 14% 0%, rgba(72,158,184,.12), transparent 8rem)"
+            : "linear-gradient(145deg, rgba(251,255,255,.97), rgba(179,239,252,.95)), radial-gradient(circle at 14% 0%, rgba(255,255,255,.86), transparent 8rem)"
+        };
       box-shadow: ${theme === "dark" ? "0 16px 34px rgba(0,0,0,.54), inset 0 1px 0 rgba(255,255,255,.08)" : "0 16px 34px rgba(3, 43, 68, .28), inset 0 1px 0 rgba(255,255,255,.9)"};
       animation: enter 170ms cubic-bezier(.2,.82,.2,1);
     }
@@ -621,13 +681,17 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
       <button class="close" type="button" id="close" aria-label="Close">×</button>
     </header>
     <div class="actions">
-      ${isCall ? `
+      ${
+        isCall
+          ? `
         <button class="action accept" type="button" id="accept">Accept</button>
         <button class="action decline" type="button" id="decline">Decline</button>
-      ` : `
+      `
+          : `
         <input id="reply" type="text" maxlength="4000" placeholder="Reply..." />
         <button class="action" type="button" id="send">Send</button>
-      `}
+      `
+      }
     </div>
   </section>
   ${sound ? `<audio id="sound" src="${sound}" ${isCall ? "" : "autoplay"}></audio>` : ""}
@@ -717,19 +781,25 @@ function createNotificationHtml(details, soundUrl, logoUrl) {
 }
 
 function showAppNotification(details = {}) {
-  if (shouldSuppressNotification({ showWhenFocused: Boolean(details.showWhenFocused) })) {
+  if (
+    shouldSuppressNotification({
+      showWhenFocused: Boolean(details.showWhenFocused),
+    })
+  ) {
     return { ok: true, suppressed: true };
   }
 
   const kind = details.kind === "call" ? "call" : "message";
   const notification = {
-    id: details.id || `toast-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    id:
+      details.id ||
+      `toast-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     kind,
     peerId: details.peerId || "",
     callId: details.callId || "",
     title: String(details.title || ""),
     body: String(details.body || ""),
-    theme: details.theme === "dark" ? "dark" : "light"
+    theme: details.theme === "dark" ? "dark" : "light",
   };
   const existingWindow = notificationWindowById.get(notification.id);
   if (existingWindow && !existingWindow.isDestroyed()) {
@@ -757,8 +827,8 @@ function showAppNotification(details = {}) {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,
       sandbox: true,
-      nodeIntegration: false
-    }
+      nodeIntegration: false,
+    },
   });
 
   notificationWindows.push(win);
@@ -774,14 +844,28 @@ function showAppNotification(details = {}) {
     positionNotificationWindows();
   });
 
-  const hasOtherCallNotification = Array.from(notificationDetailsById.entries()).some(([id, item]) => {
+  const hasOtherCallNotification = Array.from(
+    notificationDetailsById.entries(),
+  ).some(([id, item]) => {
     const notificationWindow = notificationWindowById.get(id);
-    return id !== notification.id && item.kind === "call" && notificationWindow && !notificationWindow.isDestroyed();
+    return (
+      id !== notification.id &&
+      item.kind === "call" &&
+      notificationWindow &&
+      !notificationWindow.isDestroyed()
+    );
   });
-  const shouldPlaySound = !details.silent && !isSystemDoNotDisturbEnabled() && (kind !== "call" || !hasOtherCallNotification);
-  const soundUrl = shouldPlaySound ? findNotificationSound(kind === "call" ? "ringtone" : "message") : "";
+  const shouldPlaySound =
+    !details.silent &&
+    !isSystemDoNotDisturbEnabled() &&
+    (kind !== "call" || !hasOtherCallNotification);
+  const soundUrl = shouldPlaySound
+    ? findNotificationSound(kind === "call" ? "ringtone" : "message")
+    : "";
   const logoUrl = findNotificationLogo();
-  win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(createNotificationHtml(notification, soundUrl, logoUrl))}`);
+  win.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(createNotificationHtml(notification, soundUrl, logoUrl))}`,
+  );
   win.once("ready-to-show", () => {
     positionNotificationWindows();
     win.show();
@@ -818,7 +902,8 @@ function assertTrustedInstallerUrl(rawUrl) {
   const url = new URL(rawUrl);
   const isTrustedHost = url.hostname === releaseHost;
   const isTrustedPath = url.pathname.startsWith(releasePathPrefix);
-  const isInstaller = basename(url.pathname) === projectConfig.release.windowsInstallerAsset;
+  const isInstaller =
+    basename(url.pathname) === projectConfig.release.windowsInstallerAsset;
 
   if (!isTrustedHost || !isTrustedPath || !isInstaller) {
     throw new Error("Refused untrusted update URL.");
@@ -830,20 +915,30 @@ function assertTrustedInstallerUrl(rawUrl) {
 function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
   return new Promise((resolve, reject) => {
     const request = get(url, (response) => {
-      if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
+      if (
+        [301, 302, 303, 307, 308].includes(response.statusCode) &&
+        response.headers.location
+      ) {
         response.resume();
         if (redirects >= 5) {
           reject(new Error("Too many update download redirects."));
           return;
         }
 
-        downloadFile(new URL(response.headers.location, url), targetPath, onProgress, redirects + 1).then(resolve, reject);
+        downloadFile(
+          new URL(response.headers.location, url),
+          targetPath,
+          onProgress,
+          redirects + 1,
+        ).then(resolve, reject);
         return;
       }
 
       if (response.statusCode !== 200) {
         response.resume();
-        reject(new Error(`Update download failed with HTTP ${response.statusCode}.`));
+        reject(
+          new Error(`Update download failed with HTTP ${response.statusCode}.`),
+        );
         return;
       }
 
@@ -856,16 +951,19 @@ function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
         if (totalBytes > 0) {
           onProgress({
             phase: "download",
-            percent: Math.min(100, Math.round((receivedBytes / totalBytes) * 100)),
+            percent: Math.min(
+              100,
+              Math.round((receivedBytes / totalBytes) * 100),
+            ),
             receivedBytes,
-            totalBytes
+            totalBytes,
           });
         } else {
           onProgress({
             phase: "download",
             percent: null,
             receivedBytes,
-            totalBytes: null
+            totalBytes: null,
           });
         }
       });
@@ -876,7 +974,7 @@ function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
           phase: "download",
           percent: 100,
           receivedBytes: totalBytes || receivedBytes,
-          totalBytes: totalBytes || receivedBytes
+          totalBytes: totalBytes || receivedBytes,
         });
         file.close(resolve);
       });
@@ -891,7 +989,11 @@ function getFileHash(filePath, algorithm, encoding = "hex") {
   return createHash(algorithm).update(readFileSync(filePath)).digest(encoding);
 }
 
-function verifyUpdateDownload(filePath, expectedSha256 = "", expectedSha512 = "") {
+function verifyUpdateDownload(
+  filePath,
+  expectedSha256 = "",
+  expectedSha512 = "",
+) {
   if (!expectedSha256 || !expectedSha512) {
     throw new Error("Update manifest is missing installer checksums.");
   }
@@ -911,7 +1013,13 @@ function verifyUpdateDownload(filePath, expectedSha256 = "", expectedSha512 = ""
   }
 }
 
-async function installWindowsUpdate(rawUrl, version, expectedSha256 = "", expectedSha512 = "", onProgress = () => {}) {
+async function installWindowsUpdate(
+  rawUrl,
+  version,
+  expectedSha256 = "",
+  expectedSha512 = "",
+  onProgress = () => {},
+) {
   if (process.platform !== "win32") {
     throw new Error("Setup updates are only available on Windows.");
   }
@@ -921,9 +1029,17 @@ async function installWindowsUpdate(rawUrl, version, expectedSha256 = "", expect
 
   const url = assertTrustedInstallerUrl(rawUrl);
   const updateDir = await mkdtemp(join(tmpdir(), "aero-p2p-update-"));
-  const setupPath = join(updateDir, `${projectConfig.release.windowsSetupBaseName}-${version || "latest"}.exe`);
+  const setupPath = join(
+    updateDir,
+    `${projectConfig.release.windowsSetupBaseName}-${version || "latest"}.exe`,
+  );
 
-  onProgress({ phase: "download", percent: 0, receivedBytes: 0, totalBytes: null });
+  onProgress({
+    phase: "download",
+    percent: 0,
+    receivedBytes: 0,
+    totalBytes: null,
+  });
   await downloadFile(url, setupPath, onProgress);
   onProgress({ phase: "verify", percent: 100 });
   verifyUpdateDownload(setupPath, expectedSha256, expectedSha512);
@@ -934,12 +1050,12 @@ async function installWindowsUpdate(rawUrl, version, expectedSha256 = "", expect
     "/SUPPRESSMSGBOXES",
     "/NORESTART",
     "/FORCECLOSEAPPLICATIONS",
-    "/RESTARTAPPLICATIONS"
+    "/RESTARTAPPLICATIONS",
   ];
   const updater = spawn(setupPath, setupArgs, {
     detached: true,
     stdio: "ignore",
-    windowsHide: false
+    windowsHide: false,
   });
   updater.unref();
 
@@ -967,8 +1083,8 @@ function createWindow({ hidden = false } = {}) {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,
       sandbox: true,
-      nodeIntegration: false
-    }
+      nodeIntegration: false,
+    },
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -990,7 +1106,11 @@ function createWindow({ hidden = false } = {}) {
     notifyRendererShutdown("session-end");
   });
   win.on("close", (event) => {
-    if (forceQuit || systemShutdownStarted || !appConfig.appSettings?.closeToTray) {
+    if (
+      forceQuit ||
+      systemShutdownStarted ||
+      !appConfig.appSettings?.closeToTray
+    ) {
       return;
     }
 
@@ -1009,13 +1129,23 @@ app.whenReady().then(async () => {
   await applyAutostartSettings();
   createTray();
 
-  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-    const requestingWindow = BrowserWindow.fromWebContents(webContents);
-    callback(requestingWindow === mainWindow && permission === "media");
-  });
-  ipcMain.handle("install-update", (event, details) => installWindowsUpdate(details.url, details.version, details.sha256, details.sha512, (progress) => {
-    event.sender.send("update-progress", progress);
-  }));
+  session.defaultSession.setPermissionRequestHandler(
+    (webContents, permission, callback) => {
+      const requestingWindow = BrowserWindow.fromWebContents(webContents);
+      callback(requestingWindow === mainWindow && permission === "media");
+    },
+  );
+  ipcMain.handle("install-update", (event, details) =>
+    installWindowsUpdate(
+      details.url,
+      details.version,
+      details.sha256,
+      details.sha512,
+      (progress) => {
+        event.sender.send("update-progress", progress);
+      },
+    ),
+  );
   ipcMain.handle("load-config", () => loadConfig());
   ipcMain.handle("save-config", (_event, config) => saveConfig(config));
   ipcMain.handle("get-config-path", () => getConfigPath());
@@ -1028,14 +1158,14 @@ app.whenReady().then(async () => {
     const sources = await desktopCapturer.getSources({
       types: ["screen", "window"],
       thumbnailSize: { width: 320, height: 180 },
-      fetchWindowIcons: true
+      fetchWindowIcons: true,
     });
     return sources.map((source) => ({
       id: source.id,
       name: source.name,
       displayId: source.display_id,
       thumbnail: source.thumbnail?.toDataURL() || "",
-      appIcon: source.appIcon?.toDataURL?.() || ""
+      appIcon: source.appIcon?.toDataURL?.() || "",
     }));
   });
   ipcMain.handle("write-clipboard", (_event, text) => {
@@ -1043,8 +1173,12 @@ app.whenReady().then(async () => {
     return { ok: true };
   });
   ipcMain.handle("get-notification-state", () => getAppNotificationState());
-  ipcMain.handle("show-app-notification", (_event, details) => showAppNotification(details));
-  ipcMain.handle("close-app-notification", (_event, id) => closeAppNotification(id));
+  ipcMain.handle("show-app-notification", (_event, details) =>
+    showAppNotification(details),
+  );
+  ipcMain.handle("close-app-notification", (_event, id) =>
+    closeAppNotification(id),
+  );
   ipcMain.handle("notification-action", (_event, action) => {
     sendNotificationAction(action);
     return { ok: true };
@@ -1088,7 +1222,11 @@ app.on("before-quit", (event) => {
 });
 
 app.on("window-all-closed", () => {
-  if (forceQuit || systemShutdownStarted || !appConfig.appSettings?.closeToTray) {
+  if (
+    forceQuit ||
+    systemShutdownStarted ||
+    !appConfig.appSettings?.closeToTray
+  ) {
     app.quit();
   }
 });

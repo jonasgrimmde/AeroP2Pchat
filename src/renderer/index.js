@@ -43,19 +43,35 @@ const callStream = document.querySelector("#call-stream");
 const callHangup = document.querySelector("#call-hangup");
 const callStage = document.querySelector("#call-stage");
 const localParticipantCard = document.querySelector("#local-participant-card");
-const remoteParticipantCard = document.querySelector("#remote-participant-card");
+const remoteParticipantCard = document.querySelector(
+  "#remote-participant-card",
+);
 const localVideo = document.querySelector("#local-video");
 const remoteVideo = document.querySelector("#remote-video");
 const localPipVideo = document.querySelector("#local-pip-video");
 const remotePipVideo = document.querySelector("#remote-pip-video");
-const localStreamFullscreen = document.querySelector("#local-stream-fullscreen");
-const remoteStreamFullscreen = document.querySelector("#remote-stream-fullscreen");
+const localStreamFullscreen = document.querySelector(
+  "#local-stream-fullscreen",
+);
+const remoteStreamFullscreen = document.querySelector(
+  "#remote-stream-fullscreen",
+);
 const localParticipantName = document.querySelector("#local-participant-name");
-const remoteParticipantName = document.querySelector("#remote-participant-name");
-const localParticipantStatus = document.querySelector("#local-participant-status");
-const remoteParticipantStatus = document.querySelector("#remote-participant-status");
-const localParticipantBadges = document.querySelector("#local-participant-badges");
-const remoteParticipantBadges = document.querySelector("#remote-participant-badges");
+const remoteParticipantName = document.querySelector(
+  "#remote-participant-name",
+);
+const localParticipantStatus = document.querySelector(
+  "#local-participant-status",
+);
+const remoteParticipantStatus = document.querySelector(
+  "#remote-participant-status",
+);
+const localParticipantBadges = document.querySelector(
+  "#local-participant-badges",
+);
+const remoteParticipantBadges = document.querySelector(
+  "#remote-participant-badges",
+);
 const messages = document.querySelector("#messages");
 const typingIndicator = document.querySelector("#typing-indicator");
 const messageForm = document.querySelector("#message-form");
@@ -93,8 +109,12 @@ const micModeSelect = document.querySelector("#mic-mode-select");
 const micSensitivitySlider = document.querySelector("#mic-sensitivity-slider");
 const micSensitivityLabel = document.querySelector("#mic-sensitivity-label");
 const micModeLabel = document.querySelector("#mic-mode-label");
-const micNoiseReductionSlider = document.querySelector("#mic-noise-reduction-slider");
-const micNoiseReductionLabel = document.querySelector("#mic-noise-reduction-label");
+const micNoiseReductionSlider = document.querySelector(
+  "#mic-noise-reduction-slider",
+);
+const micNoiseReductionLabel = document.querySelector(
+  "#mic-noise-reduction-label",
+);
 const micEqLowSlider = document.querySelector("#mic-eq-low-slider");
 const micEqLowLabel = document.querySelector("#mic-eq-low-label");
 const micEqMidSlider = document.querySelector("#mic-eq-mid-slider");
@@ -112,9 +132,15 @@ const autostartHidden = document.querySelector("#autostart-hidden");
 const autostartModeGroup = document.querySelector("#autostart-mode-group");
 const closeToTrayToggle = document.querySelector("#close-to-tray-toggle");
 const notificationsToggle = document.querySelector("#notifications-toggle");
-const messageNotificationsToggle = document.querySelector("#message-notifications-toggle");
-const callNotificationsToggle = document.querySelector("#call-notifications-toggle");
-const focusedNotificationsToggle = document.querySelector("#focused-notifications-toggle");
+const messageNotificationsToggle = document.querySelector(
+  "#message-notifications-toggle",
+);
+const callNotificationsToggle = document.querySelector(
+  "#call-notifications-toggle",
+);
+const focusedNotificationsToggle = document.querySelector(
+  "#focused-notifications-toggle",
+);
 const readReceiptsToggle = document.querySelector("#read-receipts-toggle");
 const soundsToggle = document.querySelector("#sounds-toggle");
 const messageSoundToggle = document.querySelector("#message-sound-toggle");
@@ -139,9 +165,15 @@ const messageMenu = document.querySelector("#message-menu");
 const menuCopy = document.querySelector("#menu-copy");
 const menuDelete = document.querySelector("#menu-delete");
 const participantMenu = document.querySelector("#participant-menu");
-const participantVolumeSlider = document.querySelector("#participant-volume-slider");
-const participantVolumeValue = document.querySelector("#participant-volume-value");
-const participantToggleName = document.querySelector("#participant-toggle-name");
+const participantVolumeSlider = document.querySelector(
+  "#participant-volume-slider",
+);
+const participantVolumeValue = document.querySelector(
+  "#participant-volume-value",
+);
+const participantToggleName = document.querySelector(
+  "#participant-toggle-name",
+);
 const streamMenu = document.querySelector("#stream-menu");
 const streamMenuQuality = document.querySelector("#stream-menu-quality");
 const streamMenuSource = document.querySelector("#stream-menu-source");
@@ -162,7 +194,9 @@ const bootLogo = document.querySelector(".boot-logo");
 const bootStatus = document.querySelector("#boot-status");
 const bootProgressFill = document.querySelector("#boot-progress-fill");
 const bootPercent = document.querySelector("#boot-percent");
-const autoFitTextNodes = Array.from(document.querySelectorAll(".auto-fit-text"));
+const autoFitTextNodes = Array.from(
+  document.querySelectorAll(".auto-fit-text"),
+);
 
 const connections = new Map();
 const pendingConnections = new Map();
@@ -192,7 +226,7 @@ const SCREEN_STREAM_PROFILES = {
   "480p": { label: "480p", height: 480, bitrate: 1100000 },
   "720p": { label: "720p", height: 720, bitrate: 2400000 },
   "1080p": { label: "1080p", height: 1080, bitrate: 4200000 },
-  native: { label: "Native", height: 0, bitrate: 5200000 }
+  native: { label: "Native", height: 0, bitrate: 5200000 },
 };
 const SCREEN_STREAM_FPS_OPTIONS = [15, 30, 60];
 const MAX_CHAT_HISTORY_ITEMS = 500;
@@ -256,7 +290,7 @@ const messageAudio = new Audio("sound/message.ogg");
 const ringtoneAudio = new Audio("sound/ringtone.ogg");
 let notificationState = {
   appFocused: false,
-  systemDnd: false
+  systemDnd: false,
 };
 callJoinAudio.preload = "auto";
 callLeaveAudio.preload = "auto";
@@ -320,7 +354,7 @@ const callState = {
   muted: false,
   deafened: false,
   mutedBeforeDeafen: null,
-  joined: false
+  joined: false,
 };
 const screenShareState = {
   localMediaConn: null,
@@ -337,19 +371,20 @@ const screenShareState = {
   remoteViewerWatching: true,
   hiddenByViewer: false,
   qualityMonitor: null,
-  qualityLastStats: null
+  qualityLastStats: null,
 };
 const remoteCallStatus = {
   muted: false,
-  deafened: false
+  deafened: false,
 };
-const autoFitResizeObserver = typeof ResizeObserver === "function"
-  ? new ResizeObserver((entries) => {
-    for (const entry of entries) {
-      fitTextToContainer(entry.target);
-    }
-  })
-  : null;
+const autoFitResizeObserver =
+  typeof ResizeObserver === "function"
+    ? new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          fitTextToContainer(entry.target);
+        }
+      })
+    : null;
 
 function fitTextToContainer(element) {
   if (!element) {
@@ -357,7 +392,8 @@ function fitTextToContainer(element) {
   }
 
   const computedStyle = window.getComputedStyle(element);
-  const maxSize = Number(element.dataset.fitMax) || parseFloat(computedStyle.fontSize) || 12;
+  const maxSize =
+    Number(element.dataset.fitMax) || parseFloat(computedStyle.fontSize) || 12;
   const minSize = Number(element.dataset.fitMin) || 7;
   element.style.fontSize = `${maxSize}px`;
 
@@ -427,7 +463,7 @@ function waitForImageReady(image) {
 async function waitForVisualReady() {
   await Promise.all([
     waitForImageReady(titlebarLogo),
-    document.fonts?.ready?.catch?.(() => {}) ?? Promise.resolve()
+    document.fonts?.ready?.catch?.(() => {}) ?? Promise.resolve(),
   ]);
 }
 
@@ -441,7 +477,10 @@ const currentVersion = packageInfo.version;
 const appDisplayName = projectConfig.app.name;
 const githubRepo = projectConfig.repo;
 const githubBranch = projectConfig.branch || "main";
-const linuxTerminalCommandName = projectConfig.app.cliCommandName || projectConfig.linux.commandName || "aerop2p";
+const linuxTerminalCommandName =
+  projectConfig.app.cliCommandName ||
+  projectConfig.linux.commandName ||
+  "aerop2p";
 const githubRepoUrl = `https://github.com/${githubRepo}`;
 const latestReleaseUrl = `${githubRepoUrl}/releases/latest`;
 const latestManifestUrl = `${latestReleaseUrl}/download/latest.yml`;
@@ -453,10 +492,16 @@ document.querySelectorAll("[data-app-name]").forEach((element) => {
   element.textContent = appDisplayName;
 });
 document.querySelectorAll("[data-app-template]").forEach((element) => {
-  element.textContent = element.dataset.appTemplate.replace("{name}", appDisplayName);
+  element.textContent = element.dataset.appTemplate.replace(
+    "{name}",
+    appDisplayName,
+  );
 });
 document.querySelectorAll("[data-app-aria-template]").forEach((element) => {
-  element.setAttribute("aria-label", element.dataset.appAriaTemplate.replace("{name}", appDisplayName));
+  element.setAttribute(
+    "aria-label",
+    element.dataset.appAriaTemplate.replace("{name}", appDisplayName),
+  );
 });
 
 const peerConnectionConfig = {
@@ -465,12 +510,12 @@ const peerConnectionConfig = {
     // spam the console when DNS resolution fails on some networks.
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" }
+    { urls: "stun:stun2.l.google.com:19302" },
   ],
   iceCandidatePoolSize: 4,
   bundlePolicy: "balanced",
   rtcpMuxPolicy: "require",
-  sdpSemantics: "unified-plan"
+  sdpSemantics: "unified-plan",
 };
 let appConfig = {};
 
@@ -504,8 +549,10 @@ function createMessageId() {
 function loadIdentity() {
   if (appConfig.identity?.id && isValidAeroId(appConfig.identity.id)) {
     appConfig.identity.nickname = sanitizeNickname(appConfig.identity.nickname);
-    appConfig.identity.previousIds = getKnownPreviousIdentityIds(appConfig.identity.previousIds, appConfig.identity.id)
-      .filter((id) => id !== appConfig.identity.id);
+    appConfig.identity.previousIds = getKnownPreviousIdentityIds(
+      appConfig.identity.previousIds,
+      appConfig.identity.id,
+    ).filter((id) => id !== appConfig.identity.id);
     return appConfig.identity;
   }
 
@@ -513,7 +560,7 @@ function loadIdentity() {
     id: createIdentityId(),
     nickname: "",
     previousIds: [],
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
   appConfig.identity = identity;
   saveAppConfig();
@@ -524,8 +571,14 @@ function migrateLocalStorageConfig() {
   let changed = false;
 
   try {
-    const storedIdentity = JSON.parse(localStorage.getItem(IDENTITY_STORAGE_KEY) || "null");
-    if (!appConfig.identity && storedIdentity?.id && isValidAeroId(storedIdentity.id)) {
+    const storedIdentity = JSON.parse(
+      localStorage.getItem(IDENTITY_STORAGE_KEY) || "null",
+    );
+    if (
+      !appConfig.identity &&
+      storedIdentity?.id &&
+      isValidAeroId(storedIdentity.id)
+    ) {
       appConfig.identity = storedIdentity;
       changed = true;
     }
@@ -534,7 +587,9 @@ function migrateLocalStorageConfig() {
   }
 
   try {
-    const storedContacts = JSON.parse(localStorage.getItem(CONTACTS_STORAGE_KEY) || "null");
+    const storedContacts = JSON.parse(
+      localStorage.getItem(CONTACTS_STORAGE_KEY) || "null",
+    );
     if (!appConfig.contacts && Array.isArray(storedContacts)) {
       appConfig.contacts = storedContacts;
       changed = true;
@@ -569,7 +624,9 @@ function isValidAeroId(value) {
 }
 
 function normalizeAeroId(value) {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function getKnownPreviousIdentityIds(value, ownId = "") {
@@ -577,7 +634,13 @@ function getKnownPreviousIdentityIds(value, ownId = "") {
     return [];
   }
 
-  return [...new Set(value.map(normalizeAeroId).filter((id) => isValidAeroId(id) && id !== ownId))];
+  return [
+    ...new Set(
+      value
+        .map(normalizeAeroId)
+        .filter((id) => isValidAeroId(id) && id !== ownId),
+    ),
+  ];
 }
 
 async function writeClipboardText(text) {
@@ -594,9 +657,12 @@ function showAppDialog({
   message = "",
   confirmText = "OK",
   cancelText = "Cancel",
-  danger = false
+  danger = false,
 } = {}) {
-  const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const previousFocus =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
   appDialogTitle.textContent = title;
   appDialogMessage.textContent = message;
   appDialogConfirm.textContent = confirmText;
@@ -657,7 +723,9 @@ function showAppDialog({
 }
 
 function sanitizeNickname(value) {
-  return String(value || "").trim().slice(0, 32);
+  return String(value || "")
+    .trim()
+    .slice(0, 32);
 }
 
 function loadContacts() {
@@ -666,7 +734,9 @@ function loadContacts() {
   }
 
   return appConfig.contacts
-    .filter((contact) => isValidAeroId(contact?.id) && contact.id !== identity.id)
+    .filter(
+      (contact) => isValidAeroId(contact?.id) && contact.id !== identity.id,
+    )
     .map((contact) => ({
       id: contact.id,
       label: contact.label || contact.id,
@@ -679,7 +749,7 @@ function loadContacts() {
         ? Math.max(0, Math.min(150, Math.round(contact.playbackVolume)))
         : 100,
       showVideoName: contact.showVideoName !== false,
-      pinnedAt: contact.pinnedAt || new Date().toISOString()
+      pinnedAt: contact.pinnedAt || new Date().toISOString(),
     }));
 }
 
@@ -693,20 +763,34 @@ function normalizeAudioConfig() {
     appConfig.audio = {};
   }
 
-  appConfig.audio.inputDeviceId = typeof appConfig.audio.inputDeviceId === "string" ? appConfig.audio.inputDeviceId : "default";
-  appConfig.audio.cameraDeviceId = typeof appConfig.audio.cameraDeviceId === "string" ? appConfig.audio.cameraDeviceId : "default";
-  appConfig.audio.outputDeviceId = typeof appConfig.audio.outputDeviceId === "string" ? appConfig.audio.outputDeviceId : "default";
+  appConfig.audio.inputDeviceId =
+    typeof appConfig.audio.inputDeviceId === "string"
+      ? appConfig.audio.inputDeviceId
+      : "default";
+  appConfig.audio.cameraDeviceId =
+    typeof appConfig.audio.cameraDeviceId === "string"
+      ? appConfig.audio.cameraDeviceId
+      : "default";
+  appConfig.audio.outputDeviceId =
+    typeof appConfig.audio.outputDeviceId === "string"
+      ? appConfig.audio.outputDeviceId
+      : "default";
   appConfig.audio.remoteVolume = Number.isFinite(appConfig.audio.remoteVolume)
     ? Math.max(0, Math.min(100, Math.round(appConfig.audio.remoteVolume)))
     : 100;
-  appConfig.audio.micMode = appConfig.audio.micMode === "manual" ? "manual" : "auto";
-  appConfig.audio.micSensitivity = Number.isFinite(appConfig.audio.micSensitivity)
+  appConfig.audio.micMode =
+    appConfig.audio.micMode === "manual" ? "manual" : "auto";
+  appConfig.audio.micSensitivity = Number.isFinite(
+    appConfig.audio.micSensitivity,
+  )
     ? Math.max(0, Math.min(100, Math.round(appConfig.audio.micSensitivity)))
     : DEFAULT_MIC_SENSITIVITY;
   appConfig.audio.micBoost = Number.isFinite(appConfig.audio.micBoost)
     ? Math.max(0, Math.min(200, Math.round(appConfig.audio.micBoost)))
     : DEFAULT_MIC_BOOST;
-  appConfig.audio.micNoiseReduction = Number.isFinite(appConfig.audio.micNoiseReduction)
+  appConfig.audio.micNoiseReduction = Number.isFinite(
+    appConfig.audio.micNoiseReduction,
+  )
     ? Math.max(0, Math.min(100, Math.round(appConfig.audio.micNoiseReduction)))
     : DEFAULT_MIC_NOISE_REDUCTION;
   appConfig.audio.micEqLow = Number.isFinite(appConfig.audio.micEqLow)
@@ -718,7 +802,9 @@ function normalizeAudioConfig() {
   appConfig.audio.micEqHigh = Number.isFinite(appConfig.audio.micEqHigh)
     ? Math.round(Math.max(-12, Math.min(12, appConfig.audio.micEqHigh)))
     : DEFAULT_MIC_EQ_HIGH;
-  appConfig.audio.micProfile = ["voice-isolation", "studio", "custom"].includes(appConfig.audio.micProfile)
+  appConfig.audio.micProfile = ["voice-isolation", "studio", "custom"].includes(
+    appConfig.audio.micProfile,
+  )
     ? appConfig.audio.micProfile
     : "voice-isolation";
 }
@@ -756,7 +842,8 @@ function applyLiveVoiceSettingsToActiveStream() {
   const eq = getMicEqValues();
 
   if (localVoiceHighpassNode) {
-    const frequency = profile === "voice-isolation" ? 85 : 70 + noiseReductionFactor * 30;
+    const frequency =
+      profile === "voice-isolation" ? 85 : 70 + noiseReductionFactor * 30;
     localVoiceHighpassNode.frequency.setTargetAtTime(frequency, now, 0.04);
   }
   if (localVoiceEqLowNode) {
@@ -772,9 +859,11 @@ function applyLiveVoiceSettingsToActiveStream() {
     localVoiceBoostNode.gain.setTargetAtTime(getMicBoostGain(), now, 0.03);
   }
   if (localVoiceCompressorNode) {
-    const threshold = profile === "voice-isolation" ? -26 : -22 - noiseReductionFactor * 5;
+    const threshold =
+      profile === "voice-isolation" ? -26 : -22 - noiseReductionFactor * 5;
     const knee = profile === "voice-isolation" ? 20 : 16;
-    const ratio = profile === "voice-isolation" ? 2.8 : 2.2 + noiseReductionFactor;
+    const ratio =
+      profile === "voice-isolation" ? 2.8 : 2.2 + noiseReductionFactor;
     localVoiceCompressorNode.threshold.setTargetAtTime(threshold, now, 0.05);
     localVoiceCompressorNode.knee.setTargetAtTime(knee, now, 0.05);
     localVoiceCompressorNode.ratio.setTargetAtTime(ratio, now, 0.05);
@@ -791,23 +880,37 @@ function setRemoteVolume(volume, { persist = true } = {}) {
   }
   remoteAudio.volume = nextVolume / 100;
   if (remoteVolumeSlider) {
-    remoteVolumeSlider.value = String(persist ? nextVolume : appConfig.audio.remoteVolume);
+    remoteVolumeSlider.value = String(
+      persist ? nextVolume : appConfig.audio.remoteVolume,
+    );
   }
   if (remoteVolumeLabel) {
     remoteVolumeLabel.textContent = `${persist ? nextVolume : appConfig.audio.remoteVolume}%`;
   }
-  updateRangeFill(remoteVolumeSlider, persist ? nextVolume : appConfig.audio.remoteVolume, 0, 100);
+  updateRangeFill(
+    remoteVolumeSlider,
+    persist ? nextVolume : appConfig.audio.remoteVolume,
+    0,
+    100,
+  );
 }
 
 function getPeerPlaybackVolume(peerId = callState.peerId) {
-  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  const identityId = peerId
+    ? getPeerIdentityId(peerId, connections.get(peerId))
+    : "";
   return Number.isFinite(findContact(identityId)?.playbackVolume)
-    ? Math.max(0, Math.min(150, Math.round(findContact(identityId).playbackVolume)))
+    ? Math.max(
+        0,
+        Math.min(150, Math.round(findContact(identityId).playbackVolume)),
+      )
     : 100;
 }
 
 function setPeerPlaybackVolume(peerId, volume) {
-  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  const identityId = peerId
+    ? getPeerIdentityId(peerId, connections.get(peerId))
+    : "";
   if (!identityId) {
     return;
   }
@@ -835,7 +938,9 @@ function setOwnVideoNameVisible(visible) {
 }
 
 function isPeerVideoNameVisible(peerId = callState.peerId) {
-  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  const identityId = peerId
+    ? getPeerIdentityId(peerId, connections.get(peerId))
+    : "";
   if (!identityId) {
     return true;
   }
@@ -843,7 +948,9 @@ function isPeerVideoNameVisible(peerId = callState.peerId) {
 }
 
 function setPeerVideoNameVisible(peerId, visible) {
-  const identityId = peerId ? getPeerIdentityId(peerId, connections.get(peerId)) : "";
+  const identityId = peerId
+    ? getPeerIdentityId(peerId, connections.get(peerId))
+    : "";
   if (!identityId) {
     return;
   }
@@ -905,10 +1012,21 @@ function setMicNoiseReduction(value, { persist = false } = {}) {
 function setMicEqBand(band, value, { persist = false } = {}) {
   normalizeAudioConfig();
   const nextValue = Math.max(-12, Math.min(12, Math.round(value)));
-  const key = band === "low" ? "micEqLow" : band === "mid" ? "micEqMid" : "micEqHigh";
+  const key =
+    band === "low" ? "micEqLow" : band === "mid" ? "micEqMid" : "micEqHigh";
   appConfig.audio[key] = nextValue;
-  const slider = band === "low" ? micEqLowSlider : band === "mid" ? micEqMidSlider : micEqHighSlider;
-  const label = band === "low" ? micEqLowLabel : band === "mid" ? micEqMidLabel : micEqHighLabel;
+  const slider =
+    band === "low"
+      ? micEqLowSlider
+      : band === "mid"
+        ? micEqMidSlider
+        : micEqHighSlider;
+  const label =
+    band === "low"
+      ? micEqLowLabel
+      : band === "mid"
+        ? micEqMidLabel
+        : micEqHighLabel;
   if (slider) {
     slider.value = String(nextValue);
   }
@@ -936,7 +1054,11 @@ function setMicMode(mode, { persist = false } = {}) {
 
 function setMicProfile(profile, { persist = false } = {}) {
   normalizeAudioConfig();
-  appConfig.audio.micProfile = ["voice-isolation", "studio", "custom"].includes(profile) ? profile : "voice-isolation";
+  appConfig.audio.micProfile = ["voice-isolation", "studio", "custom"].includes(
+    profile,
+  )
+    ? profile
+    : "voice-isolation";
   if (micProfileSelect) {
     micProfileSelect.value = appConfig.audio.micProfile;
   }
@@ -958,7 +1080,8 @@ function renderAudioSettings() {
   }
   if (micSensitivitySlider) {
     micSensitivitySlider.value = String(appConfig.audio.micSensitivity);
-    micSensitivitySlider.disabled = !isCustom || appConfig.audio.micMode === "auto";
+    micSensitivitySlider.disabled =
+      !isCustom || appConfig.audio.micMode === "auto";
   }
   if (micSensitivityLabel) {
     micSensitivityLabel.textContent = `${appConfig.audio.micSensitivity}%`;
@@ -996,11 +1119,18 @@ function renderAudioSettings() {
     micEqHighLabel.textContent = `${appConfig.audio.micEqHigh > 0 ? "+" : ""}${appConfig.audio.micEqHigh} dB`;
   }
   if (micEqLabel) {
-    const eqValues = [appConfig.audio.micEqLow, appConfig.audio.micEqMid, appConfig.audio.micEqHigh];
-    micEqLabel.textContent = eqValues.every((value) => value === 0) ? "Flat" : "Custom";
+    const eqValues = [
+      appConfig.audio.micEqLow,
+      appConfig.audio.micEqMid,
+      appConfig.audio.micEqHigh,
+    ];
+    micEqLabel.textContent = eqValues.every((value) => value === 0)
+      ? "Flat"
+      : "Custom";
   }
   if (micModeLabel) {
-    micModeLabel.textContent = appConfig.audio.micMode === "manual" ? "Manual" : "Auto";
+    micModeLabel.textContent =
+      appConfig.audio.micMode === "manual" ? "Manual" : "Auto";
   }
   if (voiceCustomControls) {
     voiceCustomControls.classList.toggle("hidden", !isCustom);
@@ -1013,7 +1143,12 @@ function renderAudioSettings() {
   }
   remoteAudio.volume = appConfig.audio.remoteVolume / 100;
   updateRangeFill(micSensitivitySlider, appConfig.audio.micSensitivity, 0, 100);
-  updateRangeFill(micNoiseReductionSlider, appConfig.audio.micNoiseReduction, 0, 100);
+  updateRangeFill(
+    micNoiseReductionSlider,
+    appConfig.audio.micNoiseReduction,
+    0,
+    100,
+  );
   updateRangeFill(micEqLowSlider, appConfig.audio.micEqLow, -12, 12);
   updateRangeFill(micEqMidSlider, appConfig.audio.micEqMid, -12, 12);
   updateRangeFill(micEqHighSlider, appConfig.audio.micEqHigh, -12, 12);
@@ -1044,27 +1179,37 @@ function normalizeAppSettings() {
     startHidden: appConfig.appSettings.startHidden !== false,
     closeToTray: appConfig.appSettings.closeToTray !== false,
     readReceipts: appConfig.appSettings.readReceipts !== false,
-    presenceStatus: ["online", "dnd", "offline"].includes(appConfig.appSettings.presenceStatus)
+    presenceStatus: ["online", "dnd", "offline"].includes(
+      appConfig.appSettings.presenceStatus,
+    )
       ? appConfig.appSettings.presenceStatus
       : "online",
     theme: ["light", "dark"].includes(appConfig.appSettings.theme)
       ? appConfig.appSettings.theme
       : DEFAULT_THEME,
-    sidebarWidth: Number.isFinite(appConfig.appSettings.sidebarWidth) ? appConfig.appSettings.sidebarWidth : DEFAULT_SIDEBAR_WIDTH
+    sidebarWidth: Number.isFinite(appConfig.appSettings.sidebarWidth)
+      ? appConfig.appSettings.sidebarWidth
+      : DEFAULT_SIDEBAR_WIDTH,
   };
 
   appConfig.appSettings.sidebarWidth = Math.round(
-    Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, appConfig.appSettings.sidebarWidth))
+    Math.max(
+      MIN_SIDEBAR_WIDTH,
+      Math.min(MAX_SIDEBAR_WIDTH, appConfig.appSettings.sidebarWidth),
+    ),
   );
 
-  if (!appConfig.notificationSettings || typeof appConfig.notificationSettings !== "object") {
+  if (
+    !appConfig.notificationSettings ||
+    typeof appConfig.notificationSettings !== "object"
+  ) {
     appConfig.notificationSettings = {};
   }
   appConfig.notificationSettings = {
     enabled: appConfig.notificationSettings.enabled !== false,
     messages: appConfig.notificationSettings.messages !== false,
     calls: appConfig.notificationSettings.calls !== false,
-    showWhenFocused: Boolean(appConfig.notificationSettings.showWhenFocused)
+    showWhenFocused: Boolean(appConfig.notificationSettings.showWhenFocused),
   };
 
   if (!appConfig.soundSettings || typeof appConfig.soundSettings !== "object") {
@@ -1075,7 +1220,7 @@ function normalizeAppSettings() {
     messages: appConfig.soundSettings.messages !== false,
     ringtone: appConfig.soundSettings.ringtone !== false,
     callEvents: appConfig.soundSettings.callEvents !== false,
-    connected: appConfig.soundSettings.connected !== false
+    connected: appConfig.soundSettings.connected !== false,
   };
 
   if (!appConfig.appSettings.autostart) {
@@ -1102,17 +1247,27 @@ function renderAppSettings() {
   autostartHidden.checked = appConfig.appSettings.startHidden;
   autostartOpen.disabled = !appConfig.appSettings.autostart;
   autostartHidden.disabled = !appConfig.appSettings.autostart;
-  autostartModeGroup.classList.toggle("disabled", !appConfig.appSettings.autostart);
+  autostartModeGroup.classList.toggle(
+    "disabled",
+    !appConfig.appSettings.autostart,
+  );
   closeToTrayToggle.checked = appConfig.appSettings.closeToTray;
   readReceiptsToggle.checked = appConfig.appSettings.readReceipts;
 
   notificationsToggle.checked = appConfig.notificationSettings.enabled;
   messageNotificationsToggle.checked = appConfig.notificationSettings.messages;
   callNotificationsToggle.checked = appConfig.notificationSettings.calls;
-  focusedNotificationsToggle.checked = appConfig.notificationSettings.showWhenFocused;
-  for (const toggle of [messageNotificationsToggle, callNotificationsToggle, focusedNotificationsToggle]) {
+  focusedNotificationsToggle.checked =
+    appConfig.notificationSettings.showWhenFocused;
+  for (const toggle of [
+    messageNotificationsToggle,
+    callNotificationsToggle,
+    focusedNotificationsToggle,
+  ]) {
     toggle.disabled = !appConfig.notificationSettings.enabled;
-    toggle.closest(".settings-check")?.classList.toggle("disabled", !appConfig.notificationSettings.enabled);
+    toggle
+      .closest(".settings-check")
+      ?.classList.toggle("disabled", !appConfig.notificationSettings.enabled);
   }
 
   soundsToggle.checked = appConfig.soundSettings.enabled;
@@ -1120,9 +1275,16 @@ function renderAppSettings() {
   ringtoneSoundToggle.checked = appConfig.soundSettings.ringtone;
   callEventSoundToggle.checked = appConfig.soundSettings.callEvents;
   connectedSoundToggle.checked = appConfig.soundSettings.connected;
-  for (const toggle of [messageSoundToggle, ringtoneSoundToggle, callEventSoundToggle, connectedSoundToggle]) {
+  for (const toggle of [
+    messageSoundToggle,
+    ringtoneSoundToggle,
+    callEventSoundToggle,
+    connectedSoundToggle,
+  ]) {
     toggle.disabled = !appConfig.soundSettings.enabled;
-    toggle.closest(".settings-check")?.classList.toggle("disabled", !appConfig.soundSettings.enabled);
+    toggle
+      .closest(".settings-check")
+      ?.classList.toggle("disabled", !appConfig.soundSettings.enabled);
   }
 
   syncPresenceStatusIndicator();
@@ -1131,7 +1293,11 @@ function renderAppSettings() {
 function syncPresenceStatusIndicator() {
   updateTitlebarPresenceIndicator();
 
-  if (callState.status !== "idle" || connections.size > 0 || pendingConnections.size > 0) {
+  if (
+    callState.status !== "idle" ||
+    connections.size > 0 ||
+    pendingConnections.size > 0
+  ) {
     return;
   }
 
@@ -1167,7 +1333,7 @@ function updatePresenceMenuState() {
   const entries = [
     [appMenuOnline, "online"],
     [appMenuDnd, "dnd"],
-    [appMenuOffline, "offline"]
+    [appMenuOffline, "offline"],
   ];
 
   for (const [button, value] of entries) {
@@ -1202,8 +1368,14 @@ function getPresenceStatusLabel(status = getPresenceStatus()) {
 
 function setPresenceStatus(status, { persist = false, force = false } = {}) {
   normalizeAppSettings();
-  const nextStatus = ["online", "dnd", "offline"].includes(status) ? status : "online";
-  if (appConfig.appSettings.presenceStatus === nextStatus && !persist && !force) {
+  const nextStatus = ["online", "dnd", "offline"].includes(status)
+    ? status
+    : "online";
+  if (
+    appConfig.appSettings.presenceStatus === nextStatus &&
+    !persist &&
+    !force
+  ) {
     updatePresenceMenuState();
     return;
   }
@@ -1271,11 +1443,14 @@ function closeAllPeerConnections() {
 
 function getSidebarWidthBounds() {
   const shellWidth = appShell?.clientWidth ?? 0;
-  const maxByLayout = shellWidth > 0 ? shellWidth - MIN_CHAT_WIDTH - RESIZER_WIDTH : MAX_SIDEBAR_WIDTH;
+  const maxByLayout =
+    shellWidth > 0
+      ? shellWidth - MIN_CHAT_WIDTH - RESIZER_WIDTH
+      : MAX_SIDEBAR_WIDTH;
   const lowerBound = window.innerWidth <= 700 ? 170 : MIN_SIDEBAR_WIDTH;
   return {
     min: lowerBound,
-    max: Math.max(lowerBound, Math.min(MAX_SIDEBAR_WIDTH, maxByLayout))
+    max: Math.max(lowerBound, Math.min(MAX_SIDEBAR_WIDTH, maxByLayout)),
   };
 }
 
@@ -1367,7 +1542,12 @@ function setupSidebarResizer() {
   });
 
   sidebarResizer.addEventListener("keydown", (event) => {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") {
+    if (
+      event.key !== "ArrowLeft" &&
+      event.key !== "ArrowRight" &&
+      event.key !== "Home" &&
+      event.key !== "End"
+    ) {
       return;
     }
 
@@ -1440,7 +1620,7 @@ function upsertContact(id, updates = {}) {
         ? Math.max(0, Math.min(150, Math.round(updates.playbackVolume)))
         : 100,
       showVideoName: updates.showVideoName !== false,
-      pinnedAt: new Date().toISOString()
+      pinnedAt: new Date().toISOString(),
     });
   }
 
@@ -1464,7 +1644,9 @@ function migrateContactIdentity(previousIds, nextId, nickname = "") {
     return null;
   }
 
-  const oldIds = getKnownPreviousIdentityIds(previousIds, identity.id).filter((id) => id !== targetId);
+  const oldIds = getKnownPreviousIdentityIds(previousIds, identity.id).filter(
+    (id) => id !== targetId,
+  );
   if (oldIds.length === 0) {
     return findContact(targetId);
   }
@@ -1475,15 +1657,30 @@ function migrateContactIdentity(previousIds, nextId, nickname = "") {
     return existingTarget;
   }
 
-  const preferred = oldContacts.find((contact) => contact.customLabel) || oldContacts[0];
-  const remoteNickname = sanitizeNickname(nickname) || existingTarget?.remoteNickname || preferred.remoteNickname;
+  const preferred =
+    oldContacts.find((contact) => contact.customLabel) || oldContacts[0];
+  const remoteNickname =
+    sanitizeNickname(nickname) ||
+    existingTarget?.remoteNickname ||
+    preferred.remoteNickname;
   const updates = {
-    label: preferred.customLabel ? preferred.label : (remoteNickname || existingTarget?.label || preferred.label || targetId),
+    label: preferred.customLabel
+      ? preferred.label
+      : remoteNickname || existingTarget?.label || preferred.label || targetId,
     remoteNickname,
     customLabel: preferred.customLabel || existingTarget?.customLabel || false,
-    pinned: oldContacts.some((contact) => contact.pinned) || existingTarget?.pinned || false,
-    trusted: oldContacts.some((contact) => contact.trusted) || existingTarget?.trusted || false,
-    blocked: oldContacts.some((contact) => contact.blocked) || existingTarget?.blocked || false
+    pinned:
+      oldContacts.some((contact) => contact.pinned) ||
+      existingTarget?.pinned ||
+      false,
+    trusted:
+      oldContacts.some((contact) => contact.trusted) ||
+      existingTarget?.trusted ||
+      false,
+    blocked:
+      oldContacts.some((contact) => contact.blocked) ||
+      existingTarget?.blocked ||
+      false,
   };
 
   contacts = contacts.filter((contact) => !oldIds.includes(contact.id));
@@ -1502,7 +1699,7 @@ function rememberRemoteIdentity(id, nickname) {
   upsertContact(id, {
     remoteNickname,
     label: existing?.customLabel ? existing.label : remoteNickname,
-    pinned: existing?.pinned ?? true
+    pinned: existing?.pinned ?? true,
   });
 }
 
@@ -1512,7 +1709,7 @@ function setContactNickname(id, nickname) {
   upsertContact(id, {
     label: cleanNickname || existing?.remoteNickname || id,
     customLabel: Boolean(cleanNickname),
-    pinned: true
+    pinned: true,
   });
   refreshPeers();
   renderContactNicknameList();
@@ -1555,7 +1752,7 @@ function setBlocked(id, blocked) {
   const contact = upsertContact(id, {
     blocked,
     trusted: blocked ? false : findContact(id)?.trusted || false,
-    pinned: blocked ? false : findContact(id)?.pinned ?? true
+    pinned: blocked ? false : (findContact(id)?.pinned ?? true),
   });
 
   if (blocked) {
@@ -1610,7 +1807,13 @@ function createBadge(iconClass, title, state = "") {
   return badge;
 }
 
-function createContactBadges({ pinned = false, trusted = false, blocked = false, waiting = false, online = false }) {
+function createContactBadges({
+  pinned = false,
+  trusted = false,
+  blocked = false,
+  waiting = false,
+  online = false,
+}) {
   const badges = document.createElement("span");
   badges.className = "contact-badges";
 
@@ -1618,10 +1821,14 @@ function createContactBadges({ pinned = false, trusted = false, blocked = false,
     badges.append(createBadge("fa-solid fa-circle", "Online", "online"));
   }
   if (waiting) {
-    badges.append(createBadge("fa-solid fa-hourglass-half", "Waiting", "waiting"));
+    badges.append(
+      createBadge("fa-solid fa-hourglass-half", "Waiting", "waiting"),
+    );
   }
   if (trusted) {
-    badges.append(createBadge("fa-solid fa-shield-halved", "Trusted", "trusted"));
+    badges.append(
+      createBadge("fa-solid fa-shield-halved", "Trusted", "trusted"),
+    );
   }
   if (pinned) {
     badges.append(createBadge("fa-solid fa-star", "Favorite", "pinned"));
@@ -1684,7 +1891,12 @@ function showConnectRetry(peerId) {
 
 function showUnreachablePeerFeedback(peerId, { label = "", reason = "" } = {}) {
   clearConnectTimeout(peerId);
-  const peerLabel = label || getPeerLabel(peerId, pendingConnections.get(peerId)?.conn || connections.get(peerId));
+  const peerLabel =
+    label ||
+    getPeerLabel(
+      peerId,
+      pendingConnections.get(peerId)?.conn || connections.get(peerId),
+    );
   const pending = pendingConnections.get(peerId);
   if (pending?.conn) {
     pending.conn.close();
@@ -1697,8 +1909,14 @@ function showUnreachablePeerFeedback(peerId, { label = "", reason = "" } = {}) {
   }
 
   showConnectRetry(peerId);
-  setStatus("offline", `${peerLabel} is offline, unreachable, or not accepting connections. Use Retry to try again.`);
-  addSystemMessage(reason || `${peerLabel} is offline, unreachable, or not accepting connections right now.`);
+  setStatus(
+    "offline",
+    `${peerLabel} is offline, unreachable, or not accepting connections. Use Retry to try again.`,
+  );
+  addSystemMessage(
+    reason ||
+      `${peerLabel} is offline, unreachable, or not accepting connections right now.`,
+  );
   refreshPeers();
 }
 
@@ -1719,16 +1937,19 @@ function isPeerUnreachableError(error) {
 
 function startConnectTimeout(peerId, conn) {
   clearConnectTimeout(peerId);
-  connectTimeouts.set(peerId, setTimeout(() => {
-    const entry = pendingConnections.get(peerId);
-    if (!entry || entry.conn !== conn || entry.direction !== "outgoing") {
-      return;
-    }
-    showUnreachablePeerFeedback(peerId, {
-      label: getPeerLabel(peerId, conn),
-      reason: `${getPeerLabel(peerId, conn)} did not answer in time.`
-    });
-  }, CONNECT_TIMEOUT_MS));
+  connectTimeouts.set(
+    peerId,
+    setTimeout(() => {
+      const entry = pendingConnections.get(peerId);
+      if (!entry || entry.conn !== conn || entry.direction !== "outgoing") {
+        return;
+      }
+      showUnreachablePeerFeedback(peerId, {
+        label: getPeerLabel(peerId, conn),
+        reason: `${getPeerLabel(peerId, conn)} did not answer in time.`,
+      });
+    }, CONNECT_TIMEOUT_MS),
+  );
 }
 
 function getOutgoingPendingPeerId() {
@@ -1765,10 +1986,13 @@ function scheduleOutgoingMessageDrain(peerId, delay = 0) {
     return;
   }
 
-  const timer = setTimeout(() => {
-    outgoingMessageTimers.delete(peerId);
-    drainOutgoingMessageQueue(peerId);
-  }, Math.max(0, delay));
+  const timer = setTimeout(
+    () => {
+      outgoingMessageTimers.delete(peerId);
+      drainOutgoingMessageQueue(peerId);
+    },
+    Math.max(0, delay),
+  );
   outgoingMessageTimers.set(peerId, timer);
 }
 
@@ -1823,7 +2047,11 @@ function shouldAcceptIncomingMessage(peerId) {
   const now = Date.now();
   const current = incomingMessageWindows.get(peerId);
   if (!current || now - current.startedAt > INCOMING_MESSAGE_WINDOW_MS) {
-    incomingMessageWindows.set(peerId, { startedAt: now, count: 1, warned: false });
+    incomingMessageWindows.set(peerId, {
+      startedAt: now,
+      count: 1,
+      warned: false,
+    });
     return true;
   }
 
@@ -1834,8 +2062,13 @@ function shouldAcceptIncomingMessage(peerId) {
 
   if (!current.warned) {
     current.warned = true;
-    setStatus("pending", "Too many messages from this contact. Slowing them down.");
-    addSystemMessage(`${getPeerLabel(peerId, connections.get(peerId))} is sending messages too quickly. Some messages were skipped.`);
+    setStatus(
+      "pending",
+      "Too many messages from this contact. Slowing them down.",
+    );
+    addSystemMessage(
+      `${getPeerLabel(peerId, connections.get(peerId))} is sending messages too quickly. Some messages were skipped.`,
+    );
   }
   return false;
 }
@@ -1844,13 +2077,17 @@ function formatTime(date = new Date()) {
   return date.toLocaleTimeString("de-DE", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false
+    hour12: false,
   });
 }
 
 function updateConnectButton() {
   const remoteId = normalizeAeroId(remoteIdInput.value);
-  connectButton.disabled = !isValidAeroId(remoteId) || remoteId === identity.id || !peer?.open || isPresenceOffline();
+  connectButton.disabled =
+    !isValidAeroId(remoteId) ||
+    remoteId === identity.id ||
+    !peer?.open ||
+    isPresenceOffline();
   if (!remoteId || remoteId !== lastFailedConnectId) {
     hideConnectRetry();
   }
@@ -1899,11 +2136,14 @@ function setRemoteTyping(peerId, typing) {
   }
 
   if (typing) {
-    typingTimers.set(peerId, setTimeout(() => {
-      typingStates.delete(peerId);
-      typingTimers.delete(peerId);
-      updateTypingIndicator();
-    }, TYPING_IDLE_MS + 600));
+    typingTimers.set(
+      peerId,
+      setTimeout(() => {
+        typingStates.delete(peerId);
+        typingTimers.delete(peerId);
+        updateTypingIndicator();
+      }, TYPING_IDLE_MS + 600),
+    );
   }
 
   updateTypingIndicator();
@@ -1916,7 +2156,11 @@ function sendTypingState(peerId, typing, { force = false } = {}) {
   }
 
   const now = Date.now();
-  if (!force && typing && now - (lastTypingSentAt.get(peerId) || 0) < TYPING_SEND_INTERVAL_MS) {
+  if (
+    !force &&
+    typing &&
+    now - (lastTypingSentAt.get(peerId) || 0) < TYPING_SEND_INTERVAL_MS
+  ) {
     return;
   }
 
@@ -1930,14 +2174,21 @@ function scheduleLocalTypingStop(peerId) {
     clearTimeout(existing);
   }
 
-  localTypingTimers.set(peerId, setTimeout(() => {
-    localTypingTimers.delete(peerId);
-    sendTypingState(peerId, false, { force: true });
-  }, TYPING_IDLE_MS));
+  localTypingTimers.set(
+    peerId,
+    setTimeout(() => {
+      localTypingTimers.delete(peerId);
+      sendTypingState(peerId, false, { force: true });
+    }, TYPING_IDLE_MS),
+  );
 }
 
 function sendReadReceiptsForActiveChat() {
-  if (!appConfig.appSettings?.readReceipts || !activePeerId || !isAppFocused()) {
+  if (
+    !appConfig.appSettings?.readReceipts ||
+    !activePeerId ||
+    !isAppFocused()
+  ) {
     return;
   }
 
@@ -1963,7 +2214,14 @@ function createSystemMessage(text) {
 }
 
 function createChatMessage(item) {
-  const { id, text, sender, peerId, time, deliveryStatus = sender === "me" ? "sent" : "" } = item;
+  const {
+    id,
+    text,
+    sender,
+    peerId,
+    time,
+    deliveryStatus = sender === "me" ? "sent" : "",
+  } = item;
   const row = document.createElement("div");
   row.className = `message-row ${sender === "me" ? "mine" : "theirs"}`;
   row.dataset.messageId = id;
@@ -2024,8 +2282,12 @@ function refreshMessageDeliveryState(peerId, messageId) {
     return;
   }
 
-  const item = ensureChatHistory(peerId).find((message) => message.id === messageId);
-  const row = item ? messages.querySelector(`[data-message-id="${messageId}"]`) : null;
+  const item = ensureChatHistory(peerId).find(
+    (message) => message.id === messageId,
+  );
+  const row = item
+    ? messages.querySelector(`[data-message-id="${messageId}"]`)
+    : null;
   const state = row?.querySelector(".message-state");
   if (!item || !row) {
     return;
@@ -2039,8 +2301,13 @@ function refreshMessageDeliveryState(peerId, messageId) {
     const nextState = document.createElement("span");
     nextState.className = `message-state ${item.deliveryStatus || "sent"}`;
     nextState.title = formatDeliveryStatus(item.deliveryStatus || "sent");
-    nextState.setAttribute("aria-label", formatDeliveryStatus(item.deliveryStatus || "sent"));
-    nextState.append(...createDeliveryStatusIcons(item.deliveryStatus || "sent"));
+    nextState.setAttribute(
+      "aria-label",
+      formatDeliveryStatus(item.deliveryStatus || "sent"),
+    );
+    nextState.append(
+      ...createDeliveryStatusIcons(item.deliveryStatus || "sent"),
+    );
     footer.append(nextState);
     return;
   }
@@ -2050,12 +2317,19 @@ function refreshMessageDeliveryState(peerId, messageId) {
 
   state.className = `message-state ${item.deliveryStatus || "sent"}`;
   state.title = formatDeliveryStatus(item.deliveryStatus || "sent");
-  state.setAttribute("aria-label", formatDeliveryStatus(item.deliveryStatus || "sent"));
-  state.replaceChildren(...createDeliveryStatusIcons(item.deliveryStatus || "sent"));
+  state.setAttribute(
+    "aria-label",
+    formatDeliveryStatus(item.deliveryStatus || "sent"),
+  );
+  state.replaceChildren(
+    ...createDeliveryStatusIcons(item.deliveryStatus || "sent"),
+  );
 }
 
 function setMessageDeliveryState(peerId, messageId, status) {
-  const item = ensureChatHistory(peerId).find((message) => message.id === messageId && message.sender === "me");
+  const item = ensureChatHistory(peerId).find(
+    (message) => message.id === messageId && message.sender === "me",
+  );
   if (!item) {
     return;
   }
@@ -2102,7 +2376,7 @@ function parseManifest(text) {
 
     const key = match[1];
     let value = match[2].trim();
-    if (value.startsWith("\"") && value.endsWith("\"")) {
+    if (value.startsWith('"') && value.endsWith('"')) {
       value = JSON.parse(value);
     }
     manifest[key] = value;
@@ -2111,8 +2385,12 @@ function parseManifest(text) {
 }
 
 function compareVersions(left, right) {
-  const leftParts = String(left).split(".").map((part) => Number(part) || 0);
-  const rightParts = String(right).split(".").map((part) => Number(part) || 0);
+  const leftParts = String(left)
+    .split(".")
+    .map((part) => Number(part) || 0);
+  const rightParts = String(right)
+    .split(".")
+    .map((part) => Number(part) || 0);
 
   for (let index = 0; index < 3; index += 1) {
     if ((leftParts[index] || 0) > (rightParts[index] || 0)) {
@@ -2154,7 +2432,8 @@ function syncAvailableUpdateUi() {
   const isIgnored = ignoredUpdateVersion === availableUpdate.version;
   updateTitle.textContent = "Update available";
   updateText.textContent = `Version ${availableUpdate.version} is ready. You are using ${currentVersion}.`;
-  updateButton.textContent = platform === "win32" ? "Install update" : "Show command";
+  updateButton.textContent =
+    platform === "win32" ? "Install update" : "Show command";
   updateIgnoreButton.textContent = isIgnored ? "Ignored" : "Ignore";
   updateIgnoreButton.disabled = isIgnored;
   headerUpdateButton.classList.add("hidden");
@@ -2164,13 +2443,13 @@ function syncAvailableUpdateUi() {
     : `Update ${availableUpdate.version} available`;
   appMenuUpdate.classList.remove("hidden");
   appMenuUpdate.disabled = false;
-  appMenuUpdate.querySelector("i").className = platform === "win32"
-    ? "fa-solid fa-download"
-    : "fa-solid fa-terminal";
+  appMenuUpdate.querySelector("i").className =
+    platform === "win32" ? "fa-solid fa-download" : "fa-solid fa-terminal";
   appMenuUpdateIgnore.classList.remove("hidden");
-  appMenuUpdate.querySelector("span").textContent = platform === "win32"
-    ? `Install ${availableUpdate.version}`
-    : `Update ${availableUpdate.version}`;
+  appMenuUpdate.querySelector("span").textContent =
+    platform === "win32"
+      ? `Install ${availableUpdate.version}`
+      : `Update ${availableUpdate.version}`;
   appMenuUpdateIgnore.querySelector("span").textContent = isIgnored
     ? `Ignored ${availableUpdate.version}`
     : `Ignore update hint`;
@@ -2219,7 +2498,7 @@ async function checkForUpdates({ manual = false } = {}) {
 
   try {
     const response = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
-      cache: "no-store"
+      cache: "no-store",
     });
     if (!response.ok) {
       if (manual) {
@@ -2240,9 +2519,18 @@ async function checkForUpdates({ manual = false } = {}) {
       return;
     }
 
-    const windowsUrl = manifest.windowsUrl || manifest.windows_url || manifest.url || "";
-    const windowsSha256 = manifest.windowsSha256 || manifest.windows_sha256 || manifest.sha256 || "";
-    const windowsSha512 = manifest.windowsSha512 || manifest.windows_sha512 || manifest.sha512 || "";
+    const windowsUrl =
+      manifest.windowsUrl || manifest.windows_url || manifest.url || "";
+    const windowsSha256 =
+      manifest.windowsSha256 ||
+      manifest.windows_sha256 ||
+      manifest.sha256 ||
+      "";
+    const windowsSha512 =
+      manifest.windowsSha512 ||
+      manifest.windows_sha512 ||
+      manifest.sha512 ||
+      "";
     if (platform === "win32" && !windowsUrl) {
       clearUpdateAvailableUi();
       if (manual) {
@@ -2264,7 +2552,7 @@ async function checkForUpdates({ manual = false } = {}) {
       version: latestVersion,
       windowsUrl,
       windowsSha256,
-      windowsSha512
+      windowsSha512,
     };
 
     syncAvailableUpdateUi();
@@ -2287,7 +2575,13 @@ function addSystemMessage(text) {
 }
 
 function addChatMessage({ id, text, sender, peerId, time }) {
-  const item = { id: id ?? createMessageId(), text, sender, peerId, time: time ?? formatTime() };
+  const item = {
+    id: id ?? createMessageId(),
+    text,
+    sender,
+    peerId,
+    time: time ?? formatTime(),
+  };
   const history = ensureChatHistory(peerId);
   history.push(item);
   const trimmed = history.length > MAX_CHAT_HISTORY_ITEMS;
@@ -2322,17 +2616,21 @@ function showAppNotification(details) {
     return false;
   }
 
-  window.aeroChat?.showNotification?.({
-    ...details,
-    theme: appConfig.appSettings.theme,
-    showWhenFocused: appConfig.notificationSettings.showWhenFocused
-  }).catch(() => {});
+  window.aeroChat
+    ?.showNotification?.({
+      ...details,
+      theme: appConfig.appSettings.theme,
+      showWhenFocused: appConfig.notificationSettings.showWhenFocused,
+    })
+    .catch(() => {});
   return true;
 }
 
 function isSoundEnabled(key) {
   normalizeAppSettings();
-  return Boolean(appConfig.soundSettings.enabled && appConfig.soundSettings[key]);
+  return Boolean(
+    appConfig.soundSettings.enabled && appConfig.soundSettings[key],
+  );
 }
 
 async function shouldPlaySound(key) {
@@ -2349,7 +2647,7 @@ async function shouldPlaySound(key) {
     if (state && typeof state === "object") {
       notificationState = {
         appFocused: Boolean(state.appFocused),
-        systemDnd: Boolean(state.systemDnd)
+        systemDnd: Boolean(state.systemDnd),
       };
     }
   } catch {}
@@ -2374,14 +2672,15 @@ function isAppFocused() {
 
 function refreshNotificationState() {
   notificationState.appFocused = isAppFocused();
-  window.aeroChat?.getNotificationState?.()
+  window.aeroChat
+    ?.getNotificationState?.()
     .then((state) => {
       if (!state || typeof state !== "object") {
         return;
       }
       notificationState = {
         appFocused: Boolean(state.appFocused),
-        systemDnd: Boolean(state.systemDnd)
+        systemDnd: Boolean(state.systemDnd),
       };
     })
     .catch(() => {
@@ -2457,7 +2756,7 @@ function notifyIncomingMessage(peerId, text) {
     peerId,
     title: getPeerLabel(peerId, conn),
     body: text,
-    silent: !isSoundEnabled("messages")
+    silent: !isSoundEnabled("messages"),
   });
   if (!shown) {
     playMessageFallbackSound();
@@ -2484,7 +2783,7 @@ function notifyIncomingCall(peerId, callId) {
     callId,
     title: "Incoming voice call",
     body: `${getPeerLabel(peerId, conn)} is calling`,
-    silent: !isSoundEnabled("ringtone")
+    silent: !isSoundEnabled("ringtone"),
   });
 }
 
@@ -2517,7 +2816,7 @@ function sendChatText(peerId, rawText) {
     id: messageId,
     protocol: PROTOCOL_VERSION,
     text: text.slice(0, MAX_MESSAGE_LENGTH),
-    time: formatTime()
+    time: formatTime(),
   };
 
   queue.push({
@@ -2528,8 +2827,8 @@ function sendChatText(peerId, rawText) {
       sender: "me",
       peerId,
       time: payload.time,
-      deliveryStatus: "sent"
-    }
+      deliveryStatus: "sent",
+    },
   });
   outgoingMessageQueues.set(peerId, queue);
   scheduleOutgoingMessageDrain(peerId);
@@ -2574,7 +2873,10 @@ function formatMicrophoneError(error) {
   if (error?.name === "NotAllowedError") {
     return "Mic blocked";
   }
-  if (error?.name === "NotFoundError" || error?.name === "DevicesNotFoundError") {
+  if (
+    error?.name === "NotFoundError" ||
+    error?.name === "DevicesNotFoundError"
+  ) {
     return "No microphone";
   }
   return "Mic unavailable";
@@ -2587,7 +2889,7 @@ function getCallVideoQualityProfile(profile = callState.videoQualityProfile) {
       maxBitrate: 170000,
       maxFramerate: 10,
       scaleResolutionDownBy: 3,
-      degradationPreference: "maintain-framerate"
+      degradationPreference: "maintain-framerate",
     };
   }
 
@@ -2597,7 +2899,7 @@ function getCallVideoQualityProfile(profile = callState.videoQualityProfile) {
       maxBitrate: 450000,
       maxFramerate: 18,
       scaleResolutionDownBy: 1.35,
-      degradationPreference: "balanced"
+      degradationPreference: "balanced",
     };
   }
 
@@ -2606,7 +2908,7 @@ function getCallVideoQualityProfile(profile = callState.videoQualityProfile) {
     maxBitrate: 280000,
     maxFramerate: 14,
     scaleResolutionDownBy: 2,
-    degradationPreference: "maintain-framerate"
+    degradationPreference: "maintain-framerate",
   };
 }
 
@@ -2619,26 +2921,37 @@ function normalizeScreenFps(value) {
   return SCREEN_STREAM_FPS_OPTIONS.includes(fps) ? fps : 30;
 }
 
-function getScreenStreamBaseBitrate(quality = screenShareState.quality, fps = screenShareState.fps) {
+function getScreenStreamBaseBitrate(
+  quality = screenShareState.quality,
+  fps = screenShareState.fps,
+) {
   const normalizedQuality = normalizeScreenQuality(quality);
   const normalizedFps = normalizeScreenFps(fps);
   const profile = SCREEN_STREAM_PROFILES[normalizedQuality];
-  const fpsFactor = normalizedFps === 60 ? 1.42 : normalizedFps === 15 ? 0.72 : 1;
+  const fpsFactor =
+    normalizedFps === 60 ? 1.42 : normalizedFps === 15 ? 0.72 : 1;
   return Math.round(profile.bitrate * fpsFactor);
 }
 
-function getScreenStreamConstraints(sourceId, { quality = screenShareState.quality, fps = screenShareState.fps, audio = false } = {}) {
+function getScreenStreamConstraints(
+  sourceId,
+  {
+    quality = screenShareState.quality,
+    fps = screenShareState.fps,
+    audio = false,
+  } = {},
+) {
   const profile = SCREEN_STREAM_PROFILES[normalizeScreenQuality(quality)];
   const normalizedFps = normalizeScreenFps(fps);
   const mandatory = {
     chromeMediaSource: "desktop",
     chromeMediaSourceId: sourceId,
     minFrameRate: Math.min(15, normalizedFps),
-    maxFrameRate: normalizedFps
+    maxFrameRate: normalizedFps,
   };
 
   if (profile.height > 0) {
-    const width = Math.round(profile.height * 16 / 9);
+    const width = Math.round((profile.height * 16) / 9);
     mandatory.minWidth = Math.min(width, 1280);
     mandatory.minHeight = Math.min(profile.height, 720);
     mandatory.maxWidth = width;
@@ -2646,13 +2959,15 @@ function getScreenStreamConstraints(sourceId, { quality = screenShareState.quali
   }
 
   return {
-    audio: audio ? {
-      mandatory: {
-        chromeMediaSource: "desktop",
-        chromeMediaSourceId: sourceId
-      }
-    } : false,
-    video: { mandatory }
+    audio: audio
+      ? {
+          mandatory: {
+            chromeMediaSource: "desktop",
+            chromeMediaSourceId: sourceId,
+          },
+        }
+      : false,
+    video: { mandatory },
   };
 }
 
@@ -2660,7 +2975,10 @@ function formatScreenCaptureError(error) {
   if (error?.name === "NotAllowedError") {
     return "Screen capture blocked.";
   }
-  if (error?.name === "NotFoundError" || error?.name === "OverconstrainedError") {
+  if (
+    error?.name === "NotFoundError" ||
+    error?.name === "OverconstrainedError"
+  ) {
     return "Screen source unavailable.";
   }
   return "Could not start screen stream.";
@@ -2704,7 +3022,11 @@ function drawCallPlaceholderFrame(canvas, context) {
   const width = canvas.width;
   const height = canvas.height;
   const localLabel = getLocalParticipantLabel();
-  const accentText = String(localLabel || "A").trim().slice(0, 1).toUpperCase() || "A";
+  const accentText =
+    String(localLabel || "A")
+      .trim()
+      .slice(0, 1)
+      .toUpperCase() || "A";
   const timeGlow = 0.18 + ((Date.now() / 600) % 1) * 0.06;
 
   context.clearRect(0, 0, width, height);
@@ -2715,7 +3037,14 @@ function drawCallPlaceholderFrame(canvas, context) {
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
 
-  const bubble = context.createRadialGradient(width * 0.24, height * 0.18, 0, width * 0.24, height * 0.18, width * 0.38);
+  const bubble = context.createRadialGradient(
+    width * 0.24,
+    height * 0.18,
+    0,
+    width * 0.24,
+    height * 0.18,
+    width * 0.38,
+  );
   bubble.addColorStop(0, `rgba(255,255,255,${0.94 - timeGlow})`);
   bubble.addColorStop(1, "rgba(255,255,255,0)");
   context.fillStyle = bubble;
@@ -2723,16 +3052,33 @@ function drawCallPlaceholderFrame(canvas, context) {
 
   context.fillStyle = "rgba(255,255,255,0.72)";
   context.beginPath();
-  context.roundRect(width * 0.21, height * 0.18, width * 0.58, height * 0.58, width * 0.16);
+  context.roundRect(
+    width * 0.21,
+    height * 0.18,
+    width * 0.58,
+    height * 0.58,
+    width * 0.16,
+  );
   context.fill();
 
-  const plate = context.createLinearGradient(width * 0.2, height * 0.2, width * 0.8, height * 0.8);
+  const plate = context.createLinearGradient(
+    width * 0.2,
+    height * 0.2,
+    width * 0.8,
+    height * 0.8,
+  );
   plate.addColorStop(0, "#ffffff");
   plate.addColorStop(0.55, "#8de6ff");
   plate.addColorStop(1, "#1899cb");
   context.fillStyle = plate;
   context.beginPath();
-  context.roundRect(width * 0.24, height * 0.22, width * 0.5, height * 0.5, width * 0.15);
+  context.roundRect(
+    width * 0.24,
+    height * 0.22,
+    width * 0.5,
+    height * 0.5,
+    width * 0.15,
+  );
   context.fill();
 
   context.fillStyle = "#0f5b77";
@@ -2759,18 +3105,25 @@ function createPlaceholderVideoTrack() {
     return null;
   }
 
-  const interval = window.setInterval(() => {
-    drawCallPlaceholderFrame(canvas, context);
-  }, Math.round(1000 / CALL_PLACEHOLDER_VIDEO_FPS));
+  const interval = window.setInterval(
+    () => {
+      drawCallPlaceholderFrame(canvas, context);
+    },
+    Math.round(1000 / CALL_PLACEHOLDER_VIDEO_FPS),
+  );
 
   track._cleanupPlaceholder = () => {
     window.clearInterval(interval);
     stream.getTracks().forEach((item) => item.stop());
   };
 
-  track.addEventListener("ended", () => {
-    window.clearInterval(interval);
-  }, { once: true });
+  track.addEventListener(
+    "ended",
+    () => {
+      window.clearInterval(interval);
+    },
+    { once: true },
+  );
 
   return track;
 }
@@ -2795,7 +3148,13 @@ function stopLocalCameraCapture() {
   callState.localCameraStream = null;
 }
 
-function updateParticipantCard(card, video, shouldShowVideo, speaking, hasError = false) {
+function updateParticipantCard(
+  card,
+  video,
+  shouldShowVideo,
+  speaking,
+  hasError = false,
+) {
   card?.classList.toggle("camera-on", shouldShowVideo);
   card?.classList.toggle("speaking", Boolean(speaking));
   card?.classList.toggle("error", Boolean(hasError));
@@ -2805,7 +3164,11 @@ function updateParticipantCard(card, video, shouldShowVideo, speaking, hasError 
 function hasStreamForTarget(target) {
   return target === "local"
     ? Boolean(screenShareState.localStream)
-    : Boolean(screenShareState.remoteStream && screenShareState.viewerWatching && !screenShareState.hiddenByViewer);
+    : Boolean(
+        screenShareState.remoteStream &&
+        screenShareState.viewerWatching &&
+        !screenShareState.hiddenByViewer,
+      );
 }
 
 function setStreamFullscreenTarget(target = "") {
@@ -2850,20 +3213,29 @@ function createParticipantBadge(iconClass, title, state = "") {
   return badge;
 }
 
-function renderParticipantBadges(container, { muted = false, deafened = false, streamHidden = false } = {}) {
+function renderParticipantBadges(
+  container,
+  { muted = false, deafened = false, streamHidden = false } = {},
+) {
   if (!container) {
     return;
   }
 
   container.replaceChildren();
   if (streamHidden) {
-    container.append(createParticipantBadge("fa-solid fa-display", "Stream hidden", "stream"));
+    container.append(
+      createParticipantBadge("fa-solid fa-display", "Stream hidden", "stream"),
+    );
   }
   if (muted) {
-    container.append(createParticipantBadge("fa-solid fa-microphone-slash", "Muted", "muted"));
+    container.append(
+      createParticipantBadge("fa-solid fa-microphone-slash", "Muted", "muted"),
+    );
   }
   if (deafened) {
-    container.append(createParticipantBadge("fa-solid fa-headphones", "Deafened", "deafened"));
+    container.append(
+      createParticipantBadge("fa-solid fa-headphones", "Deafened", "deafened"),
+    );
   }
 }
 
@@ -2872,7 +3244,11 @@ function refreshCallStage() {
   const inCall = callState.status !== "idle" && Boolean(callState.peerId);
   if (!stagePeerId || !inCall) {
     callStage?.classList.add("hidden");
-    callStage?.classList.remove("stream-fullscreen", "fullscreen-local", "fullscreen-remote");
+    callStage?.classList.remove(
+      "stream-fullscreen",
+      "fullscreen-local",
+      "fullscreen-remote",
+    );
     appShell?.classList.remove("stream-fullscreen-active");
     streamFullscreenTarget = "";
     setVideoElementStream(localVideo, null);
@@ -2891,22 +3267,48 @@ function refreshCallStage() {
   const remoteLabel = getRemoteParticipantLabel(stagePeerId);
   const localScreenActive = Boolean(screenShareState.localStream);
   const remoteStreamAvailable = Boolean(screenShareState.remoteStream);
-  const remoteScreenHidden = remoteStreamAvailable && (!screenShareState.viewerWatching || screenShareState.hiddenByViewer);
+  const remoteScreenHidden =
+    remoteStreamAvailable &&
+    (!screenShareState.viewerWatching || screenShareState.hiddenByViewer);
   const remoteScreenActive = remoteStreamAvailable && !remoteScreenHidden;
-  const localDisplayStream = localScreenActive ? screenShareState.localStream : callState.localCameraStream;
-  const remoteDisplayStream = remoteScreenActive ? screenShareState.remoteStream : callState.remoteStream;
-  const localPipStream = localScreenActive && callState.localCameraEnabled ? callState.localCameraStream : null;
-  const remotePipStream = remoteScreenActive && callState.remoteCameraEnabled ? callState.remoteStream : null;
-  const showLocalVideo = inCallWithStagePeer && Boolean(localDisplayStream) && (localScreenActive || callState.localCameraEnabled);
-  const showRemoteVideo = inCallWithStagePeer && Boolean(remoteDisplayStream) && (remoteScreenActive || callState.remoteCameraEnabled);
+  const localDisplayStream = localScreenActive
+    ? screenShareState.localStream
+    : callState.localCameraStream;
+  const remoteDisplayStream = remoteScreenActive
+    ? screenShareState.remoteStream
+    : callState.remoteStream;
+  const localPipStream =
+    localScreenActive && callState.localCameraEnabled
+      ? callState.localCameraStream
+      : null;
+  const remotePipStream =
+    remoteScreenActive && callState.remoteCameraEnabled
+      ? callState.remoteStream
+      : null;
+  const showLocalVideo =
+    inCallWithStagePeer &&
+    Boolean(localDisplayStream) &&
+    (localScreenActive || callState.localCameraEnabled);
+  const showRemoteVideo =
+    inCallWithStagePeer &&
+    Boolean(remoteDisplayStream) &&
+    (remoteScreenActive || callState.remoteCameraEnabled);
   const showLocalPip = inCallWithStagePeer && Boolean(localPipStream);
   const showRemotePip = inCallWithStagePeer && Boolean(remotePipStream);
-  const showLocalName = !showLocalVideo || isOwnVideoNameVisible() || Boolean(callState.localErrorMessage);
-  const showRemoteName = !showRemoteVideo || isPeerVideoNameVisible(stagePeerId);
+  const showLocalName =
+    !showLocalVideo ||
+    isOwnVideoNameVisible() ||
+    Boolean(callState.localErrorMessage);
+  const showRemoteName =
+    !showRemoteVideo || isPeerVideoNameVisible(stagePeerId);
 
   if (!hasStreamForTarget(streamFullscreenTarget)) {
     streamFullscreenTarget = "";
-    callStage?.classList.remove("stream-fullscreen", "fullscreen-local", "fullscreen-remote");
+    callStage?.classList.remove(
+      "stream-fullscreen",
+      "fullscreen-local",
+      "fullscreen-remote",
+    );
     appShell?.classList.remove("stream-fullscreen-active");
   }
 
@@ -2919,11 +3321,17 @@ function refreshCallStage() {
   }
   if (localParticipantStatus) {
     localParticipantStatus.textContent = inCallWithStagePeer
-      ? (localScreenActive ? "Streaming" : (callState.localErrorMessage || ""))
+      ? localScreenActive
+        ? "Streaming"
+        : callState.localErrorMessage || ""
       : "";
   }
   if (remoteParticipantStatus) {
-    remoteParticipantStatus.textContent = remoteScreenActive ? "Streaming" : remoteScreenHidden ? "Stream hidden" : "";
+    remoteParticipantStatus.textContent = remoteScreenActive
+      ? "Streaming"
+      : remoteScreenHidden
+        ? "Stream hidden"
+        : "";
   }
   localParticipantCard?.classList.toggle("hide-name", !showLocalName);
   remoteParticipantCard?.classList.toggle("hide-name", !showRemoteName);
@@ -2931,13 +3339,33 @@ function refreshCallStage() {
   remoteParticipantCard?.classList.toggle("streaming", remoteScreenActive);
   localParticipantCard?.classList.toggle("has-pip", showLocalPip);
   remoteParticipantCard?.classList.toggle("has-pip", showRemotePip);
-  callStage?.classList.toggle("stream-fullscreen", Boolean(streamFullscreenTarget));
-  callStage?.classList.toggle("fullscreen-local", streamFullscreenTarget === "local");
-  callStage?.classList.toggle("fullscreen-remote", streamFullscreenTarget === "remote");
-  appShell?.classList.toggle("stream-fullscreen-active", Boolean(streamFullscreenTarget));
+  callStage?.classList.toggle(
+    "stream-fullscreen",
+    Boolean(streamFullscreenTarget),
+  );
+  callStage?.classList.toggle(
+    "fullscreen-local",
+    streamFullscreenTarget === "local",
+  );
+  callStage?.classList.toggle(
+    "fullscreen-remote",
+    streamFullscreenTarget === "remote",
+  );
+  appShell?.classList.toggle(
+    "stream-fullscreen-active",
+    Boolean(streamFullscreenTarget),
+  );
 
-  setVideoElementStream(localVideo, showLocalVideo ? localDisplayStream : null, { smoothPlayback: localScreenActive });
-  setVideoElementStream(remoteVideo, showRemoteVideo ? remoteDisplayStream : null, { smoothPlayback: remoteScreenActive });
+  setVideoElementStream(
+    localVideo,
+    showLocalVideo ? localDisplayStream : null,
+    { smoothPlayback: localScreenActive },
+  );
+  setVideoElementStream(
+    remoteVideo,
+    showRemoteVideo ? remoteDisplayStream : null,
+    { smoothPlayback: remoteScreenActive },
+  );
   setVideoElementStream(localPipVideo, showLocalPip ? localPipStream : null);
   setVideoElementStream(remotePipVideo, showRemotePip ? remotePipStream : null);
   localPipVideo?.classList.toggle("hidden", !showLocalPip);
@@ -2946,27 +3374,34 @@ function refreshCallStage() {
   updateStreamFullscreenControl(remoteStreamFullscreen, "remote");
   renderParticipantBadges(localParticipantBadges, {
     muted: callState.muted,
-    deafened: callState.deafened
+    deafened: callState.deafened,
   });
   renderParticipantBadges(remoteParticipantBadges, {
     muted: remoteCallStatus.muted,
     deafened: remoteCallStatus.deafened,
-    streamHidden: remoteScreenHidden
+    streamHidden: remoteScreenHidden,
   });
   updateParticipantCard(
     localParticipantCard,
     localVideo,
     showLocalVideo,
     localVoiceGateIsOpen && !callState.muted,
-    Boolean(callState.localErrorMessage)
+    Boolean(callState.localErrorMessage),
   );
-  updateParticipantCard(remoteParticipantCard, remoteVideo, showRemoteVideo, remoteVoiceIsActive && !remoteCallStatus.muted);
+  updateParticipantCard(
+    remoteParticipantCard,
+    remoteVideo,
+    showRemoteVideo,
+    remoteVoiceIsActive && !remoteCallStatus.muted,
+  );
   refreshAutoFitText();
 }
 
 function stopLocalCallStream() {
   stopLocalCameraCapture();
-  callState.localStream?._rawVoiceStream?.getTracks().forEach((track) => track.stop());
+  callState.localStream?._rawVoiceStream
+    ?.getTracks()
+    .forEach((track) => track.stop());
   callState.localStream?.getTracks().forEach((track) => stopMediaTrack(track));
   callState.localStream = null;
 }
@@ -2999,7 +3434,10 @@ function updateRemoteVoiceMeter() {
     return;
   }
 
-  if (!remoteVoiceMeterBuffer || remoteVoiceMeterBuffer.length !== remoteVoiceAnalyserNode.fftSize) {
+  if (
+    !remoteVoiceMeterBuffer ||
+    remoteVoiceMeterBuffer.length !== remoteVoiceAnalyserNode.fftSize
+  ) {
     remoteVoiceMeterBuffer = new Float32Array(remoteVoiceAnalyserNode.fftSize);
   }
 
@@ -3015,10 +3453,14 @@ function updateRemoteVoiceMeter() {
   } else {
     remoteVoiceNoiseFloor = remoteVoiceNoiseFloor * 0.997 + rms * 0.003;
   }
-  remoteVoiceNoiseFloor = Math.max(0.0012, Math.min(0.03, remoteVoiceNoiseFloor));
+  remoteVoiceNoiseFloor = Math.max(
+    0.0012,
+    Math.min(0.03, remoteVoiceNoiseFloor),
+  );
 
   const threshold = Math.max(0.009, remoteVoiceNoiseFloor * 1.9 + 0.003);
-  const nextActive = rms >= threshold && !remoteAudio.muted && !remoteCallStatus.muted;
+  const nextActive =
+    rms >= threshold && !remoteAudio.muted && !remoteCallStatus.muted;
   if (nextActive !== remoteVoiceIsActive) {
     remoteVoiceIsActive = nextActive;
     refreshCallStage();
@@ -3030,7 +3472,10 @@ function updateRemoteVoiceMeter() {
 async function startRemoteVoiceMeter(stream) {
   resetRemoteVoiceProcessingState();
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (typeof AudioContextClass !== "function" || !stream?.getAudioTracks?.().length) {
+  if (
+    typeof AudioContextClass !== "function" ||
+    !stream?.getAudioTracks?.().length
+  ) {
     return;
   }
 
@@ -3074,21 +3519,33 @@ function refreshCallUi() {
   callCamera.classList.toggle("active", callState.localCameraEnabled);
   callStream.classList.toggle("active", Boolean(screenShareState.localStream));
   callCamera.classList.toggle("camera", true);
-  callMute.querySelector("span").textContent = callState.muted ? "Unmute" : "Mute";
-  callDeafen.querySelector("span").textContent = callState.deafened ? "Undeafen" : "Deafen";
-  callCamera.querySelector("span").textContent = callState.localCameraEnabled ? "Hide Cam" : "Show Cam";
-  callStream.querySelector("span").textContent = screenShareState.localStream ? "Stop Stream" : "Stream";
+  callMute.querySelector("span").textContent = callState.muted
+    ? "Unmute"
+    : "Mute";
+  callDeafen.querySelector("span").textContent = callState.deafened
+    ? "Undeafen"
+    : "Deafen";
+  callCamera.querySelector("span").textContent = callState.localCameraEnabled
+    ? "Hide Cam"
+    : "Show Cam";
+  callStream.querySelector("span").textContent = screenShareState.localStream
+    ? "Stop Stream"
+    : "Stream";
   callMute.title = callState.muted ? "Unmute microphone" : "Mute microphone";
   callDeafen.title = callState.deafened ? "Undeafen" : "Deafen";
-  callCamera.title = callState.localCameraEnabled ? "Hide camera" : "Show camera";
-  callStream.title = screenShareState.localStream ? "Stop screen stream" : "Share screen";
+  callCamera.title = callState.localCameraEnabled
+    ? "Hide camera"
+    : "Show camera";
+  callStream.title = screenShareState.localStream
+    ? "Stop screen stream"
+    : "Share screen";
   callMute.setAttribute("aria-label", callMute.title);
   callDeafen.setAttribute("aria-label", callDeafen.title);
   callCamera.setAttribute("aria-label", callCamera.title);
   callStream.setAttribute("aria-label", callStream.title);
   const remoteStates = [
     remoteCallStatus.muted ? "muted" : "",
-    remoteCallStatus.deafened ? "deafened" : ""
+    remoteCallStatus.deafened ? "deafened" : "",
   ].filter(Boolean);
   callPeerStatus.textContent = "";
   callPeerStatus.classList.add("hidden");
@@ -3198,7 +3655,7 @@ function resetCallState() {
     muted: false,
     deafened: false,
     mutedBeforeDeafen: null,
-    joined: false
+    joined: false,
   });
   remoteCallStatus.muted = false;
   remoteCallStatus.deafened = false;
@@ -3267,7 +3724,7 @@ function sendLocalCallStatus() {
   sendProtocolMessage(connections.get(callState.peerId), "call-status", {
     callId: callState.callId,
     muted: callState.muted,
-    deafened: callState.deafened
+    deafened: callState.deafened,
   });
 }
 
@@ -3326,7 +3783,10 @@ function getMicGateThreshold({ profile, mode, sensitivity, noiseFloor }) {
 
   if (mode === "auto") {
     const floor = Number.isFinite(noiseFloor) ? noiseFloor : 0.01;
-    return Math.max(thresholdMin, Math.min(thresholdMax, floor * 1.75 + 0.0025));
+    return Math.max(
+      thresholdMin,
+      Math.min(thresholdMax, floor * 1.75 + 0.0025),
+    );
   }
 
   const normalized = Math.max(0, Math.min(100, Number(sensitivity) || 0)) / 100;
@@ -3335,13 +3795,17 @@ function getMicGateThreshold({ profile, mode, sensitivity, noiseFloor }) {
 
 function getMicNoiseReductionFactor() {
   normalizeAudioConfig();
-  const value = appConfig.audio.micNoiseReduction ?? DEFAULT_MIC_NOISE_REDUCTION;
+  const value =
+    appConfig.audio.micNoiseReduction ?? DEFAULT_MIC_NOISE_REDUCTION;
   return Math.max(0, Math.min(100, value)) / 100;
 }
 
 function getMicBoostGain() {
   normalizeAudioConfig();
-  return Math.max(0, Math.min(2, (appConfig.audio.micBoost || DEFAULT_MIC_BOOST) / 100));
+  return Math.max(
+    0,
+    Math.min(2, (appConfig.audio.micBoost || DEFAULT_MIC_BOOST) / 100),
+  );
 }
 
 function getMicEqValues() {
@@ -3349,24 +3813,40 @@ function getMicEqValues() {
   return {
     low: Math.max(-12, Math.min(12, Number(appConfig.audio.micEqLow) || 0)),
     mid: Math.max(-12, Math.min(12, Number(appConfig.audio.micEqMid) || 0)),
-    high: Math.max(-12, Math.min(12, Number(appConfig.audio.micEqHigh) || 0))
+    high: Math.max(-12, Math.min(12, Number(appConfig.audio.micEqHigh) || 0)),
   };
 }
 
 function updateVoiceMeter() {
-  if (!localVoiceAnalyserNode || !localVoiceGateNode || !localVoiceBoostNode || !localVoiceProcessingContext) {
+  if (
+    !localVoiceAnalyserNode ||
+    !localVoiceGateNode ||
+    !localVoiceBoostNode ||
+    !localVoiceProcessingContext
+  ) {
     return;
   }
 
   const audio = appConfig.audio || {};
   if (audio.micProfile === "studio") {
-    localVoiceGateNode.gain.setTargetAtTime(1, localVoiceProcessingContext.currentTime, 0.01);
-    localVoiceBoostNode.gain.setTargetAtTime(1, localVoiceProcessingContext.currentTime, 0.03);
+    localVoiceGateNode.gain.setTargetAtTime(
+      1,
+      localVoiceProcessingContext.currentTime,
+      0.01,
+    );
+    localVoiceBoostNode.gain.setTargetAtTime(
+      1,
+      localVoiceProcessingContext.currentTime,
+      0.03,
+    );
     localVoiceMeterFrame = requestAnimationFrame(updateVoiceMeter);
     return;
   }
 
-  if (!localVoiceMeterBuffer || localVoiceMeterBuffer.length !== localVoiceAnalyserNode.fftSize) {
+  if (
+    !localVoiceMeterBuffer ||
+    localVoiceMeterBuffer.length !== localVoiceAnalyserNode.fftSize
+  ) {
     localVoiceMeterBuffer = new Float32Array(localVoiceAnalyserNode.fftSize);
   }
 
@@ -3385,29 +3865,35 @@ function updateVoiceMeter() {
     } else {
       localVoiceNoiseFloor = localVoiceNoiseFloor * 0.998 + rms * 0.002;
     }
-    localVoiceNoiseFloor = Math.max(0.0015, Math.min(0.04, localVoiceNoiseFloor));
+    localVoiceNoiseFloor = Math.max(
+      0.0015,
+      Math.min(0.04, localVoiceNoiseFloor),
+    );
   }
 
-  const noiseFloor = audio.micProfile === "custom"
-    ? localVoiceNoiseFloor + getMicNoiseReductionFactor() * 0.012
-    : localVoiceNoiseFloor;
+  const noiseFloor =
+    audio.micProfile === "custom"
+      ? localVoiceNoiseFloor + getMicNoiseReductionFactor() * 0.012
+      : localVoiceNoiseFloor;
   const threshold = getMicGateThreshold({
     profile: audio.micProfile,
     mode: audio.micMode,
     sensitivity: audio.micSensitivity,
-    noiseFloor
+    noiseFloor,
   });
   const openThreshold = threshold;
   const closeThreshold = Math.max(
     audio.micProfile === "custom" ? 0.0028 : 0.0038,
-    threshold * 0.62
+    threshold * 0.62,
   );
   const now = localVoiceProcessingContext.currentTime;
   if (rms >= openThreshold) {
     localVoiceGateIsOpen = true;
-    localVoiceGateHoldUntil = now + (audio.micProfile === "custom" ? 0.24 : 0.2);
+    localVoiceGateHoldUntil =
+      now + (audio.micProfile === "custom" ? 0.24 : 0.2);
   } else if (localVoiceGateIsOpen && rms >= closeThreshold) {
-    localVoiceGateHoldUntil = now + (audio.micProfile === "custom" ? 0.18 : 0.14);
+    localVoiceGateHoldUntil =
+      now + (audio.micProfile === "custom" ? 0.18 : 0.14);
   } else if (localVoiceGateIsOpen && now < localVoiceGateHoldUntil) {
     // Keep the gate open briefly so syllables do not get clipped.
   } else {
@@ -3415,11 +3901,14 @@ function updateVoiceMeter() {
   }
 
   const noiseReductionFactor = getMicNoiseReductionFactor();
-  const closedGain = audio.micProfile === "custom"
-    ? 0.18 - noiseReductionFactor * 0.1
-    : 0.12;
+  const closedGain =
+    audio.micProfile === "custom" ? 0.18 - noiseReductionFactor * 0.1 : 0.12;
   const gateOpen = localVoiceGateIsOpen ? 1 : Math.max(0.06, closedGain);
-  localVoiceGateNode.gain.setTargetAtTime(gateOpen, now, gateOpen > 0.5 ? 0.012 : 0.18);
+  localVoiceGateNode.gain.setTargetAtTime(
+    gateOpen,
+    now,
+    gateOpen > 0.5 ? 0.012 : 0.18,
+  );
   localVoiceBoostNode.gain.setTargetAtTime(getMicBoostGain(), now, 0.03);
   refreshCallStage();
 
@@ -3457,7 +3946,7 @@ function createVoiceAudioConstraints() {
     channelCount: { ideal: 1 },
     sampleRate: { ideal: 48000 },
     sampleSize: { ideal: 16 },
-    latency: { ideal: 0.02 }
+    latency: { ideal: 0.02 },
   };
 
   if (deviceId && deviceId !== "default") {
@@ -3473,7 +3962,7 @@ function createCameraVideoConstraints() {
   const video = {
     width: { ideal: CALL_CAMERA_WIDTH },
     height: { ideal: CALL_CAMERA_HEIGHT },
-    frameRate: { ideal: 16, max: CALL_CAMERA_MAX_FRAMERATE }
+    frameRate: { ideal: 16, max: CALL_CAMERA_MAX_FRAMERATE },
   };
 
   if (deviceId && deviceId !== "default") {
@@ -3494,7 +3983,12 @@ function formatCameraError(error) {
   if (name === "NotFoundError" || name === "DevicesNotFoundError") {
     return "No camera found";
   }
-  if (name === "NotReadableError" || message.includes("hardware resources") || message.includes("0xc00d3704") || code.includes("0xc00d3704")) {
+  if (
+    name === "NotReadableError" ||
+    message.includes("hardware resources") ||
+    message.includes("0xc00d3704") ||
+    code.includes("0xc00d3704")
+  ) {
     return "Camera busy or unavailable";
   }
   if (name === "OverconstrainedError") {
@@ -3505,7 +3999,10 @@ function formatCameraError(error) {
 }
 
 function improveVoiceSdp(sdp = "") {
-  const opusPayloads = Array.from(sdp.matchAll(/^a=rtpmap:(\d+) opus\/48000(?:\/\d+)?$/gim), (match) => match[1]);
+  const opusPayloads = Array.from(
+    sdp.matchAll(/^a=rtpmap:(\d+) opus\/48000(?:\/\d+)?$/gim),
+    (match) => match[1],
+  );
   let nextSdp = sdp;
 
   if (!/^a=ptime:/im.test(nextSdp)) {
@@ -3520,7 +4017,7 @@ function improveVoiceSdp(sdp = "") {
       "useinbandfec=1",
       "maxplaybackrate=48000",
       "sprop-maxcapturerate=48000",
-      `maxaveragebitrate=${VOICE_AUDIO_BITRATE}`
+      `maxaveragebitrate=${VOICE_AUDIO_BITRATE}`,
     ];
 
     if (fmtpMatch) {
@@ -3537,7 +4034,7 @@ function improveVoiceSdp(sdp = "") {
 
     nextSdp = nextSdp.replace(
       new RegExp(`^(a=rtpmap:${payload} opus\\/48000(?:\\/\\d+)?)$`, "im"),
-      `$1\r\na=fmtp:${payload} ${params.join(";")}`
+      `$1\r\na=fmtp:${payload} ${params.join(";")}`,
     );
   }
 
@@ -3551,38 +4048,59 @@ async function tuneOutgoingAudio(mediaConn) {
   }
 
   for (const sender of peerConnection.getSenders()) {
-    if (sender.track?.kind !== "audio" || !sender.getParameters || !sender.setParameters) {
+    if (
+      sender.track?.kind !== "audio" ||
+      !sender.getParameters ||
+      !sender.setParameters
+    ) {
       continue;
     }
 
     const parameters = sender.getParameters();
-    parameters.encodings = parameters.encodings?.length ? parameters.encodings : [{}];
+    parameters.encodings = parameters.encodings?.length
+      ? parameters.encodings
+      : [{}];
     parameters.encodings[0].maxBitrate = VOICE_AUDIO_BITRATE;
     parameters.encodings[0].priority = "high";
     await sender.setParameters(parameters).catch(() => {});
   }
 }
 
-async function applyVideoQualityProfileToConnection(mediaConn, profile = getCallVideoQualityProfile()) {
+async function applyVideoQualityProfileToConnection(
+  mediaConn,
+  profile = getCallVideoQualityProfile(),
+) {
   const peerConnection = mediaConn?.peerConnection;
   if (!peerConnection?.getSenders) {
     return;
   }
 
   for (const sender of peerConnection.getSenders()) {
-    if (sender.track?.kind !== "video" || !sender.getParameters || !sender.setParameters) {
+    if (
+      sender.track?.kind !== "video" ||
+      !sender.getParameters ||
+      !sender.setParameters
+    ) {
       continue;
     }
 
     const parameters = sender.getParameters();
     parameters.degradationPreference = profile.degradationPreference;
-    parameters.encodings = parameters.encodings?.length ? parameters.encodings : [{}];
+    parameters.encodings = parameters.encodings?.length
+      ? parameters.encodings
+      : [{}];
     parameters.encodings[0].maxBitrate = Math.max(
       CALL_VIDEO_MIN_BITRATE,
-      Math.min(CALL_VIDEO_FIXED_MAX_BITRATE, profile.maxBitrate)
+      Math.min(CALL_VIDEO_FIXED_MAX_BITRATE, profile.maxBitrate),
     );
-    parameters.encodings[0].maxFramerate = Math.min(CALL_CAMERA_MAX_FRAMERATE, profile.maxFramerate);
-    parameters.encodings[0].scaleResolutionDownBy = Math.max(1, profile.scaleResolutionDownBy);
+    parameters.encodings[0].maxFramerate = Math.min(
+      CALL_CAMERA_MAX_FRAMERATE,
+      profile.maxFramerate,
+    );
+    parameters.encodings[0].scaleResolutionDownBy = Math.max(
+      1,
+      profile.scaleResolutionDownBy,
+    );
     parameters.encodings[0].networkPriority = "high";
     await sender.setParameters(parameters).catch(() => {});
     if (sender.track) {
@@ -3591,7 +4109,9 @@ async function applyVideoQualityProfileToConnection(mediaConn, profile = getCall
   }
 }
 
-async function applyVideoQualityProfileToActiveCall(profile = getCallVideoQualityProfile()) {
+async function applyVideoQualityProfileToActiveCall(
+  profile = getCallVideoQualityProfile(),
+) {
   callState.videoQualityProfile = profile.name;
   const activeMediaConns = [callState.mediaConn, callState.incomingMediaConn]
     .filter(Boolean)
@@ -3610,17 +4130,34 @@ function stopVideoQualityMonitor() {
   callState.videoQualityLastStats = null;
 }
 
-function chooseAdaptiveVideoProfile({ packetsLost = 0, packetsSent = 0, availableOutgoingBitrate = 0, roundTripTime = 0, actualBitrate = 0 } = {}) {
-  const lossRatio = packetsSent > 0 ? packetsLost / Math.max(1, packetsSent + packetsLost) : 0;
+function chooseAdaptiveVideoProfile({
+  packetsLost = 0,
+  packetsSent = 0,
+  availableOutgoingBitrate = 0,
+  roundTripTime = 0,
+  actualBitrate = 0,
+} = {}) {
+  const lossRatio =
+    packetsSent > 0 ? packetsLost / Math.max(1, packetsSent + packetsLost) : 0;
   const availableKbps = availableOutgoingBitrate / 1000;
   const actualKbps = actualBitrate / 1000;
   const rttMs = roundTripTime * 1000;
 
-  if (lossRatio > 0.08 || rttMs > 380 || availableKbps > 0 && availableKbps < 220 || actualKbps > 0 && actualKbps < 140) {
+  if (
+    lossRatio > 0.08 ||
+    rttMs > 380 ||
+    (availableKbps > 0 && availableKbps < 220) ||
+    (actualKbps > 0 && actualKbps < 140)
+  ) {
     return "low";
   }
 
-  if (lossRatio > 0.035 || rttMs > 220 || availableKbps > 0 && availableKbps < 420 || actualKbps > 0 && actualKbps < 240) {
+  if (
+    lossRatio > 0.035 ||
+    rttMs > 220 ||
+    (availableKbps > 0 && availableKbps < 420) ||
+    (actualKbps > 0 && actualKbps < 240)
+  ) {
     return "medium";
   }
 
@@ -3632,7 +4169,9 @@ async function sampleAdaptiveVideoQuality() {
     return;
   }
 
-  const mediaConn = [callState.mediaConn, callState.incomingMediaConn].find((conn) => conn?.peerConnection?.getStats);
+  const mediaConn = [callState.mediaConn, callState.incomingMediaConn].find(
+    (conn) => conn?.peerConnection?.getStats,
+  );
   const peerConnection = mediaConn?.peerConnection;
   if (!peerConnection) {
     return;
@@ -3644,10 +4183,18 @@ async function sampleAdaptiveVideoQuality() {
     let selectedPair = null;
 
     for (const report of stats.values()) {
-      if (report.type === "outbound-rtp" && report.kind === "video" && !report.isRemote) {
+      if (
+        report.type === "outbound-rtp" &&
+        report.kind === "video" &&
+        !report.isRemote
+      ) {
         outboundVideo = report;
       }
-      if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
+      if (
+        report.type === "candidate-pair" &&
+        report.state === "succeeded" &&
+        report.nominated
+      ) {
         selectedPair = report;
       }
     }
@@ -3668,7 +4215,7 @@ async function sampleAdaptiveVideoQuality() {
 
     callState.videoQualityLastStats = {
       timestamp: outboundVideo.timestamp,
-      bytesSent: outboundVideo.bytesSent
+      bytesSent: outboundVideo.bytesSent,
     };
 
     const nextProfile = chooseAdaptiveVideoProfile({
@@ -3676,11 +4223,13 @@ async function sampleAdaptiveVideoQuality() {
       packetsSent: outboundVideo.packetsSent || 0,
       availableOutgoingBitrate: selectedPair?.availableOutgoingBitrate || 0,
       roundTripTime: selectedPair?.currentRoundTripTime || 0,
-      actualBitrate
+      actualBitrate,
     });
 
     if (nextProfile !== callState.videoQualityProfile) {
-      await applyVideoQualityProfileToActiveCall(getCallVideoQualityProfile(nextProfile));
+      await applyVideoQualityProfileToActiveCall(
+        getCallVideoQualityProfile(nextProfile),
+      );
     }
   } catch {
     // Ignore transient getStats errors during reconnects.
@@ -3697,7 +4246,7 @@ function startVideoQualityMonitor() {
 async function getVoiceStream() {
   const rawStream = await navigator.mediaDevices.getUserMedia({
     audio: createVoiceAudioConstraints(),
-    video: false
+    video: false,
   });
   await refreshAudioDevices();
 
@@ -3731,15 +4280,18 @@ async function getVoiceStream() {
       const compressor = localVoiceAudioContext.createDynamicsCompressor();
       const boostNode = localVoiceAudioContext.createGain();
       const gateNode = localVoiceAudioContext.createGain();
-      const noiseReduction = appConfig.audio.micNoiseReduction ?? DEFAULT_MIC_NOISE_REDUCTION;
-      const noiseReductionFactor = Math.max(0, Math.min(100, noiseReduction)) / 100;
+      const noiseReduction =
+        appConfig.audio.micNoiseReduction ?? DEFAULT_MIC_NOISE_REDUCTION;
+      const noiseReductionFactor =
+        Math.max(0, Math.min(100, noiseReduction)) / 100;
       const eq = getMicEqValues();
       const eqLow = localVoiceAudioContext.createBiquadFilter();
       const eqMid = localVoiceAudioContext.createBiquadFilter();
       const eqHigh = localVoiceAudioContext.createBiquadFilter();
 
       highpass.type = "highpass";
-      highpass.frequency.value = profile === "voice-isolation" ? 85 : 70 + noiseReductionFactor * 30;
+      highpass.frequency.value =
+        profile === "voice-isolation" ? 85 : 70 + noiseReductionFactor * 30;
       highpass.Q.value = 0.707;
       eqLow.type = "lowshelf";
       eqLow.frequency.value = 180;
@@ -3752,11 +4304,16 @@ async function getVoiceStream() {
       eqHigh.frequency.value = 4500;
       eqHigh.gain.value = eq.high;
       analyser.fftSize = VOICE_METER_FFT;
-      compressor.threshold.value = profile === "voice-isolation" ? -26 : -22 - noiseReductionFactor * 5;
+      compressor.threshold.value =
+        profile === "voice-isolation" ? -26 : -22 - noiseReductionFactor * 5;
       compressor.knee.value = profile === "voice-isolation" ? 20 : 16;
-      compressor.ratio.value = profile === "voice-isolation" ? 2.8 : 2.2 + noiseReductionFactor;
+      compressor.ratio.value =
+        profile === "voice-isolation" ? 2.8 : 2.2 + noiseReductionFactor;
       compressor.attack.value = 0.003;
-      compressor.release.value = profile === "voice-isolation" ? 0.18 : 0.24 + noiseReductionFactor * 0.04;
+      compressor.release.value =
+        profile === "voice-isolation"
+          ? 0.18
+          : 0.24 + noiseReductionFactor * 0.04;
       gateNode.gain.value = profile === "custom" ? 0.12 : 0.1;
       boostNode.gain.value = getMicBoostGain();
 
@@ -3807,11 +4364,13 @@ async function createCallLocalStream() {
   const placeholderVideoTrack = createPlaceholderVideoTrack();
   const tracks = [
     ...(audioStream?.getAudioTracks?.() || []),
-    ...(placeholderVideoTrack ? [placeholderVideoTrack] : [])
+    ...(placeholderVideoTrack ? [placeholderVideoTrack] : []),
   ];
 
   if (tracks.length === 0) {
-    throw new Error(audioErrorMessage || "Could not create a local call stream.");
+    throw new Error(
+      audioErrorMessage || "Could not create a local call stream.",
+    );
   }
 
   const stream = new MediaStream(tracks);
@@ -3821,7 +4380,7 @@ async function createCallLocalStream() {
   return {
     stream,
     audioAvailable: Boolean(audioStream?.getAudioTracks?.().length),
-    audioErrorMessage
+    audioErrorMessage,
   };
 }
 
@@ -3837,7 +4396,10 @@ async function replaceOutgoingVideoTrack(nextTrack) {
     }
 
     for (const sender of peerConnection.getSenders()) {
-      if (sender.track?.kind !== "video" || typeof sender.replaceTrack !== "function") {
+      if (
+        sender.track?.kind !== "video" ||
+        typeof sender.replaceTrack !== "function"
+      ) {
         continue;
       }
 
@@ -3855,7 +4417,7 @@ function sendLocalCameraState() {
 
   sendProtocolMessage(connections.get(callState.peerId), "camera-state", {
     callId: callState.callId,
-    enabled: callState.localCameraEnabled
+    enabled: callState.localCameraEnabled,
   });
 }
 
@@ -3873,7 +4435,7 @@ async function setLocalCameraEnabled(enabled) {
     if (nextEnabled) {
       cameraStream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: createCameraVideoConstraints()
+        video: createCameraVideoConstraints(),
       });
       replacementTrack = cameraStream.getVideoTracks()[0] || null;
       if (!replacementTrack) {
@@ -3909,7 +4471,7 @@ async function setLocalCameraEnabled(enabled) {
     cameraStream?.getTracks().forEach((track) => track.stop());
     const message = nextEnabled
       ? formatCameraError(error)
-      : (error?.message || "Could not disable your camera.");
+      : error?.message || "Could not disable your camera.";
     setStatus("offline", message);
     addSystemMessage(message);
   }
@@ -3949,7 +4511,10 @@ async function applyVoiceSettingsToActiveCall() {
     }
 
     for (const sender of peerConnection.getSenders()) {
-      if (sender.track?.kind !== "audio" || typeof sender.replaceTrack !== "function") {
+      if (
+        sender.track?.kind !== "audio" ||
+        typeof sender.replaceTrack !== "function"
+      ) {
         continue;
       }
 
@@ -3972,7 +4537,7 @@ async function applyVoiceSettingsToActiveCall() {
   const currentVideoTrack = previousStream?.getVideoTracks?.()[0] || null;
   const combinedStream = new MediaStream([
     ...nextStream.getAudioTracks(),
-    ...(currentVideoTrack ? [currentVideoTrack] : [])
+    ...(currentVideoTrack ? [currentVideoTrack] : []),
   ]);
   combinedStream._rawVoiceStream = nextStream._rawVoiceStream;
   callState.localStream = combinedStream;
@@ -3987,7 +4552,10 @@ async function applyVoiceSettingsToActiveCall() {
 function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
   callState.mediaConn = mediaConn;
   tuneOutgoingAudio(mediaConn);
-  applyVideoQualityProfileToConnection(mediaConn, getCallVideoQualityProfile()).catch(() => {});
+  applyVideoQualityProfileToConnection(
+    mediaConn,
+    getCallVideoQualityProfile(),
+  ).catch(() => {});
 
   mediaConn.on("stream", async (stream) => {
     if (callState.peerId !== peerId || callState.callId !== callId) {
@@ -4016,7 +4584,10 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
       startVideoQualityMonitor();
       sampleAdaptiveVideoQuality().catch(() => {});
     }
-    setStatus("online", `Voice call with ${getPeerLabel(peerId, connections.get(peerId))}`);
+    setStatus(
+      "online",
+      `Voice call with ${getPeerLabel(peerId, connections.get(peerId))}`,
+    );
   });
 
   mediaConn.on("close", () => {
@@ -4033,21 +4604,36 @@ function attachMediaConnectionHandlers(mediaConn, peerId, callId) {
   });
 }
 
-async function tuneScreenShareConnection(mediaConn, bitrate = getScreenStreamBaseBitrate()) {
+async function tuneScreenShareConnection(
+  mediaConn,
+  bitrate = getScreenStreamBaseBitrate(),
+) {
   const peerConnection = mediaConn?.peerConnection;
   if (!peerConnection?.getSenders) {
     return;
   }
 
   for (const sender of peerConnection.getSenders()) {
-    if (sender.track?.kind !== "video" || !sender.getParameters || !sender.setParameters) {
+    if (
+      sender.track?.kind !== "video" ||
+      !sender.getParameters ||
+      !sender.setParameters
+    ) {
       continue;
     }
 
     const parameters = sender.getParameters();
-    parameters.degradationPreference = bitrate < getScreenStreamBaseBitrate() ? "maintain-framerate" : "balanced";
-    parameters.encodings = parameters.encodings?.length ? parameters.encodings : [{}];
-    parameters.encodings[0].maxBitrate = Math.max(SCREEN_STREAM_MIN_BITRATE, bitrate);
+    parameters.degradationPreference =
+      bitrate < getScreenStreamBaseBitrate()
+        ? "maintain-framerate"
+        : "balanced";
+    parameters.encodings = parameters.encodings?.length
+      ? parameters.encodings
+      : [{}];
+    parameters.encodings[0].maxBitrate = Math.max(
+      SCREEN_STREAM_MIN_BITRATE,
+      bitrate,
+    );
     parameters.encodings[0].maxFramerate = screenShareState.fps;
     parameters.encodings[0].networkPriority = "high";
     await sender.setParameters(parameters).catch(() => {});
@@ -4097,10 +4683,18 @@ async function sampleAdaptiveScreenQuality() {
     let selectedPair = null;
 
     for (const report of stats.values()) {
-      if (report.type === "outbound-rtp" && report.kind === "video" && !report.isRemote) {
+      if (
+        report.type === "outbound-rtp" &&
+        report.kind === "video" &&
+        !report.isRemote
+      ) {
         outboundVideo = report;
       }
-      if (report.type === "candidate-pair" && report.state === "succeeded" && report.nominated) {
+      if (
+        report.type === "candidate-pair" &&
+        report.state === "succeeded" &&
+        report.nominated
+      ) {
         selectedPair = report;
       }
     }
@@ -4121,17 +4715,28 @@ async function sampleAdaptiveScreenQuality() {
 
     screenShareState.qualityLastStats = {
       timestamp: outboundVideo.timestamp,
-      bytesSent: outboundVideo.bytesSent
+      bytesSent: outboundVideo.bytesSent,
     };
 
     const baseBitrate = getScreenStreamBaseBitrate();
-    const lossRatio = outboundVideo.packetsSent > 0
-      ? (outboundVideo.packetsLost || 0) / Math.max(1, outboundVideo.packetsSent + (outboundVideo.packetsLost || 0))
-      : 0;
+    const lossRatio =
+      outboundVideo.packetsSent > 0
+        ? (outboundVideo.packetsLost || 0) /
+          Math.max(
+            1,
+            outboundVideo.packetsSent + (outboundVideo.packetsLost || 0),
+          )
+        : 0;
     const available = selectedPair?.availableOutgoingBitrate || 0;
     const rttMs = (selectedPair?.currentRoundTripTime || 0) * 1000;
-    const congestion = lossRatio > 0.06 || rttMs > 340 || available > 0 && available < baseBitrate * 0.72 || actualBitrate > 0 && actualBitrate < baseBitrate * 0.45;
-    const nextBitrate = congestion ? Math.round(baseBitrate * 0.58) : baseBitrate;
+    const congestion =
+      lossRatio > 0.06 ||
+      rttMs > 340 ||
+      (available > 0 && available < baseBitrate * 0.72) ||
+      (actualBitrate > 0 && actualBitrate < baseBitrate * 0.45);
+    const nextBitrate = congestion
+      ? Math.round(baseBitrate * 0.58)
+      : baseBitrate;
     await tuneScreenShareConnection(mediaConn, nextBitrate);
   } catch {
     // getStats can fail while a WebRTC sender is closing or changing tracks.
@@ -4151,7 +4756,9 @@ async function getScreenCaptureStream(sourceId, options) {
     return await navigator.mediaDevices.getUserMedia(constraints);
   } catch (error) {
     if (options?.audio) {
-      return navigator.mediaDevices.getUserMedia(getScreenStreamConstraints(sourceId, { ...options, audio: false }));
+      return navigator.mediaDevices.getUserMedia(
+        getScreenStreamConstraints(sourceId, { ...options, audio: false }),
+      );
     }
     throw error;
   }
@@ -4170,7 +4777,7 @@ function sendScreenShareState(extra = {}) {
     fps: screenShareState.fps,
     audio: screenShareState.audioEnabled,
     viewerWatching: screenShareState.remoteViewerWatching,
-    ...extra
+    ...extra,
   });
 }
 
@@ -4234,15 +4841,26 @@ function setRemoteScreenWatching(watching) {
     });
   }
   if (callState.peerId && callState.callId) {
-    sendProtocolMessage(connections.get(callState.peerId), "screen-watch-state", {
-      callId: callState.callId,
-      watching: screenShareState.viewerWatching
-    });
+    sendProtocolMessage(
+      connections.get(callState.peerId),
+      "screen-watch-state",
+      {
+        callId: callState.callId,
+        watching: screenShareState.viewerWatching,
+      },
+    );
   }
   refreshCallStage();
 }
 
-async function startLocalScreenShare(source, { quality = screenShareState.quality, fps = screenShareState.fps, audio = screenShareState.audioEnabled } = {}) {
+async function startLocalScreenShare(
+  source,
+  {
+    quality = screenShareState.quality,
+    fps = screenShareState.fps,
+    audio = screenShareState.audioEnabled,
+  } = {},
+) {
   if (!peer?.open || callState.status === "idle" || !callState.peerId) {
     return;
   }
@@ -4262,11 +4880,18 @@ async function startLocalScreenShare(source, { quality = screenShareState.qualit
       throw new Error("No screen video track available.");
     }
     videoTrack.contentHint = "detail";
-    videoTrack.addEventListener("ended", () => {
-      if (screenShareState.localStream === stream) {
-        stopLocalScreenShare({ notifyPeer: true, message: "Screen stream stopped." });
-      }
-    }, { once: true });
+    videoTrack.addEventListener(
+      "ended",
+      () => {
+        if (screenShareState.localStream === stream) {
+          stopLocalScreenShare({
+            notifyPeer: true,
+            message: "Screen stream stopped.",
+          });
+        }
+      },
+      { once: true },
+    );
 
     stopLocalScreenShare({ notifyPeer: false });
     screenShareState.localStream = stream;
@@ -4285,8 +4910,8 @@ async function startLocalScreenShare(source, { quality = screenShareState.qualit
         sourceName: screenShareState.sourceName,
         quality: screenShareState.quality,
         fps: screenShareState.fps,
-        audio: screenShareState.audioEnabled
-      }
+        audio: screenShareState.audioEnabled,
+      },
     });
     screenShareState.localMediaConn = mediaConn;
     mediaConn.on("close", () => {
@@ -4317,7 +4942,11 @@ async function startLocalScreenShare(source, { quality = screenShareState.qualit
 function handleIncomingScreenShare(mediaConn) {
   const peerId = mediaConn.peer;
   const callId = mediaConn.metadata?.callId;
-  if (callState.peerId !== peerId || callState.callId !== callId || callState.status === "idle") {
+  if (
+    callState.peerId !== peerId ||
+    callState.callId !== callId ||
+    callState.status === "idle"
+  ) {
     rejectIncomingMediaCall(mediaConn);
     return;
   }
@@ -4335,8 +4964,12 @@ function handleIncomingScreenShare(mediaConn) {
     }
     tuneIncomingScreenShareConnection(mediaConn);
     screenShareState.remoteStream = stream;
-    screenShareState.remoteAudioEnabled = Boolean(stream.getAudioTracks().length);
-    addSystemMessage(`${getPeerLabel(peerId, connections.get(peerId))} started streaming.`);
+    screenShareState.remoteAudioEnabled = Boolean(
+      stream.getAudioTracks().length,
+    );
+    addSystemMessage(
+      `${getPeerLabel(peerId, connections.get(peerId))} started streaming.`,
+    );
     refreshCallUi();
     refreshCallStage();
   });
@@ -4407,13 +5040,20 @@ async function startVoiceCall() {
 }
 
 function handleIncomingCallRequest(peerId, data) {
-  if (isPresenceOffline() || !connections.has(peerId) || typeof data.callId !== "string") {
+  if (
+    isPresenceOffline() ||
+    !connections.has(peerId) ||
+    typeof data.callId !== "string"
+  ) {
     return;
   }
 
   const conn = connections.get(peerId);
   if (isCallBusy()) {
-    sendProtocolMessage(conn, "call-declined", { callId: data.callId, reason: "busy" });
+    sendProtocolMessage(conn, "call-declined", {
+      callId: data.callId,
+      reason: "busy",
+    });
     return;
   }
 
@@ -4440,14 +5080,15 @@ async function acceptVoiceCall() {
   setCallState("connecting", { peerId, callId });
 
   try {
-    const { stream, audioAvailable, audioErrorMessage } = await createCallLocalStream();
+    const { stream, audioAvailable, audioErrorMessage } =
+      await createCallLocalStream();
     setCallState("connecting", {
       peerId,
       callId,
       localStream: stream,
       localAudioAvailable: audioAvailable,
       localErrorMessage: audioErrorMessage,
-      acceptedIncomingCallId: callId
+      acceptedIncomingCallId: callId,
     });
     if (audioErrorMessage) {
       setStatus("pending", "Joined call without microphone.");
@@ -4458,7 +5099,11 @@ async function acceptVoiceCall() {
     if (callState.incomingMediaConn?.metadata?.callId === callId) {
       callState.incomingMediaConn.answer(stream);
       tuneOutgoingAudio(callState.incomingMediaConn);
-      attachMediaConnectionHandlers(callState.incomingMediaConn, peerId, callId);
+      attachMediaConnectionHandlers(
+        callState.incomingMediaConn,
+        peerId,
+        callId,
+      );
     }
   } catch (error) {
     closeCallNotification(callId);
@@ -4475,12 +5120,18 @@ function declineVoiceCall() {
   closeCallNotification();
   const conn = connections.get(callState.peerId);
   sendProtocolMessage(conn, "call-declined", { callId: callState.callId });
-  addSystemMessage(`Call from ${getPeerLabel(callState.peerId, conn)} declined.`);
+  addSystemMessage(
+    `Call from ${getPeerLabel(callState.peerId, conn)} declined.`,
+  );
   resetCallState();
 }
 
 async function handleCallAccepted(peerId, data) {
-  if (callState.status !== "outgoing" || callState.peerId !== peerId || callState.callId !== data.callId) {
+  if (
+    callState.status !== "outgoing" ||
+    callState.peerId !== peerId ||
+    callState.callId !== data.callId
+  ) {
     return;
   }
 
@@ -4491,19 +5142,20 @@ async function handleCallAccepted(peerId, data) {
 
   clearOutgoingCallTimeout();
   try {
-    const { stream, audioAvailable, audioErrorMessage } = await createCallLocalStream();
+    const { stream, audioAvailable, audioErrorMessage } =
+      await createCallLocalStream();
     const mediaConn = peer.call(peerId, stream, {
       metadata: {
         ...createChatMetadata(),
-        callId: callState.callId
+        callId: callState.callId,
       },
-      sdpTransform: improveVoiceSdp
+      sdpTransform: improveVoiceSdp,
     });
     setCallState("connecting", {
       localStream: stream,
       mediaConn,
       localAudioAvailable: audioAvailable,
-      localErrorMessage: audioErrorMessage
+      localErrorMessage: audioErrorMessage,
     });
     if (audioErrorMessage) {
       setStatus("pending", "Joined call without microphone.");
@@ -4512,7 +5164,9 @@ async function handleCallAccepted(peerId, data) {
     attachMediaConnectionHandlers(mediaConn, peerId, callState.callId);
   } catch (error) {
     addSystemMessage(`Could not start call: ${error.message}`);
-    sendProtocolMessage(connections.get(peerId), "call-ended", { callId: callState.callId });
+    sendProtocolMessage(connections.get(peerId), "call-ended", {
+      callId: callState.callId,
+    });
     resetCallState();
   }
 }
@@ -4524,16 +5178,21 @@ function handleCallDeclined(peerId, data) {
 
   clearOutgoingCallTimeout();
   const label = getPeerLabel(peerId, connections.get(peerId));
-  const message = data.reason === "busy"
-    ? `${label} is busy.`
-    : data.reason === "dnd"
-      ? `${label} is in DND.`
-      : `${label} declined the call.`;
+  const message =
+    data.reason === "busy"
+      ? `${label} is busy.`
+      : data.reason === "dnd"
+        ? `${label} is in DND.`
+        : `${label} declined the call.`;
   addSystemMessage(message);
   resetCallState();
 }
 
-function endVoiceCall({ notifyPeer = true, message = "", silent = false } = {}) {
+function endVoiceCall({
+  notifyPeer = true,
+  message = "",
+  silent = false,
+} = {}) {
   clearOutgoingCallTimeout();
   const peerId = callState.peerId;
   const callId = callState.callId;
@@ -4614,24 +5273,39 @@ function setSelectValueOrDefault(select, value) {
 
 async function refreshAudioDevices() {
   if (!navigator.mediaDevices?.enumerateDevices) {
-    microphoneSelect.replaceChildren(createDeviceOption("default", "Default microphone"));
-    cameraSelect.replaceChildren(createDeviceOption("default", "Default camera"));
-    speakerSelect.replaceChildren(createDeviceOption("default", "Default output"));
+    microphoneSelect.replaceChildren(
+      createDeviceOption("default", "Default microphone"),
+    );
+    cameraSelect.replaceChildren(
+      createDeviceOption("default", "Default camera"),
+    );
+    speakerSelect.replaceChildren(
+      createDeviceOption("default", "Default output"),
+    );
     return;
   }
 
   normalizeAudioConfig();
-  const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+  const devices = await navigator.mediaDevices
+    .enumerateDevices()
+    .catch(() => []);
   const microphones = devices.filter((device) => device.kind === "audioinput");
   const cameras = devices.filter((device) => device.kind === "videoinput");
   const speakers = devices.filter((device) => device.kind === "audiooutput");
 
-  microphoneSelect.replaceChildren(createDeviceOption("default", "Default microphone"));
+  microphoneSelect.replaceChildren(
+    createDeviceOption("default", "Default microphone"),
+  );
   for (const [index, device] of microphones.entries()) {
     if (device.deviceId === "default") {
       continue;
     }
-    microphoneSelect.append(createDeviceOption(device.deviceId, device.label || `Microphone ${index + 1}`));
+    microphoneSelect.append(
+      createDeviceOption(
+        device.deviceId,
+        device.label || `Microphone ${index + 1}`,
+      ),
+    );
   }
 
   cameraSelect.replaceChildren(createDeviceOption("default", "Default camera"));
@@ -4639,15 +5313,27 @@ async function refreshAudioDevices() {
     if (device.deviceId === "default") {
       continue;
     }
-    cameraSelect.append(createDeviceOption(device.deviceId, device.label || `Camera ${index + 1}`));
+    cameraSelect.append(
+      createDeviceOption(
+        device.deviceId,
+        device.label || `Camera ${index + 1}`,
+      ),
+    );
   }
 
-  speakerSelect.replaceChildren(createDeviceOption("default", "Default output"));
+  speakerSelect.replaceChildren(
+    createDeviceOption("default", "Default output"),
+  );
   for (const [index, device] of speakers.entries()) {
     if (device.deviceId === "default") {
       continue;
     }
-    speakerSelect.append(createDeviceOption(device.deviceId, device.label || `Output ${index + 1}`));
+    speakerSelect.append(
+      createDeviceOption(
+        device.deviceId,
+        device.label || `Output ${index + 1}`,
+      ),
+    );
   }
 
   setSelectValueOrDefault(microphoneSelect, appConfig.audio.inputDeviceId);
@@ -4663,10 +5349,13 @@ function createChatMetadata() {
   return {
     app: appDisplayName,
     identityId: identity.id,
-    previousIdentityIds: getKnownPreviousIdentityIds(identity.previousIds, identity.id),
+    previousIdentityIds: getKnownPreviousIdentityIds(
+      identity.previousIds,
+      identity.id,
+    ),
     nickname: identity.nickname || "",
     protocol: PROTOCOL_VERSION,
-    version: currentVersion
+    version: currentVersion,
   };
 }
 
@@ -4685,7 +5374,11 @@ function rememberConnectionIdentity(peerId, metadata = {}) {
   }
 
   const existing = findContact(identityId);
-  if (existing && !existing.customLabel && existing.label === identity.nickname) {
+  if (
+    existing &&
+    !existing.customLabel &&
+    existing.label === identity.nickname
+  ) {
     upsertContact(identityId, { label: identityId, pinned: existing.pinned });
   }
 }
@@ -4693,7 +5386,9 @@ function rememberConnectionIdentity(peerId, metadata = {}) {
 function getPeerLabel(peerId, conn) {
   const remoteIdentity = remoteIdentities.get(peerId);
   const identityId = remoteIdentity?.identityId || peerId;
-  return findContact(identityId)?.label || remoteIdentity?.nickname || identityId;
+  return (
+    findContact(identityId)?.label || remoteIdentity?.nickname || identityId
+  );
 }
 
 function getPeerIdentityId(peerId, conn) {
@@ -4709,10 +5404,16 @@ function openContactMenu(event, id) {
   contextContactId = id;
 
   const contact = findContact(id);
-  menuTrust.querySelector("span").textContent = contact?.trusted ? "Untrust" : "Trust";
+  menuTrust.querySelector("span").textContent = contact?.trusted
+    ? "Untrust"
+    : "Trust";
   menuPin.querySelector("span").textContent = contact?.pinned ? "Unpin" : "Pin";
-  menuNickname.querySelector("span").textContent = contact?.customLabel ? "Edit nickname" : "Add nickname";
-  menuBlock.querySelector("span").textContent = contact?.blocked ? "Unblock" : "Block";
+  menuNickname.querySelector("span").textContent = contact?.customLabel
+    ? "Edit nickname"
+    : "Add nickname";
+  menuBlock.querySelector("span").textContent = contact?.blocked
+    ? "Unblock"
+    : "Block";
 
   contactMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 164)}px`;
   contactMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 132)}px`;
@@ -4774,13 +5475,21 @@ function openParticipantMenu(event, target) {
 
   const peerId = callState.peerId;
   const peerVolume = getPeerPlaybackVolume(peerId);
-  const showName = target === "local" ? isOwnVideoNameVisible() : isPeerVideoNameVisible(peerId);
+  const showName =
+    target === "local"
+      ? isOwnVideoNameVisible()
+      : isPeerVideoNameVisible(peerId);
 
   participantVolumeSlider.value = String(peerVolume);
   participantVolumeValue.textContent = `${peerVolume}%`;
   participantVolumeSlider.disabled = target === "local";
   participantToggleName.setAttribute("aria-checked", String(showName));
-  participantToggleName.classList.toggle("hidden", target === "remote" ? !callState.remoteCameraEnabled : !callState.localCameraEnabled);
+  participantToggleName.classList.toggle(
+    "hidden",
+    target === "remote"
+      ? !callState.remoteCameraEnabled
+      : !callState.localCameraEnabled,
+  );
   participantMenu.style.left = `${Math.min(event.clientX, window.innerWidth - 202)}px`;
   participantMenu.style.top = `${Math.min(event.clientY, window.innerHeight - 120)}px`;
   participantMenu.classList.remove("hidden");
@@ -4815,18 +5524,26 @@ function openStreamMenu(event, target) {
   streamMenuStop.classList.toggle("hidden", !isLocal);
   streamMenuWatch.classList.toggle("hidden", isLocal);
   streamMenuFullscreen.classList.toggle("hidden", !hasStreamForTarget(target));
-  streamMenuAudio.setAttribute("aria-checked", String(screenShareState.audioEnabled));
+  streamMenuAudio.setAttribute(
+    "aria-checked",
+    String(screenShareState.audioEnabled),
+  );
   const fullscreenIcon = streamMenuFullscreen.querySelector("i");
   const fullscreenLabel = streamMenuFullscreen.querySelector("span");
   const fullscreenActive = streamFullscreenTarget === target;
   if (fullscreenIcon) {
-    fullscreenIcon.className = fullscreenActive ? "fa-solid fa-compress" : "fa-solid fa-expand";
+    fullscreenIcon.className = fullscreenActive
+      ? "fa-solid fa-compress"
+      : "fa-solid fa-expand";
   }
   if (fullscreenLabel) {
-    fullscreenLabel.textContent = fullscreenActive ? "Shrink stream" : "Expand stream";
+    fullscreenLabel.textContent = fullscreenActive
+      ? "Shrink stream"
+      : "Expand stream";
   }
   if (!isLocal) {
-    const hidden = !screenShareState.viewerWatching || screenShareState.hiddenByViewer;
+    const hidden =
+      !screenShareState.viewerWatching || screenShareState.hiddenByViewer;
     const icon = streamMenuWatch.querySelector("i");
     const label = streamMenuWatch.querySelector("span");
     if (icon) {
@@ -4854,33 +5571,55 @@ function formatStreamSourceName(source) {
     }
   }
 
-  return name || (getStreamSourceType(source) === "screens" ? "Screen" : "Application");
+  return (
+    name ||
+    (getStreamSourceType(source) === "screens" ? "Screen" : "Application")
+  );
 }
 
 function setActiveStreamSourceTab(tab) {
   activeStreamSourceTab = tab === "windows" ? "windows" : "screens";
-  streamTabScreens?.classList.toggle("active", activeStreamSourceTab === "screens");
-  streamTabWindows?.classList.toggle("active", activeStreamSourceTab === "windows");
-  streamTabScreens?.setAttribute("aria-selected", String(activeStreamSourceTab === "screens"));
-  streamTabWindows?.setAttribute("aria-selected", String(activeStreamSourceTab === "windows"));
+  streamTabScreens?.classList.toggle(
+    "active",
+    activeStreamSourceTab === "screens",
+  );
+  streamTabWindows?.classList.toggle(
+    "active",
+    activeStreamSourceTab === "windows",
+  );
+  streamTabScreens?.setAttribute(
+    "aria-selected",
+    String(activeStreamSourceTab === "screens"),
+  );
+  streamTabWindows?.setAttribute(
+    "aria-selected",
+    String(activeStreamSourceTab === "windows"),
+  );
 }
 
 function createStreamSourceEmptyState(tab) {
   const empty = document.createElement("div");
   empty.className = "screen-source-empty";
   const icon = document.createElement("i");
-  icon.className = tab === "screens" ? "fa-solid fa-display" : "fa-solid fa-window-maximize";
+  icon.className =
+    tab === "screens" ? "fa-solid fa-display" : "fa-solid fa-window-maximize";
   icon.setAttribute("aria-hidden", "true");
   const label = document.createElement("strong");
-  label.textContent = tab === "screens" ? "No screens found" : "No app windows found";
+  label.textContent =
+    tab === "screens" ? "No screens found" : "No app windows found";
   empty.append(icon, label);
   return empty;
 }
 
 function renderScreenSources(sources = availableScreenSources) {
   availableScreenSources = Array.isArray(sources) ? sources : [];
-  const visibleSources = availableScreenSources.filter((source) => getStreamSourceType(source) === activeStreamSourceTab);
-  if (!selectedScreenSource || getStreamSourceType(selectedScreenSource) !== activeStreamSourceTab) {
+  const visibleSources = availableScreenSources.filter(
+    (source) => getStreamSourceType(source) === activeStreamSourceTab,
+  );
+  if (
+    !selectedScreenSource ||
+    getStreamSourceType(selectedScreenSource) !== activeStreamSourceTab
+  ) {
     selectedScreenSource = visibleSources[0] || null;
   }
   screenSourceList.replaceChildren();
@@ -4889,12 +5628,18 @@ function renderScreenSources(sources = availableScreenSources) {
     button.type = "button";
     button.className = "screen-source-button";
     button.dataset.sourceId = source.id;
-    button.setAttribute("aria-pressed", String(selectedScreenSource?.id === source.id));
+    button.setAttribute(
+      "aria-pressed",
+      String(selectedScreenSource?.id === source.id),
+    );
 
     const badge = document.createElement("span");
     badge.className = "screen-source-badge";
     const badgeIcon = document.createElement("i");
-    badgeIcon.className = getStreamSourceType(source) === "screens" ? "fa-solid fa-display" : "fa-solid fa-window-maximize";
+    badgeIcon.className =
+      getStreamSourceType(source) === "screens"
+        ? "fa-solid fa-display"
+        : "fa-solid fa-window-maximize";
     badgeIcon.setAttribute("aria-hidden", "true");
     badge.append(badgeIcon);
     const image = document.createElement("img");
@@ -4906,7 +5651,9 @@ function renderScreenSources(sources = availableScreenSources) {
     button.append(image, badge, label);
     button.addEventListener("click", () => {
       selectedScreenSource = source;
-      for (const item of screenSourceList.querySelectorAll(".screen-source-button")) {
+      for (const item of screenSourceList.querySelectorAll(
+        ".screen-source-button",
+      )) {
         item.setAttribute("aria-pressed", "false");
       }
       button.setAttribute("aria-pressed", "true");
@@ -4916,7 +5663,9 @@ function renderScreenSources(sources = availableScreenSources) {
   }
   streamStartButton.disabled = !selectedScreenSource;
   if (!visibleSources.length) {
-    screenSourceList.append(createStreamSourceEmptyState(activeStreamSourceTab));
+    screenSourceList.append(
+      createStreamSourceEmptyState(activeStreamSourceTab),
+    );
   }
 }
 
@@ -4944,9 +5693,11 @@ async function openStreamSetup({ reuseCurrent = false } = {}) {
   streamStartButton.disabled = true;
 
   try {
-    const sources = await window.aeroChat?.getScreenSources?.() || [];
+    const sources = (await window.aeroChat?.getScreenSources?.()) || [];
     if (reuseCurrent && screenShareState.sourceId) {
-      const current = sources.find((source) => source.id === screenShareState.sourceId);
+      const current = sources.find(
+        (source) => source.id === screenShareState.sourceId,
+      );
       if (current) {
         setActiveStreamSourceTab(getStreamSourceType(current));
         selectedScreenSource = current;
@@ -4980,7 +5731,11 @@ function isKnownChatConnection(conn) {
     return false;
   }
 
-  return conn.label === CHAT_LABEL || conn.metadata?.app === appDisplayName || !conn.metadata;
+  return (
+    conn.label === CHAT_LABEL ||
+    conn.metadata?.app === appDisplayName ||
+    !conn.metadata
+  );
 }
 
 function normalizeMessage(data) {
@@ -4991,7 +5746,7 @@ function normalizeMessage(data) {
   return {
     id: typeof data.id === "string" ? data.id : null,
     text: data.text.slice(0, MAX_MESSAGE_LENGTH),
-    time: typeof data.time === "string" ? data.time : formatTime()
+    time: typeof data.time === "string" ? data.time : formatTime(),
   };
 }
 
@@ -5007,7 +5762,7 @@ function sendProtocolMessage(conn, type, extra = {}) {
       identityId: identity.id,
       nickname: identity.nickname || "",
       time: formatTime(),
-      ...extra
+      ...extra,
     });
     return true;
   } catch {
@@ -5016,12 +5771,15 @@ function sendProtocolMessage(conn, type, extra = {}) {
 }
 
 function areReadReceiptsVisibleForPeer(peerId) {
-  return Boolean(appConfig.appSettings?.readReceipts && remoteReadReceiptsEnabled.get(peerId) !== false);
+  return Boolean(
+    appConfig.appSettings?.readReceipts &&
+    remoteReadReceiptsEnabled.get(peerId) !== false,
+  );
 }
 
 function sendReceiptSettings(conn) {
   return sendProtocolMessage(conn, "receipt-settings", {
-    readReceipts: Boolean(appConfig.appSettings?.readReceipts)
+    readReceipts: Boolean(appConfig.appSettings?.readReceipts),
   });
 }
 
@@ -5049,7 +5807,11 @@ function removePeer(peerId, { silent = false } = {}) {
   lastTypingSentAt.delete(peerId);
   remoteReadReceiptsEnabled.delete(peerId);
   if (callState.peerId === peerId) {
-    endVoiceCall({ notifyPeer: false, message: silent ? "" : "Voice call ended.", silent });
+    endVoiceCall({
+      notifyPeer: false,
+      message: silent ? "" : "Voice call ended.",
+      silent,
+    });
   }
 
   connections.delete(peerId);
@@ -5082,7 +5844,7 @@ function refreshPeers() {
 
   const visibleContactIds = new Set([
     ...connections.keys(),
-    ...pendingConnections.keys()
+    ...pendingConnections.keys(),
   ]);
 
   const favoriteContacts = getVisibleContacts()
@@ -5139,7 +5901,9 @@ function refreshPeers() {
     peerList.append(row);
   }
 
-  const pendingEntries = [...pendingConnections].filter(([peerId, entry]) => contactMatchesSearch(peerId, entry.conn));
+  const pendingEntries = [...pendingConnections].filter(([peerId, entry]) =>
+    contactMatchesSearch(peerId, entry.conn),
+  );
   if (pendingEntries.length > 0) {
     appendPeerSectionLabel("Requests");
   }
@@ -5153,11 +5917,13 @@ function refreshPeers() {
       const name = document.createElement("span");
       const identityId = getPeerIdentityId(peerId, entry.conn);
       const contact = findContact(identityId);
-      name.append(createContactBadges({
-        pinned: Boolean(contact?.pinned),
-        trusted: isTrusted(identityId),
-        waiting: true
-      }));
+      name.append(
+        createContactBadges({
+          pinned: Boolean(contact?.pinned),
+          trusted: isTrusted(identityId),
+          waiting: true,
+        }),
+      );
       const label = document.createElement("span");
       label.className = "contact-label";
       label.textContent = peerLabel;
@@ -5194,11 +5960,13 @@ function refreshPeers() {
     waiting.className = "peer-chip pending";
     const identityId = getPeerIdentityId(peerId, entry.conn);
     const contact = findContact(identityId);
-    waiting.append(createContactBadges({
-      pinned: Boolean(contact?.pinned),
-      trusted: isTrusted(identityId),
-      waiting: true
-    }));
+    waiting.append(
+      createContactBadges({
+        pinned: Boolean(contact?.pinned),
+        trusted: isTrusted(identityId),
+        waiting: true,
+      }),
+    );
     const label = document.createElement("span");
     label.className = "contact-label";
     label.textContent = peerLabel;
@@ -5210,7 +5978,9 @@ function refreshPeers() {
     peerList.append(waiting);
   }
 
-  const connectionEntries = [...connections].filter(([peerId, conn]) => contactMatchesSearch(peerId, conn));
+  const connectionEntries = [...connections].filter(([peerId, conn]) =>
+    contactMatchesSearch(peerId, conn),
+  );
   if (connectionEntries.length > 0) {
     appendPeerSectionLabel("Connected");
   }
@@ -5219,14 +5989,17 @@ function refreshPeers() {
     const peerLabel = getPeerLabel(peerId, conn);
     const button = document.createElement("button");
     button.type = "button";
-    button.className = peerId === activePeerId ? "peer-chip active" : "peer-chip";
+    button.className =
+      peerId === activePeerId ? "peer-chip active" : "peer-chip";
     const identityId = getPeerIdentityId(peerId, conn);
     const contact = findContact(identityId);
-    button.append(createContactBadges({
-      pinned: Boolean(contact?.pinned),
-      trusted: isTrusted(identityId),
-      online: conn.open
-    }));
+    button.append(
+      createContactBadges({
+        pinned: Boolean(contact?.pinned),
+        trusted: isTrusted(identityId),
+        online: conn.open,
+      }),
+    );
     const label = document.createElement("span");
     label.className = "contact-label";
     label.textContent = conn.open ? peerLabel : `${peerLabel} ...`;
@@ -5260,7 +6033,9 @@ function refreshPeers() {
 
   const activeConn = activePeerId ? connections.get(activePeerId) : null;
   const canChat = Boolean(activeConn?.open);
-  chatTitle.textContent = activePeerId ? getPeerLabel(activePeerId, activeConn) : "No active chat";
+  chatTitle.textContent = activePeerId
+    ? getPeerLabel(activePeerId, activeConn)
+    : "No active chat";
   chatMeta.textContent = activePeerId ? "Connected" : "Idle";
   messageInput.disabled = !canChat;
   sendButton.disabled = !canChat;
@@ -5287,7 +6062,10 @@ function acceptConnection(peerId) {
   if (entry.conn.open) {
     sendReceiptSettings(entry.conn);
     sendProtocolMessage(entry.conn, "connection-accepted");
-    pinContact(getPeerIdentityId(peerId, entry.conn), getPeerLabel(peerId, entry.conn));
+    pinContact(
+      getPeerIdentityId(peerId, entry.conn),
+      getPeerLabel(peerId, entry.conn),
+    );
     setStatus("online", `Connected to ${peerLabel}`);
     renderChatHistory();
     addSystemMessage(`Connection with ${peerLabel} accepted.`);
@@ -5315,7 +6093,10 @@ function declineConnection(peerId) {
   sendProtocolMessage(entry.conn, "connection-declined");
   entry.conn.close();
   pendingConnections.delete(peerId);
-  setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+  setStatus(
+    connections.size > 0 ? "online" : "pending",
+    connections.size > 0 ? "Peer connected" : "Ready to connect",
+  );
   addSystemMessage(`Connection request from ${peerLabel} declined.`);
   refreshPeers();
 }
@@ -5403,7 +6184,10 @@ function attachConnectionHandlers(conn, peerId, direction) {
       pendingConnections.delete(peerId);
       conn.close();
       showConnectRetry(peerId);
-      setStatus("offline", `${peerLabel()} declined your request. Use Retry to try again.`);
+      setStatus(
+        "offline",
+        `${peerLabel()} declined your request. Use Retry to try again.`,
+      );
       addSystemMessage(`${peerLabel()} declined your connection request.`);
       refreshPeers();
       return;
@@ -5412,7 +6196,10 @@ function attachConnectionHandlers(conn, peerId, direction) {
     if (data?.type === "connection-closed") {
       conn.close();
       removePeer(peerId);
-      setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+      setStatus(
+        connections.size > 0 ? "online" : "pending",
+        connections.size > 0 ? "Peer connected" : "Ready to connect",
+      );
       addSystemMessage(`${peerLabel()} disconnected.`);
       refreshPeers();
       return;
@@ -5471,7 +6258,10 @@ function attachConnectionHandlers(conn, peerId, direction) {
       return;
     }
 
-    if (data?.type === "message-delivered" && typeof data.messageId === "string") {
+    if (
+      data?.type === "message-delivered" &&
+      typeof data.messageId === "string"
+    ) {
       setMessageDeliveryState(peerId, data.messageId, "delivered");
       return;
     }
@@ -5501,13 +6291,20 @@ function attachConnectionHandlers(conn, peerId, direction) {
       text: message.text,
       sender: "them",
       peerId,
-      time: message.time
+      time: message.time,
     });
     if (message.id && appConfig.appSettings?.readReceipts) {
       sendProtocolMessage(conn, "message-delivered", { messageId: message.id });
     }
-    if (message.id && activePeerId === peerId && appConfig.appSettings?.readReceipts && isAppFocused()) {
-      const item = ensureChatHistory(peerId).find((entry) => entry.id === message.id);
+    if (
+      message.id &&
+      activePeerId === peerId &&
+      appConfig.appSettings?.readReceipts &&
+      isAppFocused()
+    ) {
+      const item = ensureChatHistory(peerId).find(
+        (entry) => entry.id === message.id,
+      );
       if (item) {
         item.readReceiptSent = true;
       }
@@ -5517,15 +6314,22 @@ function attachConnectionHandlers(conn, peerId, direction) {
   });
 
   conn.on("close", () => {
-    const wasKnown = connections.get(peerId) === conn || pendingConnections.get(peerId)?.conn === conn;
+    const wasKnown =
+      connections.get(peerId) === conn ||
+      pendingConnections.get(peerId)?.conn === conn;
     if (!wasKnown) {
       return;
     }
 
-    removePeer(peerId, { silent: suppressPeerCloseMessages || isPresenceOffline() });
+    removePeer(peerId, {
+      silent: suppressPeerCloseMessages || isPresenceOffline(),
+    });
     if (!suppressPeerCloseMessages && !isPresenceOffline()) {
       addSystemMessage(`${peerLabel()} closed the connection.`);
-      setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+      setStatus(
+        connections.size > 0 ? "online" : "pending",
+        connections.size > 0 ? "Peer connected" : "Ready to connect",
+      );
     }
     refreshPeers();
   });
@@ -5534,13 +6338,16 @@ function attachConnectionHandlers(conn, peerId, direction) {
     if (direction === "outgoing" && isPeerUnreachableError(error)) {
       showUnreachablePeerFeedback(peerId, {
         label: peerLabel(),
-        reason: `${peerLabel()} could not be reached. They may be offline or not connected to the signaling server.`
+        reason: `${peerLabel()} could not be reached. They may be offline or not connected to the signaling server.`,
       });
       return;
     }
 
     const message = error?.message || "The connection failed.";
-    setStatus("offline", `Could not connect to ${peerLabel()}. Use Retry to try again.`);
+    setStatus(
+      "offline",
+      `Could not connect to ${peerLabel()}. Use Retry to try again.`,
+    );
     showConnectRetry(peerId);
     addSystemMessage(`Connection with ${peerLabel()} failed: ${message}`);
   });
@@ -5566,7 +6373,10 @@ function registerConnection(conn, options = {}) {
 
   if (direction === "incoming" && isBlocked(peerIdentityId)) {
     conn.close();
-    setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+    setStatus(
+      connections.size > 0 ? "online" : "pending",
+      connections.size > 0 ? "Peer connected" : "Ready to connect",
+    );
     return;
   }
 
@@ -5589,8 +6399,13 @@ function registerConnection(conn, options = {}) {
       return;
     }
 
-    setStatus("pending", `Connection request from ${getPeerLabel(peerId, conn)}`);
-    addSystemMessage(`${getPeerLabel(peerId, conn)} wants to chat. Accept the request to start.`);
+    setStatus(
+      "pending",
+      `Connection request from ${getPeerLabel(peerId, conn)}`,
+    );
+    addSystemMessage(
+      `${getPeerLabel(peerId, conn)} wants to chat. Accept the request to start.`,
+    );
   } else {
     setStatus("pending", `Sending request to ${getPeerLabel(peerId, conn)}...`);
   }
@@ -5621,12 +6436,18 @@ function connectToPeer(remoteId) {
     activePeerId = remoteId;
     renderChatHistory();
     refreshPeers();
-    setStatus("online", `Already connected to ${getPeerLabel(remoteId, connections.get(remoteId))}.`);
+    setStatus(
+      "online",
+      `Already connected to ${getPeerLabel(remoteId, connections.get(remoteId))}.`,
+    );
     return;
   }
 
   if (pendingConnections.has(remoteId)) {
-    setStatus("pending", `Already trying to connect to ${getPeerLabel(remoteId, pendingConnections.get(remoteId)?.conn)}...`);
+    setStatus(
+      "pending",
+      `Already trying to connect to ${getPeerLabel(remoteId, pendingConnections.get(remoteId)?.conn)}...`,
+    );
     return;
   }
 
@@ -5634,7 +6455,7 @@ function connectToPeer(remoteId) {
     label: CHAT_LABEL,
     metadata: createChatMetadata(),
     reliable: true,
-    serialization: "json"
+    serialization: "json",
   });
   registerConnection(conn);
 }
@@ -5716,7 +6537,9 @@ function renderContactNicknameList(focusContactId = "") {
     save.textContent = "Save";
     save.addEventListener("click", () => {
       setContactNickname(contact.id, input.value);
-      addSystemMessage(`${findContact(contact.id)?.label || contact.id} nickname saved.`);
+      addSystemMessage(
+        `${findContact(contact.id)?.label || contact.id} nickname saved.`,
+      );
     });
 
     const clear = document.createElement("button");
@@ -5740,7 +6563,6 @@ function renderContactNicknameList(focusContactId = "") {
     editor.append(input, save, clear);
     row.append(details, editor);
     contactNicknameList.append(row);
-
   }
 }
 
@@ -5754,7 +6576,9 @@ function openSettings(focusContactId = "") {
   settingsModal.classList.remove("hidden");
   if (focusContactId) {
     requestAnimationFrame(() => {
-      const input = contactNicknameList.querySelector(`[data-contact-id="${focusContactId}"]`);
+      const input = contactNicknameList.querySelector(
+        `[data-contact-id="${focusContactId}"]`,
+      );
       input?.focus();
       input?.select();
     });
@@ -5771,7 +6595,7 @@ function createPeer() {
 
   const nextPeer = new Peer(identity.id, {
     debug: 1,
-    config: peerConnectionConfig
+    config: peerConnectionConfig,
   });
 
   nextPeer.on("open", (id) => {
@@ -5809,21 +6633,29 @@ function createPeer() {
 
   nextPeer.on("error", (error) => {
     if (error.type === "unavailable-id") {
-      setStatus("offline", "This Aero ID is already online in another app window.");
-      addSystemMessage("Close the other running instance or reset app data to create a new Aero ID.");
+      setStatus(
+        "offline",
+        "This Aero ID is already online in another app window.",
+      );
+      addSystemMessage(
+        "Close the other running instance or reset app data to create a new Aero ID.",
+      );
       return;
     }
 
     const outgoingPeerId = getOutgoingPendingPeerId();
     if (isPeerUnreachableError(error) && outgoingPeerId) {
       showUnreachablePeerFeedback(outgoingPeerId, {
-        reason: "That contact is offline or cannot be reached right now."
+        reason: "That contact is offline or cannot be reached right now.",
       });
       return;
     }
 
     const message = error.message || "The peer connection failed.";
-    setStatus("offline", "Connection failed. Check your internet connection and try again.");
+    setStatus(
+      "offline",
+      "Connection failed. Check your internet connection and try again.",
+    );
     addSystemMessage(`Connection error: ${message}`);
   });
 
@@ -5853,7 +6685,13 @@ copyId.addEventListener("click", async () => {
 
 connectForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  if (isActionOnCooldown("connect", CONNECT_ACTION_COOLDOWN_MS, "Please wait before trying another connection.")) {
+  if (
+    isActionOnCooldown(
+      "connect",
+      CONNECT_ACTION_COOLDOWN_MS,
+      "Please wait before trying another connection.",
+    )
+  ) {
     return;
   }
 
@@ -5870,7 +6708,13 @@ connectForm.addEventListener("submit", (event) => {
 });
 
 retryConnectButton?.addEventListener("click", () => {
-  if (isActionOnCooldown("connect", CONNECT_ACTION_COOLDOWN_MS, "Please wait before retrying.")) {
+  if (
+    isActionOnCooldown(
+      "connect",
+      CONNECT_ACTION_COOLDOWN_MS,
+      "Please wait before retrying.",
+    )
+  ) {
     return;
   }
 
@@ -5915,7 +6759,7 @@ clearChat.addEventListener("click", async () => {
       message: `Clear chat with ${getPeerLabel(activePeerId, activeConn)}?`,
       confirmText: "Clear",
       cancelText: "Cancel",
-      danger: true
+      danger: true,
     });
     if (!confirmed) {
       return;
@@ -5944,21 +6788,39 @@ contactSearchInput?.addEventListener("input", () => {
 });
 
 callChat.addEventListener("click", () => {
-  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+  if (
+    isActionOnCooldown(
+      "call",
+      CALL_ACTION_COOLDOWN_MS,
+      "Please wait before changing call state.",
+    )
+  ) {
     return;
   }
   startVoiceCall();
 });
 
 callAccept.addEventListener("click", () => {
-  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+  if (
+    isActionOnCooldown(
+      "call",
+      CALL_ACTION_COOLDOWN_MS,
+      "Please wait before changing call state.",
+    )
+  ) {
     return;
   }
   acceptVoiceCall();
 });
 
 callDecline.addEventListener("click", () => {
-  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+  if (
+    isActionOnCooldown(
+      "call",
+      CALL_ACTION_COOLDOWN_MS,
+      "Please wait before changing call state.",
+    )
+  ) {
     return;
   }
   declineVoiceCall();
@@ -5978,7 +6840,10 @@ callCamera.addEventListener("click", () => {
 
 callStream.addEventListener("click", () => {
   if (screenShareState.localStream) {
-    stopLocalScreenShare({ notifyPeer: true, message: "Screen stream stopped." });
+    stopLocalScreenShare({
+      notifyPeer: true,
+      message: "Screen stream stopped.",
+    });
     return;
   }
 
@@ -5986,7 +6851,13 @@ callStream.addEventListener("click", () => {
 });
 
 callHangup.addEventListener("click", () => {
-  if (isActionOnCooldown("call", CALL_ACTION_COOLDOWN_MS, "Please wait before changing call state.")) {
+  if (
+    isActionOnCooldown(
+      "call",
+      CALL_ACTION_COOLDOWN_MS,
+      "Please wait before changing call state.",
+    )
+  ) {
     return;
   }
   endVoiceCall({ notifyPeer: true, message: "Voice call ended." });
@@ -6045,7 +6916,7 @@ streamStartButton.addEventListener("click", async () => {
   const options = {
     quality: normalizeScreenQuality(streamQualitySelect.value),
     fps: normalizeScreenFps(streamFpsSelect.value),
-    audio: streamAudioToggle.checked
+    audio: streamAudioToggle.checked,
   };
   closeStreamSetup();
   await startLocalScreenShare(source, options);
@@ -6064,7 +6935,9 @@ streamMenuAudio.addEventListener("click", () => {
 });
 
 streamMenuWatch.addEventListener("click", () => {
-  setRemoteScreenWatching(!screenShareState.viewerWatching || screenShareState.hiddenByViewer);
+  setRemoteScreenWatching(
+    !screenShareState.viewerWatching || screenShareState.hiddenByViewer,
+  );
   closeStreamMenu();
 });
 
@@ -6089,7 +6962,10 @@ disconnectChat.addEventListener("click", () => {
   const peerLabel = getPeerLabel(activePeerId, conn);
   conn?.close();
   removePeer(activePeerId);
-  setStatus(connections.size > 0 ? "online" : "pending", connections.size > 0 ? "Peer connected" : "Ready to connect");
+  setStatus(
+    connections.size > 0 ? "online" : "pending",
+    connections.size > 0 ? "Peer connected" : "Ready to connect",
+  );
   addSystemMessage(`Disconnected from ${peerLabel}.`);
   refreshPeers();
 });
@@ -6135,7 +7011,9 @@ micNoiseReductionSlider.addEventListener("input", () => {
 });
 
 micNoiseReductionSlider.addEventListener("change", () => {
-  setMicNoiseReduction(Number(micNoiseReductionSlider.value || 0), { persist: true });
+  setMicNoiseReduction(Number(micNoiseReductionSlider.value || 0), {
+    persist: true,
+  });
 });
 
 micEqLowSlider.addEventListener("input", () => {
@@ -6194,7 +7072,8 @@ participantToggleName?.addEventListener("click", () => {
     return;
   }
 
-  const nextValue = participantToggleName.getAttribute("aria-checked") !== "true";
+  const nextValue =
+    participantToggleName.getAttribute("aria-checked") !== "true";
   participantToggleName.setAttribute("aria-checked", String(nextValue));
   if (contextParticipantTarget === "local") {
     setOwnVideoNameVisible(nextValue);
@@ -6249,7 +7128,9 @@ callNotificationsToggle.addEventListener("change", () => {
 });
 
 focusedNotificationsToggle.addEventListener("change", () => {
-  saveNotificationSettings({ showWhenFocused: focusedNotificationsToggle.checked });
+  saveNotificationSettings({
+    showWhenFocused: focusedNotificationsToggle.checked,
+  });
 });
 
 readReceiptsToggle.addEventListener("change", () => {
@@ -6305,7 +7186,11 @@ window.aeroChat?.onNotificationAction?.((action) => {
     return;
   }
 
-  if (action.type === "accept-call" && callState.status === "incoming" && callState.peerId === peerId) {
+  if (
+    action.type === "accept-call" &&
+    callState.status === "incoming" &&
+    callState.peerId === peerId
+  ) {
     activePeerId = peerId;
     unreadCounts.delete(peerId);
     renderChatHistory();
@@ -6314,7 +7199,11 @@ window.aeroChat?.onNotificationAction?.((action) => {
     return;
   }
 
-  if (action.type === "decline-call" && callState.status === "incoming" && callState.peerId === peerId) {
+  if (
+    action.type === "decline-call" &&
+    callState.status === "incoming" &&
+    callState.peerId === peerId
+  ) {
     declineVoiceCall();
   }
 });
@@ -6332,25 +7221,28 @@ function setUpdateButtonText(text) {
 
 function startUpdateProgressListener() {
   removeUpdateProgressListener?.();
-  removeUpdateProgressListener = window.aeroChat?.onUpdateProgress?.((progress) => {
-    if (progress?.phase === "download") {
-      const percentText = Number.isFinite(progress.percent) ? `${progress.percent}%` : "...";
-      setUpdateButtonText(`Downloading ${percentText}`);
-      setStatus("pending", `Downloading update ${percentText}`);
-      return;
-    }
+  removeUpdateProgressListener =
+    window.aeroChat?.onUpdateProgress?.((progress) => {
+      if (progress?.phase === "download") {
+        const percentText = Number.isFinite(progress.percent)
+          ? `${progress.percent}%`
+          : "...";
+        setUpdateButtonText(`Downloading ${percentText}`);
+        setStatus("pending", `Downloading update ${percentText}`);
+        return;
+      }
 
-    if (progress?.phase === "install") {
-      setUpdateButtonText("Starting setup...");
-      setStatus("pending", "Starting update setup...");
-      return;
-    }
+      if (progress?.phase === "install") {
+        setUpdateButtonText("Starting setup...");
+        setStatus("pending", "Starting update setup...");
+        return;
+      }
 
-    if (progress?.phase === "verify") {
-      setUpdateButtonText("Verifying...");
-      setStatus("pending", "Verifying update download...");
-    }
-  }) || null;
+      if (progress?.phase === "verify") {
+        setUpdateButtonText("Verifying...");
+        setStatus("pending", "Verifying update download...");
+      }
+    }) || null;
 }
 
 function stopUpdateProgressListener() {
@@ -6376,7 +7268,7 @@ async function installAvailableUpdate() {
         url: availableUpdate.windowsUrl,
         version: availableUpdate.version,
         sha256: availableUpdate.windowsSha256,
-        sha512: availableUpdate.windowsSha512
+        sha512: availableUpdate.windowsSha512,
       });
       setUpdateButtonText("Setup started");
       setStatus("pending", "Setup started. The app will restart.");
@@ -6487,7 +7379,12 @@ function saveOwnNickname() {
   appConfig.identity = identity;
   saveAppConfig();
   refreshCallStage();
-  setStatus("pending", identity.nickname ? `Nickname set to ${identity.nickname}.` : "Nickname cleared.");
+  setStatus(
+    "pending",
+    identity.nickname
+      ? `Nickname set to ${identity.nickname}.`
+      : "Nickname cleared.",
+  );
 }
 
 saveNickname.addEventListener("click", saveOwnNickname);
@@ -6506,7 +7403,9 @@ menuTrust.addEventListener("click", () => {
 
   const nextValue = !isTrusted(contextContactId);
   setTrusted(contextContactId, nextValue);
-  addSystemMessage(`${findContact(contextContactId)?.label || contextContactId} ${nextValue ? "trusted" : "untrusted"}.`);
+  addSystemMessage(
+    `${findContact(contextContactId)?.label || contextContactId} ${nextValue ? "trusted" : "untrusted"}.`,
+  );
   closeContactMenu();
 });
 
@@ -6630,7 +7529,9 @@ function cleanupRealtimeConnections({ deferClose = false } = {}) {
   realtimeCleanupStarted = true;
   endVoiceCall({ notifyPeer: true });
 
-  const openConnections = Array.from(connections.values()).filter((conn) => conn?.open);
+  const openConnections = Array.from(connections.values()).filter(
+    (conn) => conn?.open,
+  );
   const pendingEntries = Array.from(pendingConnections.values());
   for (const conn of openConnections) {
     sendProtocolMessage(conn, "connection-closed");
@@ -6681,11 +7582,21 @@ async function finishBootScreen() {
     const bootRect = bootLogo?.getBoundingClientRect();
     const targetX = logoRect.left + logoRect.width / 2;
     const targetY = logoRect.top + logoRect.height / 2;
-    const currentX = bootRect ? bootRect.left + bootRect.width / 2 : window.innerWidth / 2;
-    const currentY = bootRect ? bootRect.top + bootRect.height / 2 : window.innerHeight / 2;
+    const currentX = bootRect
+      ? bootRect.left + bootRect.width / 2
+      : window.innerWidth / 2;
+    const currentY = bootRect
+      ? bootRect.top + bootRect.height / 2
+      : window.innerHeight / 2;
 
-    document.body.style.setProperty("--boot-delta-x", `${targetX - currentX}px`);
-    document.body.style.setProperty("--boot-delta-y", `${targetY - currentY}px`);
+    document.body.style.setProperty(
+      "--boot-delta-x",
+      `${targetX - currentX}px`,
+    );
+    document.body.style.setProperty(
+      "--boot-delta-y",
+      `${targetY - currentY}px`,
+    );
     document.body.classList.add("app-boot-finish");
 
     window.setTimeout(() => {

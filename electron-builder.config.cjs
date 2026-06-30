@@ -4,25 +4,19 @@ module.exports = {
   appId: projectConfig.app.id,
   productName: projectConfig.app.name,
   directories: {
-    output: "dist"
+    output: "dist",
   },
-  files: [
-    "out/**/*",
-    "assets/**/*",
-    "package.json"
-  ],
+  files: ["out/**/*", "assets/**/*", "package.json"],
   artifactName: projectConfig.release.artifactName,
   win: {
     target: "dir",
-    icon: "assets/app.ico"
+    icon: "assets/app.ico",
   },
   linux: {
-    target: [
-      "AppImage"
-    ],
+    target: ["AppImage"],
     icon: "assets/linux-icons",
     category: "Network",
-    syncDesktopName: true
+    syncDesktopName: true,
   },
-  asar: true
+  asar: true,
 };
