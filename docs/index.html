@@ -1,11 +1,1216 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroP2PChat</title>
-</head>
-<body>
-    <h1>:)</h1>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aero P2P Chat</title>
+    <meta
+      name="description"
+      content="Aero P2P Chat is a glossy Frutiger Aero styled peer-to-peer desktop chat app with direct IDs, voice calls and a clean glass interface."
+    />
+    <link rel="preload" href="logo.png" as="image" />
+
+    <style>
+      :root {
+        --text: #07344d;
+        --muted: #477487;
+        --blue: #0aa8e6;
+        --cyan: #76f2ff;
+        --green: #48df70;
+        --glass: rgba(255, 255, 255, 0.48);
+        --glass-strong: rgba(255, 255, 255, 0.74);
+        --border: rgba(255, 255, 255, 0.78);
+        --shadow: 0 24px 80px rgba(0, 91, 130, 0.24);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(
+            circle at 18% 10%,
+            rgba(255, 255, 255, 0.95),
+            transparent 14rem
+          ),
+          radial-gradient(
+            circle at 82% 18%,
+            rgba(110, 255, 210, 0.62),
+            transparent 18rem
+          ),
+          radial-gradient(
+            circle at 52% 74%,
+            rgba(56, 185, 255, 0.42),
+            transparent 20rem
+          ),
+          linear-gradient(
+            135deg,
+            #baf6ff 0%,
+            #ecffff 42%,
+            #6ee1ff 74%,
+            #55df77 100%
+          );
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.18) 1px,
+            transparent 1px
+          ),
+          linear-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+        background-size: 72px 72px;
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0.48),
+          transparent 80%
+        );
+      }
+
+      .bubble {
+        position: fixed;
+        border-radius: 999px;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            circle at 30% 25%,
+            rgba(255, 255, 255, 0.95),
+            transparent 22%
+          ),
+          radial-gradient(
+            circle at 72% 76%,
+            rgba(0, 178, 255, 0.24),
+            transparent 35%
+          ),
+          rgba(255, 255, 255, 0.26);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow:
+          inset -10px -14px 24px rgba(0, 150, 205, 0.16),
+          0 18px 46px rgba(0, 90, 130, 0.16);
+        animation: float 8s ease-in-out infinite;
+      }
+
+      .bubble.one {
+        width: 170px;
+        height: 170px;
+        left: -48px;
+        top: 160px;
+      }
+
+      .bubble.two {
+        width: 90px;
+        height: 90px;
+        right: 7%;
+        top: 110px;
+        animation-delay: -2s;
+      }
+
+      .bubble.three {
+        width: 210px;
+        height: 210px;
+        right: -70px;
+        bottom: 70px;
+        animation-delay: -4s;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+        }
+
+        50% {
+          transform: translateY(-18px) scale(1.03);
+        }
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px 0;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 950;
+        letter-spacing: -0.03em;
+      }
+
+      .brand img {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        filter: drop-shadow(0 8px 18px rgba(0, 131, 180, 0.28));
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.36);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 10px 28px rgba(0, 94, 135, 0.12);
+      }
+
+      .nav a {
+        color: #15566e;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 850;
+        padding: 9px 13px;
+        border-radius: 999px;
+      }
+
+      .nav a:hover {
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+        align-items: center;
+        gap: 44px;
+        min-height: calc(100vh - 92px);
+        padding: 42px 0 76px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        margin-bottom: 18px;
+        padding: 9px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.74);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.52);
+        color: #0e6982;
+        font-size: 13px;
+        font-weight: 950;
+        box-shadow: 0 10px 28px rgba(0, 123, 166, 0.12);
+        backdrop-filter: blur(18px);
+      }
+
+      .badge span {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #43dd77;
+        box-shadow: 0 0 0 5px rgba(67, 221, 119, 0.18);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(48px, 8vw, 92px);
+        line-height: 0.92;
+        letter-spacing: -0.08em;
+        color: #06354d;
+        text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .gradient-text {
+        display: block;
+        background: linear-gradient(90deg, #009fe3, #1bcbd4 45%, #38d86e);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 12px 26px rgba(0, 161, 210, 0.18));
+      }
+
+      .lead {
+        max-width: 620px;
+        margin: 22px 0 0;
+        color: #275f75;
+        font-size: clamp(17px, 2vw, 21px);
+        line-height: 1.55;
+        font-weight: 700;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 32px;
+      }
+
+      .btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 54px;
+        padding: 0 24px;
+        border: 1px solid rgba(255, 255, 255, 0.84);
+        border-radius: 18px;
+        text-decoration: none;
+        color: #043247;
+        font-weight: 950;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.86),
+          0 16px 34px rgba(0, 111, 157, 0.18);
+        overflow: hidden;
+        transition:
+          transform 180ms ease,
+          box-shadow 180ms ease,
+          opacity 180ms ease;
+        cursor: pointer;
+      }
+
+      .btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          circle at 22% 12%,
+          rgba(255, 255, 255, 0.96),
+          transparent 28%
+        );
+        pointer-events: none;
+      }
+
+      .btn strong,
+      .btn span {
+        position: relative;
+        z-index: 1;
+      }
+
+      .btn.primary {
+        background: linear-gradient(
+          180deg,
+          #ffffff 0%,
+          #9af5ff 48%,
+          #23b6e8 49%,
+          #00a1d8 100%
+        );
+      }
+
+      .btn.secondary {
+        background: linear-gradient(
+          180deg,
+          #ffffff 0%,
+          #dfffff 48%,
+          #a7f6c4 49%,
+          #41d86d 100%
+        );
+      }
+
+      .btn.ghost {
+        background: rgba(255, 255, 255, 0.46);
+        backdrop-filter: blur(18px);
+      }
+
+      .btn:hover {
+        transform: translateY(-3px);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 22px 44px rgba(0, 111, 157, 0.24);
+      }
+
+      .btn.is-loading {
+        opacity: 0.72;
+        pointer-events: none;
+      }
+
+      .tiny {
+        display: block;
+        margin-top: 10px;
+        color: #4d7b8b;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .release-line {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 11px;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.44);
+        color: #276477;
+        font-size: 12px;
+        font-weight: 900;
+        backdrop-filter: blur(14px);
+      }
+
+      .hero-card {
+        position: relative;
+        min-height: 540px;
+        border: 1px solid rgba(255, 255, 255, 0.84);
+        border-radius: 42px;
+        background:
+          radial-gradient(
+            circle at 22% 12%,
+            rgba(255, 255, 255, 0.9),
+            transparent 12rem
+          ),
+          linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.62),
+            rgba(142, 241, 255, 0.32)
+          );
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(24px);
+        overflow: hidden;
+      }
+
+      .hero-card::after {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border-radius: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.58);
+        pointer-events: none;
+      }
+
+      .orb {
+        position: absolute;
+        inset: 42px 42px auto;
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background:
+          radial-gradient(
+            circle at 28% 18%,
+            rgba(255, 255, 255, 0.98),
+            transparent 18%
+          ),
+          radial-gradient(
+            circle at 74% 78%,
+            rgba(62, 216, 112, 0.9),
+            transparent 34%
+          ),
+          linear-gradient(135deg, #28b7f1, #7ef3ff 48%, #35dd70);
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        box-shadow:
+          inset -24px -26px 44px rgba(0, 91, 160, 0.22),
+          inset 18px 18px 32px rgba(255, 255, 255, 0.38),
+          0 30px 80px rgba(0, 132, 190, 0.28);
+      }
+
+      .orb img {
+        width: 74%;
+        height: 74%;
+        object-fit: contain;
+        filter: drop-shadow(0 18px 28px rgba(0, 75, 110, 0.2));
+        animation: logoFloat 4s ease-in-out infinite;
+      }
+
+      @keyframes logoFloat {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+        }
+
+        50% {
+          transform: translateY(-10px) scale(1.035);
+        }
+      }
+
+      .mock-chat {
+        position: absolute;
+        left: 28px;
+        right: 28px;
+        bottom: 28px;
+        display: grid;
+        gap: 10px;
+        padding: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.74);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.54);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 16px 42px rgba(0, 91, 130, 0.16);
+      }
+
+      .mock-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #2c6d83;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .status i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #37db75;
+        box-shadow: 0 0 0 4px rgba(55, 219, 117, 0.18);
+      }
+
+      .msg {
+        max-width: 84%;
+        padding: 12px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.74);
+        border-radius: 17px;
+        color: #104357;
+        font-size: 14px;
+        font-weight: 800;
+        box-shadow: 0 8px 20px rgba(0, 91, 130, 0.1);
+      }
+
+      .msg.left {
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .msg.right {
+        justify-self: end;
+        background: linear-gradient(180deg, #ffffff, #a8f7ff 52%, #72ddf4);
+      }
+
+      section {
+        padding: 76px 0;
+      }
+
+      .section-title {
+        max-width: 760px;
+        margin: 0 auto 28px;
+        text-align: center;
+      }
+
+      .section-title h2 {
+        margin: 0;
+        color: #06354d;
+        font-size: clamp(34px, 5vw, 58px);
+        line-height: 1;
+        letter-spacing: -0.06em;
+      }
+
+      .section-title p {
+        margin: 16px 0 0;
+        color: #376f82;
+        font-size: 17px;
+        line-height: 1.55;
+        font-weight: 700;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        position: relative;
+        min-height: 210px;
+        padding: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 30px;
+        background:
+          radial-gradient(
+            circle at 18% 8%,
+            rgba(255, 255, 255, 0.9),
+            transparent 7rem
+          ),
+          rgba(255, 255, 255, 0.44);
+        box-shadow: 0 18px 44px rgba(0, 91, 130, 0.14);
+        backdrop-filter: blur(18px);
+        overflow: hidden;
+      }
+
+      .card::after {
+        content: "";
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        right: -34px;
+        top: -34px;
+        border-radius: 50%;
+        background:
+          radial-gradient(
+            circle at 30% 24%,
+            rgba(255, 255, 255, 0.9),
+            transparent 30%
+          ),
+          rgba(112, 242, 255, 0.3);
+      }
+
+      .icon {
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 18px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        background: linear-gradient(180deg, #ffffff, #9bf5ff 50%, #28b9e8);
+        box-shadow: 0 12px 26px rgba(0, 117, 157, 0.16);
+        font-size: 24px;
+      }
+
+      .card h3 {
+        margin: 0 0 10px;
+        color: #08394f;
+        font-size: 22px;
+        letter-spacing: -0.04em;
+      }
+
+      .card p {
+        margin: 0;
+        color: #3d7284;
+        line-height: 1.55;
+        font-weight: 700;
+      }
+
+      .download-panel {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 24px;
+        align-items: center;
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.84);
+        border-radius: 36px;
+        background:
+          radial-gradient(
+            circle at 14% 0%,
+            rgba(255, 255, 255, 0.92),
+            transparent 13rem
+          ),
+          linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.64),
+            rgba(126, 242, 255, 0.38)
+          );
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(22px);
+      }
+
+      .download-panel h2 {
+        margin: 0;
+        color: #06354d;
+        font-size: clamp(32px, 5vw, 52px);
+        line-height: 1;
+        letter-spacing: -0.06em;
+      }
+
+      .download-panel p {
+        margin: 14px 0 0;
+        color: #376f82;
+        font-size: 16px;
+        line-height: 1.55;
+        font-weight: 700;
+      }
+
+      .download-buttons {
+        display: grid;
+        gap: 12px;
+        min-width: 280px;
+      }
+
+      .terminal {
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.82);
+        border-radius: 24px;
+        background: linear-gradient(
+          145deg,
+          rgba(255, 255, 255, 0.68),
+          rgba(188, 247, 255, 0.48)
+        );
+        box-shadow: 0 18px 44px rgba(0, 91, 130, 0.13);
+        backdrop-filter: blur(18px);
+      }
+
+      .terminal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: #275f75;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .dots {
+        display: inline-flex;
+        gap: 6px;
+      }
+
+      .dots i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #23b6e8;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      }
+
+      .dots i:nth-child(2) {
+        background: #43dd77;
+      }
+
+      .dots i:nth-child(3) {
+        background: #ffcf4a;
+      }
+
+      code {
+        display: block;
+        overflow-x: auto;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        color: #06354d;
+        font-family: "Cascadia Code", "Consolas", monospace;
+        font-size: 14px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .copy-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      button.btn {
+        border: 1px solid rgba(255, 255, 255, 0.84);
+        font-family: inherit;
+      }
+
+      footer {
+        padding: 34px 0 46px;
+        color: #3d7284;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      @media (max-width: 900px) {
+        header {
+          align-items: flex-start;
+        }
+
+        .nav {
+          display: none;
+        }
+
+        .hero {
+          grid-template-columns: 1fr;
+          min-height: auto;
+          padding-top: 28px;
+        }
+
+        .hero-card {
+          min-height: 480px;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .download-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .download-buttons {
+          min-width: 0;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .page {
+          width: min(100% - 22px, 1180px);
+        }
+
+        .actions {
+          display: grid;
+        }
+
+        .btn {
+          width: 100%;
+        }
+
+        .hero-card {
+          min-height: 420px;
+          border-radius: 30px;
+        }
+
+        .orb {
+          inset: 28px 28px auto;
+        }
+
+        .mock-chat {
+          left: 16px;
+          right: 16px;
+          bottom: 16px;
+        }
+
+        section {
+          padding: 56px 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="bubble one"></div>
+    <div class="bubble two"></div>
+    <div class="bubble three"></div>
+
+    <div class="page">
+      <header>
+        <a class="brand" href="#">
+          <img src="logo.png" alt="Aero P2P Chat logo" />
+          <span>Aero P2P Chat</span>
+        </a>
+
+        <nav class="nav" aria-label="Navigation">
+          <a href="#features">Features</a>
+          <a href="#download">Download</a>
+          <a href="#linux">Linux</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div>
+            <div class="badge">
+              <span></span>
+              Direct peer-to-peer desktop chat
+            </div>
+
+            <h1>
+              Chat with<br />
+              <span class="gradient-text">Aero energy.</span>
+            </h1>
+
+            <p class="lead">
+              Aero P2P Chat is a glossy Frutiger Aero styled desktop messenger.
+              Connect with an Aero ID, send messages directly, start voice calls
+              and enjoy a clean glass interface.
+            </p>
+
+            <div class="actions">
+              <a
+                id="hero-windows-download"
+                class="btn primary is-loading"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest"
+                target="_blank"
+                rel="noopener"
+              >
+                <strong>Loading Windows download...</strong>
+              </a>
+
+              <a class="btn secondary" href="#linux">
+                <strong>Install on Linux</strong>
+              </a>
+
+              <a
+                class="btn ghost"
+                href="https://github.com/Zorblock/AeroP2Pchat"
+                target="_blank"
+                rel="noopener"
+              >
+                <strong>Open GitHub</strong>
+              </a>
+            </div>
+
+            <div class="release-line">
+              <span id="version-pill" class="pill"
+                >Latest version: loading...</span
+              >
+              <span id="status-pill" class="pill">Reading latest.yml...</span>
+            </div>
+
+            <span class="tiny">
+              Downloads are loaded automatically from the latest release
+              manifest.
+            </span>
+          </div>
+
+          <div class="hero-card" aria-hidden="true">
+            <div class="orb">
+              <img src="logo.png" alt="" />
+            </div>
+
+            <div class="mock-chat">
+              <div class="mock-top">
+                <span>Aero P2P Chat</span>
+                <span class="status"><i></i> Online</span>
+              </div>
+
+              <div class="msg left">Connected with an Aero ID ✨</div>
+
+              <div class="msg right">Direct, clean and P2P.</div>
+
+              <div class="msg left">Voice and chat ready.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="features">
+          <div class="section-title">
+            <h2>Everything a clean P2P chat needs.</h2>
+            <p>
+              Aero P2P Chat combines direct connections, a shiny Aero interface
+              and simple downloads for Windows and Linux.
+            </p>
+          </div>
+
+          <div class="grid">
+            <article class="card">
+              <div class="icon">💬</div>
+              <h3>Direct chat</h3>
+              <p>
+                Connect using an Aero ID and message friends without unnecessary
+                account friction.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="icon">🎙️</div>
+              <h3>Voice calls</h3>
+              <p>
+                Start calls directly from the app and talk through a clean
+                desktop interface.
+              </p>
+            </article>
+
+            <article class="card">
+              <div class="icon">🫧</div>
+              <h3>Frutiger Aero style</h3>
+              <p>
+                Glass panels, water colors, soft highlights, bubbles and a
+                futuristic glossy look.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section id="download">
+          <div class="download-panel">
+            <div>
+              <h2>Download Aero P2P Chat</h2>
+              <p>
+                The buttons below are filled automatically from
+                <strong>latest.yml</strong>. When you publish a new GitHub
+                release, this page will point to the newest Windows installer
+                and Linux AppImage.
+              </p>
+
+              <div class="release-line">
+                <span id="windows-info" class="pill">Windows: loading...</span>
+                <span id="linux-info" class="pill">Linux: loading...</span>
+              </div>
+            </div>
+
+            <div class="download-buttons">
+              <a
+                id="windows-download"
+                class="btn primary is-loading"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest"
+                target="_blank"
+                rel="noopener"
+              >
+                <strong>Loading Windows installer...</strong>
+              </a>
+
+              <a
+                id="linux-appimage-download"
+                class="btn secondary is-loading"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest"
+                target="_blank"
+                rel="noopener"
+              >
+                <strong>Loading Linux AppImage...</strong>
+              </a>
+
+              <a
+                class="btn ghost"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases"
+                target="_blank"
+                rel="noopener"
+              >
+                <strong>All releases</strong>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <section id="linux">
+          <div class="section-title">
+            <h2>Linux install</h2>
+            <p>
+              Install Aero P2P Chat with one terminal command, or download the
+              latest AppImage directly from the release manifest.
+            </p>
+          </div>
+
+          <div class="terminal">
+            <div class="terminal-head">
+              <span>Terminal install</span>
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            </div>
+
+            <code id="install-command"
+              >curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" |
+              sh</code
+            >
+
+            <div class="copy-row">
+              <button id="copy-install" class="btn secondary" type="button">
+                <strong>Copy install command</strong>
+              </button>
+
+              <a
+                id="linux-appimage-download-2"
+                class="btn primary is-loading"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest"
+                target="_blank"
+                rel="noopener"
+              >
+                <strong>Loading AppImage...</strong>
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        © <span id="year"></span> Aero P2P Chat · built with glass, bubbles and
+        P2P energy.
+      </footer>
+    </div>
+
+    <script>
+      const repo = "Zorblock/AeroP2Pchat";
+      const releasePageUrl = `https://github.com/${repo}/releases/latest`;
+      const manifestUrl = `https://github.com/${repo}/releases/latest/download/latest.yml`;
+      const installCommand = `curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh`;
+
+      const elements = {
+        year: document.getElementById("year"),
+        status: document.getElementById("status-pill"),
+        version: document.getElementById("version-pill"),
+        windowsInfo: document.getElementById("windows-info"),
+        linuxInfo: document.getElementById("linux-info"),
+        windowsDownload: document.getElementById("windows-download"),
+        heroWindowsDownload: document.getElementById("hero-windows-download"),
+        linuxAppImageDownload: document.getElementById(
+          "linux-appimage-download",
+        ),
+        linuxAppImageDownload2: document.getElementById(
+          "linux-appimage-download-2",
+        ),
+        copyInstall: document.getElementById("copy-install"),
+        installCommand: document.getElementById("install-command"),
+      };
+
+      elements.year.textContent = new Date().getFullYear();
+      elements.installCommand.textContent = installCommand;
+
+      function parseLatestYml(text) {
+        const data = {};
+
+        for (const rawLine of text.split(/\r?\n/)) {
+          const line = rawLine.trim();
+
+          if (!line || line.startsWith("#")) {
+            continue;
+          }
+
+          const match = /^([a-zA-Z0-9_-]+):\s*(.*)$/.exec(line);
+
+          if (!match) {
+            continue;
+          }
+
+          const key = match[1];
+          let value = match[2].trim();
+
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1).replace(/\\"/g, '"');
+          }
+
+          data[key] = value;
+        }
+
+        return data;
+      }
+
+      function formatBytes(value) {
+        const bytes = Number(value);
+
+        if (!Number.isFinite(bytes) || bytes <= 0) {
+          return "";
+        }
+
+        const units = ["B", "KB", "MB", "GB"];
+        let size = bytes;
+        let unitIndex = 0;
+
+        while (size >= 1024 && unitIndex < units.length - 1) {
+          size /= 1024;
+          unitIndex += 1;
+        }
+
+        return `${size.toFixed(size >= 100 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+      }
+
+      function setDownloadButton(button, url, text) {
+        button.href = url || releasePageUrl;
+        button.querySelector("strong").textContent = text;
+        button.classList.remove("is-loading");
+      }
+
+      function applyManifest(manifest) {
+        const version = manifest.version || "latest";
+        const windowsUrl =
+          manifest.windowsUrl || manifest.url || releasePageUrl;
+        const linuxUrl = manifest.linuxUrl || releasePageUrl;
+        const windowsSize = formatBytes(manifest.windowsSize || manifest.size);
+        const linuxSize = formatBytes(manifest.linuxSize);
+
+        elements.version.textContent = `Latest version: v${version}`;
+        elements.status.textContent = "Downloads loaded from latest.yml";
+
+        elements.windowsInfo.textContent = windowsSize
+          ? `Windows installer: ${windowsSize}`
+          : "Windows installer: ready";
+
+        elements.linuxInfo.textContent = linuxSize
+          ? `Linux AppImage: ${linuxSize}`
+          : "Linux AppImage: ready";
+
+        setDownloadButton(
+          elements.windowsDownload,
+          windowsUrl,
+          "Download for Windows",
+        );
+        setDownloadButton(
+          elements.heroWindowsDownload,
+          windowsUrl,
+          "Download for Windows",
+        );
+        setDownloadButton(
+          elements.linuxAppImageDownload,
+          linuxUrl,
+          "Download AppImage",
+        );
+        setDownloadButton(
+          elements.linuxAppImageDownload2,
+          linuxUrl,
+          "Download AppImage",
+        );
+      }
+
+      function applyManifestFallback() {
+        elements.version.textContent = "Latest version: open GitHub";
+        elements.status.textContent = "Could not read latest.yml";
+
+        elements.windowsInfo.textContent = "Windows: open latest release";
+        elements.linuxInfo.textContent = "Linux: open latest release";
+
+        setDownloadButton(
+          elements.windowsDownload,
+          releasePageUrl,
+          "Open Windows release",
+        );
+        setDownloadButton(
+          elements.heroWindowsDownload,
+          releasePageUrl,
+          "Open Windows release",
+        );
+        setDownloadButton(
+          elements.linuxAppImageDownload,
+          releasePageUrl,
+          "Open Linux release",
+        );
+        setDownloadButton(
+          elements.linuxAppImageDownload2,
+          releasePageUrl,
+          "Open Linux release",
+        );
+      }
+
+      async function loadLatestRelease() {
+        try {
+          const response = await fetch(`${manifestUrl}?t=${Date.now()}`, {
+            cache: "no-store",
+          });
+
+          if (!response.ok) {
+            throw new Error(`Manifest request failed: ${response.status}`);
+          }
+
+          const manifest = parseLatestYml(await response.text());
+          applyManifest(manifest);
+        } catch (error) {
+          console.warn(error);
+          applyManifestFallback();
+        }
+      }
+
+      elements.copyInstall.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(installCommand);
+          elements.copyInstall.querySelector("strong").textContent = "Copied!";
+        } catch {
+          elements.copyInstall.querySelector("strong").textContent =
+            "Copy failed";
+        }
+
+        setTimeout(() => {
+          elements.copyInstall.querySelector("strong").textContent =
+            "Copy install command";
+        }, 1600);
+      });
+
+      loadLatestRelease();
+    </script>
+  </body>
 </html>
