@@ -197,6 +197,26 @@ h2 {
   background: #ffffff;
 }
 
+.download-badge {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.download-badge img {
+  display: block;
+  height: 22px;
+  border-radius: 4px;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.download-badge:hover img {
+  opacity: 0.86;
+  transform: translateY(-1px);
+}
+
 .facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -729,6 +749,7 @@ code {
 .link-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 18px;
   margin-top: 16px;
 }
