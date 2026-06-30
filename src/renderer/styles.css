@@ -4326,6 +4326,26 @@ body[data-theme="dark"] .window-controls button {
   box-shadow: none;
 }
 
+body[data-theme="dark"] .window-controls button:hover,
+body[data-theme="dark"] .window-controls button:focus-visible {
+  border-color: #4a6476;
+  background: #1a2a36 !important;
+  color: #ffffff;
+}
+
+body[data-theme="dark"] .window-controls .window-close {
+  border-color: rgba(215, 120, 140, 0.42);
+  background: #2a1219 !important;
+  color: #ffdce4;
+}
+
+body[data-theme="dark"] .window-controls .window-close:hover,
+body[data-theme="dark"] .window-controls .window-close:focus-visible {
+  border-color: rgba(235, 135, 154, 0.62);
+  background: #451923 !important;
+  color: #ffffff;
+}
+
 body[data-theme="dark"] #connect-button,
 body[data-theme="dark"] #send-button,
 body[data-theme="dark"] #update-button,
