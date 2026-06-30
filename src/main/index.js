@@ -67,7 +67,9 @@ function getDefaultAppSettings() {
     autostart: true,
     startHidden: true,
     closeToTray: true,
+    readReceipts: true,
     sidebarWidth: defaultSidebarWidth,
+    theme: "light",
     presenceStatus: "online"
   };
 }
@@ -99,7 +101,9 @@ function normalizeConfig(config = {}) {
     autostart: Boolean(settings.autostart),
     startHidden: Boolean(settings.startHidden),
     closeToTray: settings.closeToTray !== false,
+    readReceipts: settings.readReceipts !== false,
     presenceStatus: ["online", "dnd", "offline"].includes(settings.presenceStatus) ? settings.presenceStatus : "online",
+    theme: ["light", "dark"].includes(settings.theme) ? settings.theme : "light",
     sidebarWidth: Number.isFinite(settings.sidebarWidth)
       ? Math.round(Math.max(minSidebarWidth, Math.min(maxSidebarWidth, settings.sidebarWidth)))
       : defaultSidebarWidth

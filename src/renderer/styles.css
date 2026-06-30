@@ -2732,6 +2732,34 @@ body[data-theme="dark"] input::placeholder {
   color: #6f9fab;
 }
 
+body[data-theme="dark"] .settings-check input,
+body[data-theme="dark"] .settings-choice input {
+  border-color: rgba(255, 118, 142, 0.5);
+  background:
+    radial-gradient(circle at 66% 28%, rgba(255, 255, 255, 0.9) 0 10%, transparent 19%),
+    radial-gradient(circle at 35% 70%, rgba(255, 200, 208, 0.24) 0 8%, transparent 17%),
+    linear-gradient(145deg, #5f1027 0%, #9d173d 42%, #e64b70 76%, #ff9aae 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 221, 226, 0.36),
+    inset 0 -2px 5px rgba(40, 0, 12, 0.52),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 2px 5px rgba(0, 0, 0, 0.28);
+}
+
+body[data-theme="dark"] .settings-check input:checked,
+body[data-theme="dark"] .settings-choice input:checked {
+  border-color: rgba(75, 236, 218, 0.66);
+  background:
+    radial-gradient(circle at 64% 25%, rgba(255, 255, 255, 0.94) 0 12%, transparent 21%),
+    radial-gradient(circle at 28% 76%, rgba(216, 255, 241, 0.28) 0 9%, transparent 18%),
+    linear-gradient(145deg, #0b3f48 0%, #0c889b 36%, #19d1b4 68%, #a5ffd4 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(232, 255, 250, 0.44),
+    inset 0 -2px 5px rgba(0, 38, 42, 0.52),
+    0 0 10px rgba(44, 228, 199, 0.42),
+    0 2px 5px rgba(0, 0, 0, 0.24);
+}
+
 body[data-theme="dark"] input:focus,
 body[data-theme="dark"] select:focus {
   border-color: rgba(91, 222, 255, 0.82);
