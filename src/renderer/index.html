@@ -5,11 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>App</title>
     <link rel="preload" href="boot-logo.png" as="image" />
+    <script>
+      (() => {
+        const theme =
+          new URLSearchParams(window.location.search).get("theme") === "dark"
+            ? "dark"
+            : "light";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <style>
       :root {
-        background: #eef4f7;
-        color: #0d2f43;
+        --boot-bg: #eef4f7;
+        --boot-panel: #ffffff;
+        --boot-line: #cfdee6;
+        --boot-text: #0d2f43;
+        --boot-muted: #55707d;
+        --boot-track: #dbe8ee;
+        --boot-fill: #167daa;
+        background: var(--boot-bg);
+        color: var(--boot-text);
         font-family: "Segoe UI", system-ui, sans-serif;
+      }
+
+      html[data-theme="dark"] {
+        --boot-bg: #070b10;
+        --boot-panel: #101923;
+        --boot-line: #263847;
+        --boot-text: #edf4f7;
+        --boot-muted: #9db0bb;
+        --boot-track: #172531;
+        --boot-fill: #5f9db9;
       }
 
       html,
@@ -18,7 +44,7 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #eef4f7;
+        background: var(--boot-bg);
       }
 
       .hidden {
@@ -39,7 +65,7 @@
         z-index: 9999;
         display: grid;
         place-items: center;
-        background: #eef4f7;
+        background: var(--boot-bg);
       }
 
       .boot-panel {
@@ -55,25 +81,22 @@
         height: 82px;
         border-radius: 50%;
         object-fit: contain;
-        background: #ffffff;
-        border: 1px solid #cfdee6;
+        background: var(--boot-panel);
+        border: 1px solid var(--boot-line);
         padding: 5px;
         box-shadow: none;
-        transform-origin: center;
-        animation: bootLogoIdle 1.8s ease-in-out infinite;
-        will-change: transform;
       }
 
       .boot-title {
         margin: 0;
-        color: #07364f;
+        color: var(--boot-text);
         font-size: 18px;
         font-weight: 800;
         letter-spacing: 0;
       }
 
       .boot-status {
-        color: #477487;
+        color: var(--boot-muted);
         font-size: 12px;
         font-weight: 800;
       }
@@ -84,7 +107,7 @@
         overflow: hidden;
         border: 1px solid rgba(41, 139, 171, 0.18);
         border-radius: 999px;
-        background: #dbe8ee;
+        background: var(--boot-track);
         box-shadow: none;
       }
 
@@ -92,14 +115,14 @@
         width: 0%;
         height: 100%;
         border-radius: inherit;
-        background: #167daa;
+        background: var(--boot-fill);
         box-shadow: none;
         transition: width 360ms cubic-bezier(0.22, 0.8, 0.2, 1);
       }
 
       .boot-percent {
         min-height: 12px;
-        color: #5a8393;
+        color: var(--boot-muted);
         font-size: 10px;
         font-weight: 800;
         line-height: 1;
@@ -114,16 +137,8 @@
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: #149ac7;
-        animation: bootPulse 0.9s ease-in-out infinite;
-      }
-
-      .boot-dots span:nth-child(2) {
-        animation-delay: 0.12s;
-      }
-
-      .boot-dots span:nth-child(3) {
-        animation-delay: 0.24s;
+        background: var(--boot-fill);
+        opacity: 0.42;
       }
 
       body:not(.app-loading) .boot-screen {
@@ -132,15 +147,7 @@
 
       body.app-boot-finish .boot-screen {
         pointer-events: none;
-        animation: bootFadeOut 960ms ease forwards;
-      }
-
-      body.app-boot-finish .boot-panel {
-        animation: bootPanelExit 960ms cubic-bezier(0.2, 0.82, 0.2, 1) forwards;
-      }
-
-      body.app-boot-finish .boot-logo {
-        animation: bootLogoDock 960ms cubic-bezier(0.2, 0.82, 0.2, 1) forwards;
+        animation: bootFadeOut 260ms ease forwards;
       }
 
       body.app-boot-finish .boot-title,
@@ -148,59 +155,28 @@
       body.app-boot-finish .boot-progress,
       body.app-boot-finish .boot-percent,
       body.app-boot-finish .boot-dots {
-        animation: bootTextExit 220ms ease forwards;
+        opacity: 0;
+        transition: opacity 160ms ease;
       }
 
-      @keyframes bootPulse {
-        0%,
-        100% {
-          opacity: 0.35;
-          transform: translateY(0);
-        }
-
-        50% {
-          opacity: 1;
-          transform: translateY(-3px);
-        }
+      body.app-boot-finish .window-frame {
+        animation: appFadeIn 220ms ease both;
       }
 
-      @keyframes bootLogoIdle {
-        0%,
-        100% {
-          transform: translateY(0) scale(1);
-        }
-
-        50% {
-          transform: translateY(-5px) scale(1.035);
-        }
-      }
-
-      @keyframes bootTextExit {
-        to {
+      @keyframes appFadeIn {
+        from {
           opacity: 0;
-          transform: translateY(6px);
         }
-      }
-
-      @keyframes bootPanelExit {
         to {
-          transform: translate(var(--boot-delta-x, 0), var(--boot-delta-y, 0));
-        }
-      }
-
-      @keyframes bootLogoDock {
-        to {
-          transform: scale(0.3);
+          opacity: 1;
         }
       }
 
       @keyframes bootFadeOut {
-        0%,
-        78% {
+        from {
           opacity: 1;
         }
-
-        100% {
+        to {
           opacity: 0;
         }
       }

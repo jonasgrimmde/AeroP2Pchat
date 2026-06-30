@@ -1067,6 +1067,7 @@ async function installWindowsUpdate(
 }
 
 function createWindow({ hidden = false } = {}) {
+  const initialTheme = appConfig?.appSettings?.theme === "dark" ? "dark" : "light";
   const win = new BrowserWindow({
     width: 760,
     height: 560,
@@ -1076,7 +1077,7 @@ function createWindow({ hidden = false } = {}) {
     icon: windowIcon,
     frame: false,
     titleBarStyle: "hidden",
-    backgroundColor: "#c5f2ff",
+    backgroundColor: initialTheme === "dark" ? "#070b10" : "#eef4f7",
     autoHideMenuBar: true,
     show: !hidden,
     webPreferences: {
@@ -1093,9 +1094,13 @@ function createWindow({ hidden = false } = {}) {
   });
 
   if (process.env.ELECTRON_RENDERER_URL) {
-    win.loadURL(process.env.ELECTRON_RENDERER_URL);
+    const rendererUrl = new URL(process.env.ELECTRON_RENDERER_URL);
+    rendererUrl.searchParams.set("theme", initialTheme);
+    win.loadURL(rendererUrl.toString());
   } else {
-    win.loadFile(join(__dirname, "../renderer/index.html"));
+    win.loadFile(join(__dirname, "../renderer/index.html"), {
+      query: { theme: initialTheme },
+    });
   }
 
   mainWindow = win;

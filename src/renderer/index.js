@@ -604,16 +604,18 @@ function migrateLocalStorageConfig() {
 }
 
 appConfig = await loadAppConfig();
+normalizeAppSettings();
+applyAppTheme(appConfig.appSettings.theme);
 setBootProgress(42, "Loading settings");
 migrateLocalStorageConfig();
+normalizeAppSettings();
+applyAppTheme(appConfig.appSettings.theme);
 const identity = loadIdentity();
 setBootProgress(55, "Loading identity");
 
 ownId.textContent = identity.id;
 nicknameInput.value = identity.nickname || "";
 normalizeAudioConfig();
-normalizeAppSettings();
-applyAppTheme(appConfig.appSettings.theme);
 applySidebarWidth(appConfig.appSettings.sidebarWidth);
 renderAudioSettings();
 setupSidebarResizer();
@@ -7546,32 +7548,11 @@ async function finishBootScreen() {
   setBootProgress(100, "Ready");
 
   requestAnimationFrame(() => {
-    const logoRect = titlebarLogo.getBoundingClientRect();
-    const bootRect = bootLogo?.getBoundingClientRect();
-    const targetX = logoRect.left + logoRect.width / 2;
-    const targetY = logoRect.top + logoRect.height / 2;
-    const currentX = bootRect
-      ? bootRect.left + bootRect.width / 2
-      : window.innerWidth / 2;
-    const currentY = bootRect
-      ? bootRect.top + bootRect.height / 2
-      : window.innerHeight / 2;
-
-    document.body.style.setProperty(
-      "--boot-delta-x",
-      `${targetX - currentX}px`,
-    );
-    document.body.style.setProperty(
-      "--boot-delta-y",
-      `${targetY - currentY}px`,
-    );
     document.body.classList.add("app-boot-finish");
 
     window.setTimeout(() => {
       document.body.classList.remove("app-loading", "app-boot-finish");
-      document.body.style.removeProperty("--boot-delta-x");
-      document.body.style.removeProperty("--boot-delta-y");
-    }, 1040);
+    }, 280);
   });
 }
 
