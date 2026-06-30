@@ -9,11 +9,12 @@ APPIMAGE_RELEASE_NAME="Aero-P2P-Chat-Linux.AppImage"
 APPIMAGE_INSTALL_NAME="Aero-P2P-Chat.AppImage"
 REPO="Zorblock/AeroP2Pchat"
 RELEASE_BASE="https://github.com/${REPO}/releases/latest/download"
-RAW_BASE="https://raw.githubusercontent.com/${REPO}/refs/heads/main"
+PAGES_BASE="https://zorblock.github.io/AeroP2Pchat"
 
 APPIMAGE_URL="${RELEASE_BASE}/${APPIMAGE_RELEASE_NAME}"
 MANIFEST_URL="${RELEASE_BASE}/latest.yml"
-ICON_URL="${RAW_BASE}/assets/linux-icons/512x512.png"
+INSTALLER_URL="${PAGES_BASE}/install.sh"
+ICON_URL="${PAGES_BASE}/logo.png"
 
 DATA_HOME="${XDG_DATA_HOME:-"$HOME/.local/share"}"
 CONFIG_HOME="${XDG_CONFIG_HOME:-"$HOME/.config"}"
@@ -180,9 +181,9 @@ case "\$command" in
     ;;
     install|update|status|uninstall|remove|menu)
         if command -v curl >/dev/null 2>&1; then
-            curl -fsSL "$RAW_BASE/install.sh" | sh -s -- "\$command"
+            curl -fsSL "$INSTALLER_URL" | sh -s -- "\$command"
         elif command -v wget >/dev/null 2>&1; then
-            wget -qO- "$RAW_BASE/install.sh" | sh -s -- "\$command"
+            wget -qO- "$INSTALLER_URL" | sh -s -- "\$command"
         else
             printf '%s\n' "Install curl or wget first." >&2
             exit 1
@@ -202,7 +203,7 @@ ensure_terminal_integration() {
     if [ ! -x "$BIN_PATH" ] || ! grep -F "$APPIMAGE_PATH" "$BIN_PATH" >/dev/null 2>&1; then
         needs_repair=1
     fi
-    if [ ! -x "$CLI_PATH" ] || ! grep -F "$RAW_BASE/install.sh" "$CLI_PATH" >/dev/null 2>&1; then
+    if [ ! -x "$CLI_PATH" ] || ! grep -F "$INSTALLER_URL" "$CLI_PATH" >/dev/null 2>&1; then
         needs_repair=1
     fi
 
@@ -515,7 +516,7 @@ After install:
   $CLI_COMMAND_NAME uninstall
 
 Installer URL:
-  ${RAW_BASE}/install.sh
+  ${INSTALLER_URL}
 
 Examples:
   curl -fsSL <installer-url> | sh

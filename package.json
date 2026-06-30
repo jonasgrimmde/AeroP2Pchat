@@ -7,12 +7,13 @@
   "scripts": {
     "dev": "node scripts/run-electron-vite.cjs dev",
     "dev:2": "node scripts/dev-two.cjs",
-    "test": "node --check src/main/index.js && node --check src/preload/index.js && node --check electron-builder.config.cjs && node --check scripts/build-inno.cjs && node --check scripts/build-win.cjs && node --check scripts/dev-two.cjs && node --check scripts/release.cjs && node --check scripts/run-electron-vite.cjs",
+    "test": "node --check src/main/index.js && node --check src/preload/index.js && node --check electron-builder.config.cjs && node --check scripts/build-inno.cjs && node --check scripts/build-win.cjs && node --check scripts/deploy-pages.cjs && node --check scripts/dev-two.cjs && node --check scripts/release.cjs && node --check scripts/run-electron-vite.cjs",
     "build": "node scripts/build-win.cjs",
     "setup": "npm run build && node scripts/build-inno.cjs",
     "release": "node scripts/release.cjs",
     "patch": "node scripts/release.cjs --patch",
-    "release:linux": "node scripts/release.cjs --linux-only --no-bump"
+    "release:linux": "node scripts/release.cjs --linux-only --no-bump",
+    "pages": "node scripts/deploy-pages.cjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
