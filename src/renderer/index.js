@@ -229,6 +229,7 @@ let peer = null;
 let availableUpdate = null;
 let ignoredUpdateVersion = "";
 let updateCheckInFlight = false;
+let updateMenuResetTimer = null;
 let contacts = [];
 let contextContactId = "";
 let contextMessage = null;
@@ -2131,11 +2132,19 @@ function clearUpdateAvailableUi() {
   updateCard.classList.add("hidden");
   titlebarLogo.classList.remove("update-available");
   titlebarLogo.removeAttribute("title");
-  appMenuUpdate.classList.add("hidden");
+  appMenuUpdate.classList.remove("hidden");
+  appMenuUpdate.disabled = false;
+  appMenuUpdate.querySelector("span").textContent = "Check for updates";
+  appMenuUpdate.querySelector("i").className = "fa-solid fa-rotate-right";
   appMenuUpdateIgnore.classList.add("hidden");
 }
 
 function syncAvailableUpdateUi() {
+  if (updateMenuResetTimer) {
+    clearTimeout(updateMenuResetTimer);
+    updateMenuResetTimer = null;
+  }
+
   if (!availableUpdate) {
     clearUpdateAvailableUi();
     return;
@@ -2153,6 +2162,10 @@ function syncAvailableUpdateUi() {
     ? `Update ${availableUpdate.version} available`
     : `Update ${availableUpdate.version} available`;
   appMenuUpdate.classList.remove("hidden");
+  appMenuUpdate.disabled = false;
+  appMenuUpdate.querySelector("i").className = platform === "win32"
+    ? "fa-solid fa-download"
+    : "fa-solid fa-terminal";
   appMenuUpdateIgnore.classList.remove("hidden");
   appMenuUpdate.querySelector("span").textContent = platform === "win32"
     ? `Install ${availableUpdate.version}`
@@ -2160,6 +2173,24 @@ function syncAvailableUpdateUi() {
   appMenuUpdateIgnore.querySelector("span").textContent = isIgnored
     ? `Ignored ${availableUpdate.version}`
     : `Ignore update hint`;
+}
+
+function setUpdateMenuStatus(text, { reset = true } = {}) {
+  if (updateMenuResetTimer) {
+    clearTimeout(updateMenuResetTimer);
+    updateMenuResetTimer = null;
+  }
+
+  appMenuUpdate.classList.remove("hidden");
+  appMenuUpdate.querySelector("span").textContent = text;
+  appMenuUpdate.querySelector("i").className = "fa-solid fa-rotate-right";
+
+  if (reset) {
+    updateMenuResetTimer = setTimeout(() => {
+      updateMenuResetTimer = null;
+      syncAvailableUpdateUi();
+    }, 1800);
+  }
 }
 
 function ignoreAvailableUpdateHint() {
@@ -2171,17 +2202,29 @@ function ignoreAvailableUpdateHint() {
   syncAvailableUpdateUi();
 }
 
-async function checkForUpdates() {
+async function checkForUpdates({ manual = false } = {}) {
   if (updateCheckInFlight) {
+    if (manual) {
+      setUpdateMenuStatus("Checking...", { reset: false });
+    }
     return;
   }
 
   updateCheckInFlight = true;
+  if (manual) {
+    setUpdateMenuStatus("Checking...", { reset: false });
+    setStatus("pending", "Checking for updates...");
+  }
+
   try {
     const response = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
       cache: "no-store"
     });
     if (!response.ok) {
+      if (manual) {
+        setUpdateMenuStatus("Check failed");
+        setStatus("offline", "Update check failed.");
+      }
       return;
     }
 
@@ -2189,6 +2232,10 @@ async function checkForUpdates() {
     const latestVersion = manifest.version;
     if (!latestVersion || compareVersions(latestVersion, currentVersion) <= 0) {
       clearUpdateAvailableUi();
+      if (manual) {
+        setUpdateMenuStatus("No update found");
+        setStatus("online", "You are up to date.");
+      }
       return;
     }
 
@@ -2197,10 +2244,18 @@ async function checkForUpdates() {
     const windowsSha512 = manifest.windowsSha512 || manifest.windows_sha512 || manifest.sha512 || "";
     if (platform === "win32" && !windowsUrl) {
       clearUpdateAvailableUi();
+      if (manual) {
+        setUpdateMenuStatus("No installer found");
+        setStatus("offline", "Update manifest has no Windows installer.");
+      }
       return;
     }
     if (platform === "win32" && (!windowsSha256 || !windowsSha512)) {
       clearUpdateAvailableUi();
+      if (manual) {
+        setUpdateMenuStatus("Invalid update");
+        setStatus("offline", "Update manifest is missing checksums.");
+      }
       return;
     }
 
@@ -2212,8 +2267,15 @@ async function checkForUpdates() {
     };
 
     syncAvailableUpdateUi();
+    if (manual) {
+      setStatus("online", `Update ${availableUpdate.version} available.`);
+    }
   } catch {
     // Keep an existing update hint visible when a periodic check fails.
+    if (manual) {
+      setUpdateMenuStatus("Check failed");
+      setStatus("offline", "Update check failed.");
+    }
   } finally {
     updateCheckInFlight = false;
   }
@@ -6335,7 +6397,11 @@ headerUpdateButton.addEventListener("click", installAvailableUpdate);
 updateButton.addEventListener("click", installAvailableUpdate);
 updateIgnoreButton.addEventListener("click", ignoreAvailableUpdateHint);
 appMenuUpdate.addEventListener("click", () => {
-  installAvailableUpdate();
+  if (availableUpdate) {
+    installAvailableUpdate();
+  } else {
+    checkForUpdates({ manual: true });
+  }
   closeAppMenu();
 });
 appMenuUpdateIgnore.addEventListener("click", () => {
@@ -6598,6 +6664,7 @@ window.addEventListener("beforeunload", () => {
 
 refreshPeers();
 refreshAudioDevices();
+clearUpdateAvailableUi();
 setBootProgress(82, "Rendering chat");
 peer = createPeer();
 setBootProgress(90, "Starting peer");
