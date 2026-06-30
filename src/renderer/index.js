@@ -1,6 +1,7 @@
 import Peer, { util } from "peerjs";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import appLogo from "../../assets/app.png";
+import projectConfig from "../../config.json";
 import packageInfo from "../../package.json";
 import "./styles.css";
 
@@ -423,9 +424,12 @@ await waitForImageReady(bootLogo);
 setBootProgress(18, "Preparing interface");
 
 const currentVersion = packageInfo.version;
-const latestReleaseUrl = "https://github.com/Zorblock/AeroP2Pchat/releases/latest";
-const latestManifestUrl = "https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/latest.yml";
-const linuxInstallCommand = "curl -fsSL https://raw.githubusercontent.com/Zorblock/AeroP2Pchat/refs/heads/main/install.sh | sh -s -- update";
+const githubRepo = projectConfig.repo;
+const githubBranch = projectConfig.branch || "main";
+const githubRepoUrl = `https://github.com/${githubRepo}`;
+const latestReleaseUrl = `${githubRepoUrl}/releases/latest`;
+const latestManifestUrl = `${latestReleaseUrl}/download/latest.yml`;
+const linuxInstallCommand = `curl -fsSL https://raw.githubusercontent.com/${githubRepo}/refs/heads/${githubBranch}/install.sh | sh -s -- update`;
 const platform = window.aeroChat?.platform ?? "browser";
 const peerConnectionConfig = {
   iceServers: [

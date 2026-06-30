@@ -15,11 +15,6 @@
     "patch": "node scripts/release.cjs --patch",
     "release:linux": "node scripts/release.cjs --linux-only --no-bump"
   },
-  "release": {
-    "owner": "Zorblock",
-    "repo": "AeroP2Pchat",
-    "latestUrl": "https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/latest.yml"
-  },
   "build": {
     "appId": "de.jonasgrimm.aerop2pchat",
     "productName": "Aero P2P Chat",
@@ -29,6 +24,7 @@
     "files": [
       "out/**/*",
       "assets/**/*",
+      "config.json",
       "package.json"
     ],
     "artifactName": "Aero-P2P-Chat-${version}-${os}-${arch}.${ext}",

@@ -7,6 +7,7 @@ const path = require("node:path");
 const rootDir = path.join(__dirname, "..");
 const packagePath = path.join(rootDir, "package.json");
 const lockPath = path.join(rootDir, "package-lock.json");
+const projectConfigPath = path.join(rootDir, "config.json");
 const apiVersion = "2026-03-10";
 const appName = "Aero P2P Chat";
 const userAgent = "aero-p2p-chat-release-script";
@@ -88,6 +89,17 @@ function readJson(filePath) {
 
 function writeJson(filePath, data) {
   fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+}
+
+function getRepoParts(config) {
+  const repoSlug = String(config.repo || "").trim();
+  const [owner, repo] = repoSlug.split("/");
+
+  if (!owner || !repo) {
+    throw new Error("Missing repo in config.json. Expected format: owner/repo.");
+  }
+
+  return { owner, repo };
 }
 
 function readTextIfExists(filePath) {
@@ -715,10 +727,12 @@ async function main() {
   try {
     const options = parseArgs();
     const pkgBefore = readJson(packagePath);
-    owner = process.env.GITHUB_OWNER || (pkgBefore.release && pkgBefore.release.owner);
-    repo = process.env.GITHUB_REPO || (pkgBefore.release && pkgBefore.release.repo);
+    const projectConfig = readJson(projectConfigPath);
+    const configuredRepo = getRepoParts(projectConfig);
+    owner = process.env.GITHUB_OWNER || configuredRepo.owner;
+    repo = process.env.GITHUB_REPO || configuredRepo.repo;
     if (!owner || !repo) {
-      throw new Error("Missing release.owner/release.repo in package.json.");
+      throw new Error("Missing repo in config.json.");
     }
     if (options.linuxOnly && process.platform !== "linux") {
       throw new Error("AppImage packaging must run on Linux. Use the GitHub workflow for npm run release:linux.");

@@ -6,13 +6,14 @@ const { get } = require("node:https");
 const { tmpdir } = require("node:os");
 const { basename, dirname, join } = require("node:path");
 const { spawn } = require("node:child_process");
+const projectConfig = require("../../config.json");
 
 const windowIcon = process.platform === "win32"
   ? join(__dirname, "../../assets/app.ico")
   : join(__dirname, "../../assets/linux-icons/512x512.png");
 const releaseHost = "github.com";
-const releasePathPrefix = "/Zorblock/AeroP2Pchat/releases/";
-const configFileName = "config.json";
+const releasePathPrefix = `/${projectConfig.repo}/releases/`;
+const userConfigFileName = "config.json";
 const defaultSidebarWidth = 230;
 const minSidebarWidth = 170;
 const maxSidebarWidth = 360;
@@ -57,7 +58,7 @@ if (!allowMultipleInstances) {
 }
 
 function getConfigPath() {
-  return join(app.getPath("userData"), configFileName);
+  return join(app.getPath("userData"), userConfigFileName);
 }
 
 function getDefaultAppSettings() {
