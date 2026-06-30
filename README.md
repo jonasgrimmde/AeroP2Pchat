@@ -47,6 +47,7 @@ The script installs the AppImage to:
 It also creates:
 
 - Command: `~/.local/bin/aero-p2p-chat`
+- Update CLI: `~/.local/bin/aerop2p` (`aerop2p update`)
 - Desktop entry: `~/.local/share/applications/de.jonasgrimm.aerop2pchat.desktop`
 - Icon: `~/.local/share/icons/hicolor/512x512/apps/de.jonasgrimm.aerop2pchat.png`
 

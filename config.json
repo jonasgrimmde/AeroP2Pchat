@@ -9,6 +9,7 @@
   "linux": {
     "installDirName": "aero-p2p-chat",
     "commandName": "aero-p2p-chat",
+    "terminalCommandName": "aerop2p",
     "autostartDesktopFileName": "aero-p2p-chat.desktop"
   },
   "release": {

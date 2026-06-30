@@ -4,6 +4,7 @@ set -eu
 APP_NAME="Aero P2P Chat"
 APP_ID="de.jonasgrimm.aerop2pchat"
 APP_SLUG="aero-p2p-chat"
+CLI_COMMAND_NAME="aerop2p"
 APPIMAGE_RELEASE_NAME="Aero-P2P-Chat-Linux.AppImage"
 APPIMAGE_INSTALL_NAME="Aero-P2P-Chat.AppImage"
 REPO="Zorblock/AeroP2Pchat"
@@ -27,6 +28,7 @@ APP_DATA_DIR="${CONFIG_HOME}/Aero P2P Chat"
 APPIMAGE_PATH="$INSTALL_DIR/${APPIMAGE_INSTALL_NAME}"
 VERSION_PATH="$INSTALL_DIR/version"
 BIN_PATH="$BIN_DIR/${APP_SLUG}"
+CLI_PATH="$BIN_DIR/${CLI_COMMAND_NAME}"
 DESKTOP_PATH="$APPLICATIONS_DIR/${APP_ID}.desktop"
 ICON_PATH="$ICON_DIR/${APP_ID}.png"
 
@@ -143,6 +145,60 @@ EOF
     chmod +x "$BIN_PATH"
 }
 
+write_terminal_command() {
+    mkdir -p "$BIN_DIR"
+  cat > "$CLI_PATH" <<EOF
+#!/usr/bin/env sh
+set -eu
+
+command="\${1:-help}"
+case "\$command" in
+    open|run|start)
+        shift || true
+        exec "$BIN_PATH" "\$@"
+    ;;
+    install|update|status|uninstall|remove|menu|help|--help|-h)
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL "$RAW_BASE/install.sh" | sh -s -- "\$command"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO- "$RAW_BASE/install.sh" | sh -s -- "\$command"
+        else
+            printf '%s\n' "Install curl or wget first." >&2
+            exit 1
+        fi
+    ;;
+    *)
+        cat <<HELP
+Usage:
+  $CLI_COMMAND_NAME update      Update ${APP_NAME}
+  $CLI_COMMAND_NAME status      Show installed and latest version
+  $CLI_COMMAND_NAME uninstall   Remove ${APP_NAME}
+  $CLI_COMMAND_NAME open        Start ${APP_NAME}
+HELP
+        exit 1
+    ;;
+esac
+EOF
+    chmod +x "$CLI_PATH"
+}
+
+ensure_terminal_integration() {
+    needs_repair=0
+    if [ ! -x "$BIN_PATH" ] || ! grep -F "$APPIMAGE_PATH" "$BIN_PATH" >/dev/null 2>&1; then
+        needs_repair=1
+    fi
+    if [ ! -x "$CLI_PATH" ] || ! grep -F "$RAW_BASE/install.sh" "$CLI_PATH" >/dev/null 2>&1; then
+        needs_repair=1
+    fi
+
+    if [ "$needs_repair" -eq 1 ]; then
+        info "Repairing terminal commands..."
+        write_launcher
+        write_terminal_command
+        ok "Terminal commands ready."
+    fi
+}
+
 write_desktop_entry() {
     mkdir -p "$APPLICATIONS_DIR"
   cat > "$DESKTOP_PATH" <<EOF
@@ -178,7 +234,8 @@ install_icon() {
 
 print_paths() {
     printf '%s %s\n' "$(color dim 'AppImage')" "$APPIMAGE_PATH"
-    printf '%s %s\n' "$(color dim 'Command ')" "$BIN_PATH"
+    printf '%s %s\n' "$(color dim 'App cmd ')" "$BIN_PATH"
+    printf '%s %s\n' "$(color dim 'CLI cmd ')" "$CLI_PATH"
     printf '%s %s\n' "$(color dim 'Launcher')" "$DESKTOP_PATH"
     printf '%s %s\n' "$(color dim 'App data')" "$APP_DATA_DIR"
 }
@@ -334,6 +391,7 @@ install_app() {
         printf '%s %s\n' "$(color dim 'Installed')" "$installed_version"
         printf '%s %s\n' "$(color dim 'Latest   ')" "$latest_version"
         if [ "$installed_version" = "$latest_version" ]; then
+            ensure_terminal_integration
             ok "Already installed and up to date."
             print_paths
             return
@@ -350,13 +408,14 @@ install_app() {
     printf '%s\n' "$latest_version" > "$VERSION_PATH"
     
     write_launcher
+    write_terminal_command
     install_icon
     write_desktop_entry
     
     ok "${APP_NAME} ${latest_version} installed."
     print_paths
     if ! printf '%s' ":$PATH:" | grep -q ":$BIN_DIR:"; then
-        warn "$BIN_DIR is not in PATH. Restart your shell or add it to PATH to use: $APP_SLUG"
+        warn "$BIN_DIR is not in PATH. Restart your shell or add it to PATH to use: $CLI_COMMAND_NAME update"
     fi
 }
 
@@ -382,9 +441,10 @@ show_status() {
     
     if is_installed && [ "$latest_version" != "unknown" ]; then
         if [ "$installed_version" = "$latest_version" ]; then
+            ensure_terminal_integration
             ok "Up to date."
         else
-            warn "Update available. Run: sh install.sh update"
+            warn "Update available. Run: $CLI_COMMAND_NAME update"
         fi
     fi
     print_paths
@@ -392,7 +452,7 @@ show_status() {
 
 uninstall_app() {
     title
-    if ! is_installed && [ ! -e "$BIN_PATH" ] && [ ! -e "$DESKTOP_PATH" ]; then
+    if ! is_installed && [ ! -e "$BIN_PATH" ] && [ ! -e "$CLI_PATH" ] && [ ! -e "$DESKTOP_PATH" ]; then
         warn "${APP_NAME} is not installed."
         return
     fi
@@ -403,7 +463,7 @@ uninstall_app() {
     fi
     
     close_running_instances
-    rm -f "$APPIMAGE_PATH" "$VERSION_PATH" "$BIN_PATH" "$DESKTOP_PATH" "$ICON_PATH" "$OLD_ICON_DIR/${APP_ID}.png"
+    rm -f "$APPIMAGE_PATH" "$VERSION_PATH" "$BIN_PATH" "$CLI_PATH" "$DESKTOP_PATH" "$ICON_PATH" "$OLD_ICON_DIR/${APP_ID}.png"
     rmdir "$INSTALL_DIR" >/dev/null 2>&1 || true
     
     if command -v update-desktop-database >/dev/null 2>&1; then
@@ -432,6 +492,11 @@ Usage:
   sh install.sh status       Show installed and latest version
   sh install.sh uninstall    Remove the AppImage, launcher, command, and icon
   sh install.sh help         Show this help
+
+Installed terminal commands:
+  $APP_SLUG                 Start ${APP_NAME}
+  $CLI_COMMAND_NAME update  Check and install the latest release
+  $CLI_COMMAND_NAME status  Show installed and latest version
 
 Remote one-liners:
   curl -fsSL ${RAW_BASE}/install.sh | sh

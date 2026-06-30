@@ -441,10 +441,11 @@ const currentVersion = packageInfo.version;
 const appDisplayName = projectConfig.app.name;
 const githubRepo = projectConfig.repo;
 const githubBranch = projectConfig.branch || "main";
+const linuxTerminalCommandName = projectConfig.linux.terminalCommandName || projectConfig.linux.commandName || "aerop2p";
 const githubRepoUrl = `https://github.com/${githubRepo}`;
 const latestReleaseUrl = `${githubRepoUrl}/releases/latest`;
 const latestManifestUrl = `${latestReleaseUrl}/download/latest.yml`;
-const linuxInstallCommand = `curl -fsSL https://raw.githubusercontent.com/${githubRepo}/refs/heads/${githubBranch}/install.sh | sh -s -- update`;
+const linuxInstallCommand = `${linuxTerminalCommandName} update`;
 const platform = window.aeroChat?.platform ?? "browser";
 
 document.title = appDisplayName;
