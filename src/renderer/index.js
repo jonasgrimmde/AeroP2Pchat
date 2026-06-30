@@ -72,6 +72,12 @@ const modalText = document.querySelector("#modal-text");
 const modalClose = document.querySelector("#modal-close");
 const linuxCommand = document.querySelector("#linux-command");
 const copyUpdateCommand = document.querySelector("#copy-update-command");
+const appDialog = document.querySelector("#app-dialog");
+const appDialogTitle = document.querySelector("#app-dialog-title");
+const appDialogMessage = document.querySelector("#app-dialog-message");
+const appDialogClose = document.querySelector("#app-dialog-close");
+const appDialogCancel = document.querySelector("#app-dialog-cancel");
+const appDialogConfirm = document.querySelector("#app-dialog-confirm");
 const settingsModal = document.querySelector("#settings-modal");
 const settingsClose = document.querySelector("#settings-close");
 const nicknameInput = document.querySelector("#nickname-input");
@@ -199,6 +205,7 @@ const CALL_ACTION_COOLDOWN_MS = 900;
 const OUTGOING_CALL_TIMEOUT_MS = 45000;
 const TYPING_IDLE_MS = 1800;
 const TYPING_SEND_INTERVAL_MS = 1200;
+const UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000;
 const DEFAULT_MIC_SENSITIVITY = 55;
 const DEFAULT_MIC_BOOST = 100;
 const DEFAULT_MIC_NOISE_REDUCTION = 55;
@@ -221,6 +228,7 @@ let myPeerId = "";
 let peer = null;
 let availableUpdate = null;
 let ignoredUpdateVersion = "";
+let updateCheckInFlight = false;
 let contacts = [];
 let contextContactId = "";
 let contextMessage = null;
@@ -577,6 +585,73 @@ async function writeClipboardText(text) {
   }
 
   await navigator.clipboard.writeText(text);
+}
+
+function showAppDialog({
+  title = "Confirm",
+  message = "",
+  confirmText = "OK",
+  cancelText = "Cancel",
+  danger = false
+} = {}) {
+  const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  appDialogTitle.textContent = title;
+  appDialogMessage.textContent = message;
+  appDialogConfirm.textContent = confirmText;
+  appDialogCancel.textContent = cancelText;
+  appDialogConfirm.classList.toggle("danger", Boolean(danger));
+  appDialog.classList.remove("hidden");
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const cleanup = (result) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      appDialog.classList.add("hidden");
+      appDialogConfirm.classList.remove("danger");
+      appDialog.removeEventListener("click", handleBackdrop);
+      document.removeEventListener("keydown", handleKeydown, true);
+      appDialogClose.removeEventListener("click", cancel);
+      appDialogCancel.removeEventListener("click", cancel);
+      appDialogConfirm.removeEventListener("click", confirm);
+      previousFocus?.focus?.();
+      resolve(result);
+    };
+
+    const confirm = () => cleanup(true);
+    const cancel = () => cleanup(false);
+    const handleBackdrop = (event) => {
+      if (event.target === appDialog) {
+        cancel();
+      }
+    };
+    const handleKeydown = (event) => {
+      if (appDialog.classList.contains("hidden")) {
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        cancel();
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        event.stopPropagation();
+        confirm();
+      }
+    };
+
+    appDialog.addEventListener("click", handleBackdrop);
+    document.addEventListener("keydown", handleKeydown, true);
+    appDialogClose.addEventListener("click", cancel);
+    appDialogCancel.addEventListener("click", cancel);
+    appDialogConfirm.addEventListener("click", confirm);
+    appDialogConfirm.focus();
+  });
 }
 
 function sanitizeNickname(value) {
@@ -2097,6 +2172,11 @@ function ignoreAvailableUpdateHint() {
 }
 
 async function checkForUpdates() {
+  if (updateCheckInFlight) {
+    return;
+  }
+
+  updateCheckInFlight = true;
   try {
     const response = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
       cache: "no-store"
@@ -2133,7 +2213,9 @@ async function checkForUpdates() {
 
     syncAvailableUpdateUi();
   } catch {
-    clearUpdateAvailableUi();
+    // Keep an existing update hint visible when a periodic check fails.
+  } finally {
+    updateCheckInFlight = false;
   }
 }
 
@@ -5762,10 +5844,17 @@ messageForm.addEventListener("submit", (event) => {
   }
 });
 
-clearChat.addEventListener("click", () => {
+clearChat.addEventListener("click", async () => {
   if (activePeerId) {
     const activeConn = connections.get(activePeerId);
-    if (!window.confirm(`Clear chat with ${getPeerLabel(activePeerId, activeConn)}?`)) {
+    const confirmed = await showAppDialog({
+      title: "Clear chat",
+      message: `Clear chat with ${getPeerLabel(activePeerId, activeConn)}?`,
+      confirmText: "Clear",
+      cancelText: "Cancel",
+      danger: true
+    });
+    if (!confirmed) {
       return;
     }
     chatHistory.set(activePeerId, []);
@@ -6513,6 +6602,7 @@ setBootProgress(82, "Rendering chat");
 peer = createPeer();
 setBootProgress(90, "Starting peer");
 checkForUpdates();
+setInterval(checkForUpdates, UPDATE_CHECK_INTERVAL_MS);
 
 async function finishBootScreen() {
   await waitForVisualReady();
