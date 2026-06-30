@@ -29,6 +29,8 @@ const releasePathPrefix = `/${projectConfig.repo}/releases/`;
 const latestManifestUrl = `https://${releaseHost}${releasePathPrefix}latest/download/latest.yml`;
 const appDisplayName = projectConfig.app.name;
 const userConfigFileName = "config.json";
+const updateManifestTimeoutMs = 12000;
+const updateManifestRetryDelayMs = 800;
 const defaultSidebarWidth = 230;
 const minSidebarWidth = 170;
 const maxSidebarWidth = 360;
@@ -967,12 +969,37 @@ function fetchText(url, redirects = 0) {
     });
 
     request.on("error", reject);
+    request.setTimeout(updateManifestTimeoutMs, () => {
+      request.destroy(new Error("Update manifest request timed out."));
+    });
   });
+}
+
+function wait(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function fetchTextWithRetry(url, attempts = 2) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fetchText(url);
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        await wait(updateManifestRetryDelayMs);
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 async function fetchUpdateManifest(rawUrl) {
   const url = assertTrustedManifestUrl(rawUrl);
-  return fetchText(url);
+  return fetchTextWithRetry(url);
 }
 
 function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
@@ -1214,9 +1241,16 @@ app.whenReady().then(async () => {
       },
     ),
   );
-  ipcMain.handle("fetch-update-manifest", (_event, url) =>
-    fetchUpdateManifest(url),
-  );
+  ipcMain.handle("fetch-update-manifest", async (_event, url) => {
+    try {
+      return { ok: true, text: await fetchUpdateManifest(url) };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error?.message || "Update manifest request failed.",
+      };
+    }
+  });
   ipcMain.handle("load-config", () => loadConfig());
   ipcMain.handle("save-config", (_event, config) => saveConfig(config));
   ipcMain.handle("get-config-path", () => getConfigPath());

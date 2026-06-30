@@ -246,7 +246,7 @@ const CALL_ACTION_COOLDOWN_MS = 900;
 const OUTGOING_CALL_TIMEOUT_MS = 45000;
 const TYPING_IDLE_MS = 1800;
 const TYPING_SEND_INTERVAL_MS = 1200;
-const UPDATE_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 const DEFAULT_MIC_SENSITIVITY = 55;
 const DEFAULT_MIC_BOOST = 100;
 const DEFAULT_MIC_NOISE_REDUCTION = 55;
@@ -2509,16 +2509,29 @@ async function checkForUpdates({ manual = false } = {}) {
   }
 
   try {
-    const manifestText = window.aeroChat?.fetchUpdateManifest
-      ? await window.aeroChat.fetchUpdateManifest(latestManifestUrl)
-      : await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
-          cache: "no-store",
-        }).then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          return response.text();
-        });
+    let manifestText = "";
+    if (window.aeroChat?.fetchUpdateManifest) {
+      const manifestResult =
+        await window.aeroChat.fetchUpdateManifest(latestManifestUrl);
+      if (typeof manifestResult === "string") {
+        manifestText = manifestResult;
+      } else if (manifestResult?.ok && typeof manifestResult.text === "string") {
+        manifestText = manifestResult.text;
+      } else {
+        throw new Error(
+          manifestResult?.error || "Update manifest request failed.",
+        );
+      }
+    } else {
+      manifestText = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
+        cache: "no-store",
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.text();
+      });
+    }
 
     const manifest = parseManifest(manifestText);
     const latestVersion = manifest.version;
