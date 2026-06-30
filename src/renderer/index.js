@@ -2499,18 +2499,18 @@ async function checkForUpdates({ manual = false } = {}) {
   }
 
   try {
-    const response = await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      if (manual) {
-        setUpdateMenuStatus("Check failed");
-        setStatus("offline", "Update check failed.");
-      }
-      return;
-    }
+    const manifestText = window.aeroChat?.fetchUpdateManifest
+      ? await window.aeroChat.fetchUpdateManifest(latestManifestUrl)
+      : await fetch(`${latestManifestUrl}?t=${Date.now()}`, {
+          cache: "no-store",
+        }).then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          return response.text();
+        });
 
-    const manifest = parseManifest(await response.text());
+    const manifest = parseManifest(manifestText);
     const latestVersion = manifest.version;
     if (!latestVersion || compareVersions(latestVersion, currentVersion) <= 0) {
       clearUpdateAvailableUi();
@@ -2561,11 +2561,14 @@ async function checkForUpdates({ manual = false } = {}) {
     if (manual) {
       setStatus("online", `Update ${availableUpdate.version} available.`);
     }
-  } catch {
+  } catch (error) {
     // Keep an existing update hint visible when a periodic check fails.
     if (manual) {
       setUpdateMenuStatus("Check failed");
-      setStatus("offline", "Update check failed.");
+      setStatus(
+        "offline",
+        `Update check failed${error?.message ? `: ${error.message}` : "."}`,
+      );
     }
   } finally {
     updateCheckInFlight = false;

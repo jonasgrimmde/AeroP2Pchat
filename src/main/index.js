@@ -26,6 +26,7 @@ const windowIcon =
     : join(__dirname, "../../assets/linux-icons/512x512.png");
 const releaseHost = "github.com";
 const releasePathPrefix = `/${projectConfig.repo}/releases/`;
+const latestManifestUrl = `https://${releaseHost}${releasePathPrefix}latest/download/latest.yml`;
 const appDisplayName = projectConfig.app.name;
 const userConfigFileName = "config.json";
 const defaultSidebarWidth = 230;
@@ -912,6 +913,58 @@ function assertTrustedInstallerUrl(rawUrl) {
   return url;
 }
 
+function assertTrustedManifestUrl(rawUrl) {
+  const url = new URL(rawUrl);
+  if (url.toString() !== latestManifestUrl) {
+    throw new Error("Refused untrusted update manifest URL.");
+  }
+  return url;
+}
+
+function fetchText(url, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    const request = get(url, (response) => {
+      if (
+        [301, 302, 303, 307, 308].includes(response.statusCode) &&
+        response.headers.location
+      ) {
+        response.resume();
+        if (redirects >= 5) {
+          reject(new Error("Too many update manifest redirects."));
+          return;
+        }
+        fetchText(new URL(response.headers.location, url), redirects + 1).then(
+          resolve,
+          reject,
+        );
+        return;
+      }
+
+      if (response.statusCode !== 200) {
+        response.resume();
+        reject(
+          new Error(`Update manifest failed with HTTP ${response.statusCode}.`),
+        );
+        return;
+      }
+
+      response.setEncoding("utf8");
+      let text = "";
+      response.on("data", (chunk) => {
+        text += chunk;
+      });
+      response.on("end", () => resolve(text));
+    });
+
+    request.on("error", reject);
+  });
+}
+
+async function fetchUpdateManifest(rawUrl) {
+  const url = assertTrustedManifestUrl(rawUrl);
+  return fetchText(url);
+}
+
 function downloadFile(url, targetPath, onProgress = () => {}, redirects = 0) {
   return new Promise((resolve, reject) => {
     const request = get(url, (response) => {
@@ -1150,6 +1203,9 @@ app.whenReady().then(async () => {
         event.sender.send("update-progress", progress);
       },
     ),
+  );
+  ipcMain.handle("fetch-update-manifest", (_event, url) =>
+    fetchUpdateManifest(url),
   );
   ipcMain.handle("load-config", () => loadConfig());
   ipcMain.handle("save-config", (_event, config) => saveConfig(config));

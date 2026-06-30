@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("aeroChat", {
       ipcRenderer.removeListener("update-progress", listener);
     };
   },
+  fetchUpdateManifest: (url) => ipcRenderer.invoke("fetch-update-manifest", url),
   loadConfig: () => ipcRenderer.invoke("load-config"),
   saveConfig: (config) => ipcRenderer.invoke("save-config", config),
   getConfigPath: () => ipcRenderer.invoke("get-config-path"),
