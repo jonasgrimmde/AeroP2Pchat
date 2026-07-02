@@ -89,7 +89,7 @@ aerop2p uninstall
 Available Linux CLI commands:
 
 - `aerop2p status` shows the installed and latest version.
-- `aerop2p update` installs the latest AppImage.
+- `aerop2p update` installs the latest release.
 - `aerop2p open` starts Aero P2P Chat.
 - `aerop2p uninstall` removes Aero P2P Chat.
 
@@ -101,9 +101,14 @@ curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh -s -- update
 curl -fsSL "https://zorblock.github.io/AeroP2Pchat/install.sh" | sh -s -- uninstall
 ```
 
-The Linux installer creates:
+On Debian/Ubuntu-style systems, the Linux installer prefers the `.deb` package.
+On other distributions, or if the package install is not available, it falls
+back to the AppImage.
 
-- AppImage: `~/.local/share/aero-p2p-chat/Aero-P2P-Chat.AppImage`
+The Linux installer creates or manages:
+
+- Debian package: `aero-p2p-chat` when `.deb` installation is available
+- AppImage fallback: `~/.local/share/aero-p2p-chat/Aero-P2P-Chat.AppImage`
 - App command: `~/.local/bin/aero-p2p-chat`
 - CLI command: `~/.local/bin/aerop2p`
 - Desktop entry: `~/.local/share/applications/de.jonasgrimm.aerop2pchat.desktop`
