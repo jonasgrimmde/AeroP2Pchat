@@ -2572,12 +2572,25 @@ async function checkForUpdates({ manual = false } = {}) {
       }
       return;
     }
+    const macosUrl = manifest.macosUniversalDmgUrl || "";
+    if (platform === "darwin" && !macosUrl) {
+      clearUpdateAvailableUi();
+      if (manual) {
+        setUpdateMenuStatus("No macOS build found");
+        setStatus("offline", "Update manifest has no macOS installer.");
+      }
+      return;
+    }
 
     availableUpdate = {
       version: latestVersion,
       windowsUrl,
       windowsSha256,
       windowsSha512,
+      linuxUrl: manifest.linuxUrl || manifest.linuxX64AppImageUrl || "",
+      linuxSha256:
+        manifest.linuxSha256 || manifest.linuxX64AppImageSha256 || "",
+      macosUrl,
     };
 
     syncAvailableUpdateUi();
@@ -7619,6 +7632,11 @@ async function installAvailableUpdate() {
       headerUpdateButton.textContent = "Update";
       setStatus("offline", error.message || "Update failed.");
     }
+    return;
+  }
+
+  if (platform === "darwin") {
+    window.open(availableUpdate.macosUrl || latestReleaseUrl, "_blank", "noopener");
     return;
   }
 

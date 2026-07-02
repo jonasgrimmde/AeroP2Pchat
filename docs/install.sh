@@ -5,7 +5,7 @@ APP_NAME="Aero P2P Chat"
 APP_ID="de.jonasgrimm.aerop2pchat"
 APP_SLUG="aero-p2p-chat"
 CLI_COMMAND_NAME="aerop2p"
-APPIMAGE_RELEASE_NAME="Aero-P2P-Chat-Linux.AppImage"
+APPIMAGE_RELEASE_NAME="Aero-P2P-Chat-Linux-x64.AppImage"
 APPIMAGE_INSTALL_NAME="Aero-P2P-Chat.AppImage"
 REPO="Zorblock/AeroP2Pchat"
 RELEASE_BASE="https://github.com/${REPO}/releases/latest/download"
@@ -114,6 +114,42 @@ read_manifest_value() {
     key="$1"
     file="$2"
     sed -n "s/^${key}:[[:space:]]*//p" "$file" | head -n 1 | sed 's/^"//; s/"$//'
+}
+
+get_manifest_appimage_url() {
+    manifest="$1"
+    url="$(read_manifest_value "linuxUrl" "$manifest")"
+    if [ -z "$url" ]; then
+        url="$(read_manifest_value "linuxX64AppImageUrl" "$manifest")"
+    fi
+    if [ -z "$url" ]; then
+        url="$APPIMAGE_URL"
+    fi
+    printf '%s' "$url"
+}
+
+verify_sha256() {
+    file="$1"
+    expected="$2"
+    if [ -z "$expected" ]; then
+        return
+    fi
+
+    actual=""
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual="$(sha256sum "$file" | awk '{print $1}')"
+    elif command -v shasum >/dev/null 2>&1; then
+        actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+    else
+        warn "Could not verify SHA256 because sha256sum/shasum is missing."
+        return
+    fi
+
+    expected="$(printf '%s' "$expected" | tr '[:upper:]' '[:lower:]')"
+    actual="$(printf '%s' "$actual" | tr '[:upper:]' '[:lower:]')"
+    if [ "$actual" != "$expected" ]; then
+        fail "Downloaded AppImage SHA256 does not match latest.yml."
+    fi
 }
 
 get_latest_version() {
@@ -401,6 +437,11 @@ install_app() {
     
     fetch_manifest "$tmp_manifest"
     latest_version="$(get_latest_version "$tmp_manifest")"
+    appimage_url="$(get_manifest_appimage_url "$tmp_manifest")"
+    appimage_sha256="$(read_manifest_value "linuxSha256" "$tmp_manifest")"
+    if [ -z "$appimage_sha256" ]; then
+        appimage_sha256="$(read_manifest_value "linuxX64AppImageSha256" "$tmp_manifest")"
+    fi
     installed_version="$(get_installed_version)"
     
     if is_installed; then
@@ -418,7 +459,8 @@ install_app() {
         info "Installing ${latest_version}..."
     fi
     
-    download "$APPIMAGE_URL" "$tmp_appimage"
+    download "$appimage_url" "$tmp_appimage"
+    verify_sha256 "$tmp_appimage" "$appimage_sha256"
     chmod +x "$tmp_appimage"
     mv "$tmp_appimage" "$APPIMAGE_PATH"
     printf '%s\n' "$latest_version" > "$VERSION_PATH"

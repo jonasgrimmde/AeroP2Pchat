@@ -915,8 +915,11 @@ function assertTrustedInstallerUrl(rawUrl) {
   const url = new URL(rawUrl);
   const isTrustedHost = url.hostname === releaseHost;
   const isTrustedPath = url.pathname.startsWith(releasePathPrefix);
-  const isInstaller =
-    basename(url.pathname) === projectConfig.release.windowsInstallerAsset;
+  const trustedInstallerNames = new Set([
+    projectConfig.release.windowsInstallerAsset,
+    projectConfig.release.windowsX64SetupAsset,
+  ]);
+  const isInstaller = trustedInstallerNames.has(basename(url.pathname));
 
   if (!isTrustedHost || !isTrustedPath || !isInstaller) {
     throw new Error("Refused untrusted update URL.");

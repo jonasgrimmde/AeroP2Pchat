@@ -11,7 +11,7 @@ Aero P2P Chat is a compact Electron desktop chat client for direct peer-to-peer 
 - Peer ID based direct chat
 - Copy your own Peer ID
 - Connect to another peer by entering their Peer ID
-- Native desktop builds for Windows and Linux
+- Native desktop builds for Windows, Linux, and macOS
 - Terminal commands for updates, status, opening, and uninstalling
 
 ## How It Works
@@ -31,10 +31,11 @@ Download and run the latest Windows installer from GitHub Releases:
 https://github.com/Zorblock/AeroP2Pchat/releases/latest
 ```
 
-The Windows release asset is named:
+The Windows release assets are:
 
 ```text
-Aero-P2P-Chat-Windows-Setup.exe
+Aero-P2P-Chat-Windows-x64-Setup.exe
+Aero-P2P-Chat-Windows-x64-Portable.exe
 ```
 
 After installing, open a new terminal and use:
@@ -54,6 +55,19 @@ Available Windows CLI commands:
 - `aerop2p uninstall` starts the Windows uninstaller.
 
 The terminal command is removed again when Aero P2P Chat is uninstalled.
+
+## Install On macOS
+
+Download the latest universal macOS build from GitHub Releases:
+
+```text
+https://github.com/Zorblock/AeroP2Pchat/releases/latest
+```
+
+The macOS release assets are:
+
+- `Aero-P2P-Chat-macOS-Universal.dmg`
+- `Aero-P2P-Chat-macOS-Universal-Portable.zip`
 
 ## Install On Linux
 
@@ -102,3 +116,16 @@ The terminal command is removed again when Aero P2P Chat is uninstalled.
 ```text
 https://github.com/Zorblock/AeroP2Pchat
 ```
+
+## Release Workflow
+
+Releases are built by GitHub Actions. Push a tag named `v*` to run the CD
+workflow:
+
+```sh
+git tag v26.14.1
+git push origin v26.14.1
+```
+
+The workflow creates `latest.yml` for the in-app updater and Linux installer,
+then uploads Windows, Linux, and macOS assets to the GitHub release.

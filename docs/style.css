@@ -684,7 +684,7 @@ h2 {
 
 .download-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -703,8 +703,13 @@ h2 {
   background: linear-gradient(180deg, #ffffff, #edf8fc);
 }
 
+.download-actions {
+  display: grid;
+  gap: 10px;
+}
+
 .download-card .button {
-  align-self: flex-start;
+  width: 100%;
 }
 
 .platform {

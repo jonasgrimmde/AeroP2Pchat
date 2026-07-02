@@ -18,5 +18,10 @@ module.exports = {
     category: "Network",
     syncDesktopName: true,
   },
+  mac: {
+    target: ["dmg", "zip"],
+    icon: "assets/app.png",
+    category: "public.app-category.social-networking",
+  },
   asar: true,
 };

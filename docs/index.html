@@ -7,7 +7,7 @@
     <title>Aero P2P Chat</title>
     <meta
       name="description"
-      content="Aero P2P Chat is a desktop peer-to-peer messenger with Aero IDs, calls, screen sharing, notifications, and native Windows and Linux builds."
+      content="Aero P2P Chat is a desktop peer-to-peer messenger with Aero IDs, calls, screen sharing, notifications, and native Windows, Linux, and macOS builds."
     />
     <meta name="author" content="Zorblock" />
     <meta name="robots" content="index, follow" />
@@ -22,7 +22,7 @@
     <meta property="og:title" content="Aero P2P Chat" />
     <meta
       property="og:description"
-      content="A desktop peer-to-peer messenger with Aero IDs, calls, screen sharing, notifications, and native Windows and Linux builds."
+      content="A desktop peer-to-peer messenger with Aero IDs, calls, screen sharing, notifications, and native Windows, Linux, and macOS builds."
     />
     <meta property="og:url" content="https://zorblock.github.io/AeroP2Pchat/" />
     <meta
@@ -71,8 +71,8 @@
           <h1 id="hero-title">Chat from one desktop to another.</h1>
           <p class="lead">
             Aero P2P Chat gives every user an Aero ID, lets contacts connect by
-            request, and keeps the conversation in a focused Windows and Linux
-            app with voice, camera, screen sharing, and update tools built in.
+            request, and keeps the conversation in a focused desktop app with
+            voice, camera, screen sharing, and update tools built in.
           </p>
 
           <div class="actions">
@@ -87,7 +87,7 @@
             </div>
             <div>
               <dt>Platforms</dt>
-              <dd>Windows, Linux</dd>
+              <dd>Windows, Linux, macOS</dd>
             </div>
             <div>
               <dt>Command</dt>
@@ -230,8 +230,8 @@
             <span class="feature-icon">UP</span>
             <h3>Updates and CLI</h3>
             <p>
-              Windows uses the setup installer, Linux uses AppImage support, and
-              both expose the <code class="inline-code">aerop2p</code> command.
+              Windows uses the setup installer, Linux uses AppImage support,
+              and macOS builds are produced by the release workflow.
             </p>
           </article>
         </div>
@@ -295,7 +295,7 @@
               <h3>Light and dark themes</h3>
               <p>
                 The app stores settings in Electron userData and keeps the
-                interface consistent across Windows and Linux.
+                interface consistent across Windows, Linux, and macOS.
               </p>
             </article>
             <article>
@@ -323,35 +323,83 @@
         <div class="download-grid">
           <article class="download-card recommended reveal">
             <div>
-              <p class="platform">Windows</p>
-              <h3>Setup installer</h3>
+              <p class="platform">Windows x64</p>
+              <h3>Installer and portable</h3>
               <p>
-                Installs Aero P2P Chat and keeps the Windows update flow simple.
+                Use the setup installer for normal installs, or the portable
+                executable when you do not want to install it.
               </p>
             </div>
-            <a
-              class="button primary"
-              href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Windows-Setup.exe"
-            >
-              Download for Windows
-            </a>
+            <div class="download-actions">
+              <a
+                class="button primary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Windows-x64-Setup.exe"
+              >
+                Installer .exe
+              </a>
+              <a
+                class="button secondary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Windows-x64-Portable.exe"
+              >
+                Portable .exe
+              </a>
+            </div>
           </article>
 
           <article class="download-card reveal">
             <div>
-              <p class="platform">Linux</p>
-              <h3>AppImage</h3>
+              <p class="platform">Linux x64</p>
+              <h3>AppImage, Debian, archive</h3>
               <p>
-                Download the portable AppImage directly, or use the recommended
-                installer command below.
+                Download the AppImage directly, install the Debian package, or
+                use the portable archive.
               </p>
             </div>
-            <a
-              class="button primary"
-              href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Linux.AppImage"
-            >
-              Download AppImage
-            </a>
+            <div class="download-actions">
+              <a
+                class="button primary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Linux-x64.AppImage"
+              >
+                AppImage
+              </a>
+              <a
+                class="button secondary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Linux-x64.deb"
+              >
+                Debian .deb
+              </a>
+              <a
+                class="button secondary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-Linux-x64-Portable.tar.gz"
+              >
+                Portable .tar.gz
+              </a>
+            </div>
+          </article>
+
+          <article class="download-card reveal">
+            <div>
+              <p class="platform">macOS</p>
+              <h3>DMG and portable app</h3>
+              <p>
+                Universal macOS builds are created on GitHub Actions for Intel
+                and Apple Silicon Macs.
+              </p>
+            </div>
+            <div class="download-actions">
+              <a
+                class="button primary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-macOS-Universal.dmg"
+              >
+                Installer .dmg
+              </a>
+              <a
+                class="button secondary"
+                href="https://github.com/Zorblock/AeroP2Pchat/releases/latest/download/Aero-P2P-Chat-macOS-Universal-Portable.zip"
+              >
+                Portable .zip
+              </a>
+            </div>
           </article>
         </div>
 
